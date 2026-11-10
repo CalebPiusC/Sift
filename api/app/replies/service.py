@@ -109,6 +109,7 @@ async def process(conn, vendor, mid):
     c = await conn.fetchrow(
         "SELECT * FROM conversations WHERE id=$1 FOR UPDATE", inbound["conversation_id"]
     )
+    inbound = await conn.fetchrow("SELECT * FROM messages WHERE id=$1", mid)
     if inbound["lane"] is not None:
         return
     settings = await policy(conn, vendor)
@@ -125,6 +126,10 @@ async def process(conn, vendor, mid):
             "UPDATE messages SET lane='paused',lane_reason='human_takeover' WHERE id=$1", mid
         )
         return  # Never replay old human-handled enquiries on hand-back.
+    from app.commerce.chat import handle as handle_order_chat
+
+    if await handle_order_chat(conn, vendor, inbound):
+        return
     source = inbound["voice_transcript"] or inbound["content"]
     sheet = await get_product_facts(conn, vendor, c["id"], source)
     decision = decide(

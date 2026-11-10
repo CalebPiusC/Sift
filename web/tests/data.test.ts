@@ -269,7 +269,17 @@ describe('API switch never silently seeds', () => {
 it('API adapter maps every contract operation and preserves typed error envelopes', async () => {
   const fetcher = vi
     .fn()
-    .mockImplementation(async () => new Response(JSON.stringify({ ok: true, data: null })));
+    .mockImplementation(
+      async (url: string) =>
+        new Response(
+          JSON.stringify({
+            ok: true,
+            data: url.includes('payment-confirmation')
+              ? { confirmationToken: 'test-confirmation' }
+              : null,
+          }),
+        ),
+    );
   const c = createApiClient({ vendorId: 'tenant', getToken: async () => 'token', fetcher });
   const cases: [() => Promise<unknown>, string, string][] = [
     [() => c.catalogue.get('p/1'), 'catalogue/p%2F1', 'GET'],
@@ -293,7 +303,13 @@ it('API adapter maps every contract operation and preserves typed error envelope
       'PATCH',
     ],
     [
-      () => c.orders.confirmPayment({ id: 'o', source: 'vendor', expectedRevision: 1 }),
+      () =>
+        c.orders.confirmPayment({
+          id: 'o',
+          source: 'vendor',
+          expectedRevision: 1,
+          confirmed: true,
+        }),
       'orders/o/payment',
       'POST',
     ],

@@ -153,3 +153,9 @@ Run `PATH="$PWD/.venv/bin:$PATH" npm run test:pipeline` for Python and native Po
 See [reply safety rules, evaluation, activation and live-acceptance status](docs/backend/reply-engine.md).
 The engine is off per vendor until enabled. `npm run eval:replies` prints the120-case safety evaluation;
 root `npm run build` runs it as a required prebuild gate. Gmail acceptance remains pending authorization.
+
+## Orders and payments (B4)
+
+See [order/payment rules, signed receipts, setup and pending real acceptance](docs/backend/orders-payments.md).
+`PATH="$PWD/.venv/bin:$PATH" npm run test:commerce` exercises the local transactional flow and
+last-item races. Real Paystack/Gmail acceptance still needs configured credentials and deployment.

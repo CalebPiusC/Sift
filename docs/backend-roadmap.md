@@ -8,6 +8,9 @@ The generated endpoint inventory below is the B0 planning inventory, not a curre
 claim. F0 response shapes remain unchanged. Hosted verification and live Gmail acceptance are pending;
 local provider simulations are not hosted proof.
 
+B4 now adds [orders, verified payments, stock and signed receipts](backend/orders-payments.md).
+Its provider-backed acceptance is pending; the inventory marks local implementation separately.
+
 Sources: [exact schema delta](backend/schema-delta.md), [function-to-storage gaps](backend/contract-gaps.md),
 [enforced role matrix](backend/role-matrix.md), [events and idempotency](backend/events-and-idempotency.md).
 `backend/endpoints.json` is the machine-readable endpoint inventory. Tests prevent method omissions
@@ -92,10 +95,10 @@ means the F0 route exists, **local-only** means it must not become a production 
 | CatalogueData.get | GET `/v1/catalogue/{id}` | owner manager agent | none | none | products,product_variants,product_photos | **planned**.  |
 | ConversationsData.list | GET `/v1/conversations` | owner manager agent | none | cursor | conversations,conversation_reads | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
 | ConversationsData.get | GET `/v1/conversations/{id}` | owner manager agent | none | none | conversations,conversation_reads | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
-| OrdersData.list | GET `/v1/orders` | owner manager agent | none | cursor | orders,order_items,order_timeline | **planned**.  |
-| OrdersData.get | GET `/v1/orders/{id}` | owner manager agent | none | none | orders,order_items,order_timeline | **planned**.  |
-| ReceiptsData.list | GET `/v1/receipts` | owner manager agent | none | cursor | receipts | **planned**.  |
-| ReceiptsData.get | GET `/v1/receipts/{id}` | owner manager agent | none | none | receipts | **planned**.  |
+| OrdersData.list | GET `/v1/orders` | owner manager agent | none | cursor | orders,order_items,order_timeline | **implemented-local**. B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending. |
+| OrdersData.get | GET `/v1/orders/{id}` | owner manager agent | none | none | orders,order_items,order_timeline | **implemented-local**. B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending. |
+| ReceiptsData.list | GET `/v1/receipts` | owner manager agent | none | cursor | receipts | **implemented-local**. B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending. |
+| ReceiptsData.get | GET `/v1/receipts/{id}` | owner manager agent | none | none | receipts | **implemented-local**. B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending. |
 | CustomersData.list | GET `/v1/customers` | owner manager agent | none | cursor | customers | **planned**.  |
 | CustomersData.get | GET `/v1/customers/{id}` | owner manager agent | none | none | customers | **planned**.  |
 | CatalogueData.extract | POST `/v1/catalogue/extractions` | owner manager | required | none | catalogue_drafts,product_photos | **planned**. Store private media references; provider integration deferred. |
@@ -108,9 +111,9 @@ means the F0 route exists, **local-only** means it must not become a production 
 | ConversationsData.setHumanMode | PATCH `/v1/conversations/{id}/human-mode` | owner manager agent | required | none | conversations,domain_events | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
 | MessagesData.send | POST `/v1/messages` | owner manager agent | required | none | messages,message_deliveries,jobs | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
 | ApprovalsData.decide | POST `/v1/approvals/{id}/decision` | owner manager agent | required | none | approvals,messages,message_deliveries,jobs | **implemented-local**. B3 once-only decisions; stale snapshot refresh and verifier required, including at send. |
-| OrdersData.setStatus | PATCH `/v1/orders/{id}/status` | owner manager agent | required | none | orders,order_timeline,messages,jobs | **planned**. expectedRevision; no generic transition into paid; agent assigned/unassigned conversation scope. |
-| OrdersData.confirmPayment | POST `/v1/orders/{id}/payment` | owner manager | required | none | orders,payments,stock_movements,domain_events | **planned**. Vendor source only; expectedRevision; bank acknowledgement validated; no screenshot path; transactional ledger/stock. |
-| ReceiptsData.issue | POST `/v1/receipts` | owner manager | required | none | receipts,receipt_shares | **planned**. Vendor lock and per-order uniqueness; guarded SQL RPC; freeze snapshot; no edit/delete. |
+| OrdersData.setStatus | PATCH `/v1/orders/{id}/status` | owner manager agent | required | none | orders,order_timeline,messages,jobs | **implemented-local**. B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending. |
+| OrdersData.confirmPayment | POST `/v1/orders/{id}/payment` | owner manager | required | none | orders,payments,stock_movements,domain_events | **implemented-local**. B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending. |
+| ReceiptsData.issue | POST `/v1/receipts` | owner manager | required | none | receipts,receipt_shares | **implemented-local**. B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending. |
 | CustomersData.update | PATCH `/v1/customers/{id}` | owner manager agent | required | none | customers | **planned**. Allowlisted notes/tags/flagged; metadata flag does not block provider. |
 | ChannelsData.begin | POST `/v1/channels/connections` | owner manager | required | none | channel_attempts,channel_accounts | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
 | ChannelsData.complete | POST `/v1/channels/connections/{attemptId}/complete` | owner manager | required | none | channel_attempts,channel_tokens,channel_accounts | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
@@ -158,6 +161,10 @@ means the F0 route exists, **local-only** means it must not become a production 
 | MessagesData.retry | POST `/v1/messages/{id}/retry` | owner manager agent (thread scoped) | required | none | messages,jobs,message_deliveries | **implemented-local**. State-conditional retry; ambiguous sends reconcile only. Live Gmail acceptance pending. |
 | SettingsData.getReplyPolicy | GET `/v1/settings/reply-engine` | owner manager agent | none | none | business_settings,vendors | **implemented-local**. B3 safe intent allowlist; no approve-everything option. Activation is prospective only. |
 | SettingsData.updateReplyPolicy | PATCH `/v1/settings/reply-engine` | owner manager | required | none | business_settings,vendors | **implemented-local**. B3 safe intent allowlist; no approve-everything option. Activation is prospective only. |
+| OrdersData.requestCheckout | POST `/v1/orders/{id}/checkout` | owner manager | required | none | orders,jobs | **implemented-local**. B4 explicit state-conditional operation; provider ambiguity is not blindly replayed. |
+| OrdersData.cancellationActions | POST `/v1/orders/{id}/cancellation-actions` | owner manager | required | none | orders,stock_movements,audit_log,jobs | **implemented-local**. B4 explicit state-conditional operation; provider ambiguity is not blindly replayed. |
+| ReceiptsData.share | POST `/v1/receipts/{id}/share` | owner manager | required | none | receipts,receipt_shares | **implemented-local**. B4 explicit state-conditional operation; provider ambiguity is not blindly replayed. |
+| ReceiptsData.revoke | POST `/v1/receipts/{id}/revoke` | owner manager | required | none | receipt_shares,audit_log | **implemented-local**. B4 explicit state-conditional operation; provider ambiguity is not blindly replayed. |
 
 <!-- endpoints:end -->
 

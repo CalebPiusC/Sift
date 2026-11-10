@@ -139,6 +139,9 @@ export interface StockMovement {
   note: string;
 }
 export interface Order extends Entity {
+  paymentReview?: string | null;
+  refundStatus?: string | null;
+  restockedAt?: string | null;
   revision: number;
   conversationId: ID | null;
   deliveryAddress: string;

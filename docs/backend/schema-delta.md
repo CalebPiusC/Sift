@@ -907,7 +907,7 @@ New/changed constraints:
 - `jobs_created_at_not_null`: `NOT NULL created_at`
 - `jobs_dedupe_key_not_null`: `NOT NULL dedupe_key`
 - `jobs_id_not_null`: `NOT NULL id`
-- `jobs_kind_check`: `CHECK ((kind = ANY (ARRAY['ingest'::text, 'send'::text, 'holding_reply'::text, 'followup'::text, 'restock'::text, 'payment'::text, 'receipt'::text, 'usage'::text, 'invitation_email'::text, 'channel_refresh'::text, 'cleanup'::text, 'gmail_sync'::text, 'gmail_watch'::text, 'reservation_expiry'::text, 'takeover_timeout'::text, 'reply'::text])))`
+- `jobs_kind_check`: `CHECK ((kind = ANY (ARRAY['ingest'::text, 'send'::text, 'holding_reply'::text, 'followup'::text, 'restock'::text, 'payment'::text, 'receipt'::text, 'usage'::text, 'invitation_email'::text, 'channel_refresh'::text, 'cleanup'::text, 'gmail_sync'::text, 'gmail_watch'::text, 'reservation_expiry'::text, 'takeover_timeout'::text, 'reply'::text, 'checkout'::text, 'order_message'::text, 'refund'::text])))`
 - `jobs_kind_not_null`: `NOT NULL kind`
 - `jobs_max_attempts_check`: `CHECK ((max_attempts > 0))`
 - `jobs_max_attempts_not_null`: `NOT NULL max_attempts`
@@ -1055,6 +1055,7 @@ Added columns:
 - `lane_reason` text; nullable
 - `detected_language` text; nullable
 - `detection_confidence` numeric; nullable
+- `commerce_context` jsonb; nullable
 
 New/changed constraints:
 
@@ -1230,14 +1231,29 @@ Added columns:
 - `revision` bigint; NOT NULL; default `1`
 - `updated_at` timestamp with time zone; NOT NULL; default `now()`
 - `paid_at_source` text; nullable
+- `currency` text; NOT NULL; default `'NGN'::text`
+- `checkout_reference` text; nullable
+- `checkout_started_at` timestamp with time zone; nullable
+- `reservation_expires_at` timestamp with time zone; nullable
+- `payment_review` text; nullable
+- `chat_context` jsonb; nullable
+- `delivery_instructions` text; NOT NULL; default `''::text`
+- `refund_requested_at` timestamp with time zone; nullable
+- `refund_reference` text; nullable
+- `refund_status` text; nullable
+- `restocked_at` timestamp with time zone; nullable
 
 New/changed constraints:
 
 - `order_paid_state`: `CHECK (((status <> ALL (ARRAY['paid'::text, 'preparing'::text, 'out_for_delivery'::text, 'delivered'::text])) OR (payment_status = 'paid'::text)))`
+- `orders_currency_check`: `CHECK ((currency = 'NGN'::text))`
+- `orders_currency_not_null`: `NOT NULL currency`
 - `orders_delivery_address_not_null`: `NOT NULL delivery_address`
 - `orders_delivery_fee_kobo_safe_integer`: `CHECK ((delivery_fee_kobo <= '9007199254740991'::bigint))`
+- `orders_delivery_instructions_not_null`: `NOT NULL delivery_instructions`
 - `orders_paid_at_source_check`: `CHECK ((paid_at_source = ANY (ARRAY['verified'::text, 'legacy_creation'::text])))`
 - `orders_payment_screenshot_received_not_null`: `NOT NULL payment_screenshot_received`
+- `orders_refund_status_check`: `CHECK ((refund_status = ANY (ARRAY['requested'::text, 'processing'::text, 'pending'::text, 'completed'::text, 'uncertain'::text])))`
 - `orders_revision_check`: `CHECK ((revision > 0))`
 - `orders_revision_not_null`: `NOT NULL revision`
 - `orders_status_check`: `CHECK ((status = ANY (ARRAY['draft'::text, 'awaiting_payment'::text, 'paid'::text, 'preparing'::text, 'out_for_delivery'::text, 'delivered'::text, 'cancelled'::text])))`
@@ -1249,6 +1265,7 @@ New/changed constraints:
 Added indexes (including constraint-backed and FK lookup indexes):
 
 - `b0_fk_orders_vendor_id_conversation_id_fkey_16634`: `CREATE INDEX b0_fk_orders_vendor_id_conversation_id_fkey_16634 ON public.orders USING btree (vendor_id, conversation_id)`
+- `checkout_reference_identity`: `CREATE UNIQUE INDEX checkout_reference_identity ON public.orders USING btree (checkout_reference) WHERE (checkout_reference IS NOT NULL)`
 - `order_conversation_customer_fk`: `CREATE INDEX order_conversation_customer_fk ON public.orders USING btree (vendor_id, customer_id, conversation_id)`
 - `orders_cursor`: `CREATE INDEX orders_cursor ON public.orders USING btree (vendor_id, created_at DESC, id DESC)`
 - `orders_customer_cursor`: `CREATE INDEX orders_customer_cursor ON public.orders USING btree (vendor_id, customer_id, created_at DESC, id DESC)`
@@ -1268,6 +1285,7 @@ Added columns:
 - `verified_at` timestamp with time zone; NOT NULL
 - `verified_by` uuid; nullable
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
+- `currency` text; NOT NULL; default `'NGN'::text`
 
 New/changed constraints:
 
@@ -1275,6 +1293,8 @@ New/changed constraints:
 - `payments_amount_kobo_not_null`: `NOT NULL amount_kobo`
 - `payments_amount_kobo_safe_integer`: `CHECK ((amount_kobo <= '9007199254740991'::bigint))`
 - `payments_created_at_not_null`: `NOT NULL created_at`
+- `payments_currency_check`: `CHECK ((currency = 'NGN'::text))`
+- `payments_currency_not_null`: `NOT NULL currency`
 - `payments_id_not_null`: `NOT NULL id`
 - `payments_order_id_not_null`: `NOT NULL order_id`
 - `payments_pkey`: `PRIMARY KEY (id)`
@@ -1392,6 +1412,8 @@ Added columns:
 - `expires_at` timestamp with time zone; NOT NULL
 - `revoked_at` timestamp with time zone; nullable
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
+- `token_ciphertext` bytea; nullable
+- `key_version` text; nullable
 
 New/changed constraints:
 

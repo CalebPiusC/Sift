@@ -26,6 +26,7 @@ services:
       - ./supabase/migrations/202611100004_reconciliation_invariants.sql:/docker-entrypoint-initdb.d/005-reconciliation-invariants.sql:ro
       - ./supabase/migrations/202611100005_gmail_pipeline.sql:/docker-entrypoint-initdb.d/006-gmail-pipeline.sql:ro
       - ./supabase/migrations/202611100006_reply_engine.sql:/docker-entrypoint-initdb.d/007-reply-engine.sql:ro
+      - ./supabase/migrations/202611100007_orders_payments.sql:/docker-entrypoint-initdb.d/008-orders-payments.sql:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U selvora']
       interval: 5s

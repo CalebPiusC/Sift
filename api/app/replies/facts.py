@@ -11,7 +11,7 @@ def fingerprint(sheet: dict) -> str:
     ).hexdigest()
 
 
-async def get_product_facts(conn, vendor, conversation, customer_text: str) -> dict:
+async def get_product_facts(conn, vendor, conversation, customer_text: str, order_id=None) -> dict:
     # RLS is already tenant scoped. Explicit vendor predicates are defence in depth.
     rows = await conn.fetch(
         "SELECT id,name,price_kobo,lowest_price_kobo,stock_count,revision,kind FROM products WHERE vendor_id=$1 AND NOT archived ORDER BY id LIMIT 501 FOR SHARE",
@@ -59,6 +59,9 @@ async def get_product_facts(conn, vendor, conversation, customer_text: str) -> d
                 p = {
                     **p,
                     **choices[0],
+                    "parent_id": str(p["id"]),
+                    "variant_id": str(choices[0]["id"]),
+                    "variant_name": choices[0]["name"],
                     "name": p["name"] + " / " + choices[0]["name"],
                     "variants": p["variants"],
                 }
@@ -95,9 +98,10 @@ async def get_product_facts(conn, vendor, conversation, customer_text: str) -> d
                 break
     # Never trust a customer-supplied order ID/payment screenshot as ownership or payment proof.
     orders = await conn.fetch(
-        "SELECT o.id,o.status,o.payment_status,o.payment_source,o.total_kobo,o.delivery_fee_kobo,o.revision FROM orders o JOIN conversations c ON c.customer_id=o.customer_id AND c.vendor_id=o.vendor_id WHERE c.id=$2 AND o.vendor_id=$1 ORDER BY o.created_at DESC LIMIT 2 FOR SHARE OF o",
+        "SELECT o.id,o.status,o.payment_status,o.payment_source,o.total_kobo,o.delivery_fee_kobo,o.revision,o.payment_link FROM orders o JOIN conversations c ON c.customer_id=o.customer_id AND c.vendor_id=o.vendor_id WHERE c.id=$2 AND o.vendor_id=$1 AND ($3::uuid IS NULL OR o.id=$3) ORDER BY o.created_at DESC LIMIT 2 FOR SHARE OF o",
         vendor,
         conversation,
+        order_id,
     )
     sheet = {
         "products": products,
@@ -123,6 +127,9 @@ async def get_product_facts(conn, vendor, conversation, customer_text: str) -> d
             if len(delivery) == 1
             else None
         )
+    if order_id and len(orders) == 1:
+        sheet["total_kobo"] = orders[0]["total_kobo"]
+        sheet["allowed_links"] = [orders[0]["payment_link"]] if orders[0]["payment_link"] else []
     return json.loads(json.dumps(sheet, default=str))
 
 

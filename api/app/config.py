@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     pipeline_lease_seconds: int = 90
     worker_poll_seconds: float = 2
     pipeline_enabled: bool = False
+    paystack_secret_key: SecretStr = SecretStr("")
+    public_web_url: str = ""
 
 
 @lru_cache

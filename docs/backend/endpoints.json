@@ -51,8 +51,8 @@
     "tables": "orders,order_items,order_timeline",
     "pagination": "cursor",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending."
   },
   {
     "function": "OrdersData.get",
@@ -62,8 +62,8 @@
     "tables": "orders,order_items,order_timeline",
     "pagination": "none",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending."
   },
   {
     "function": "ReceiptsData.list",
@@ -73,8 +73,8 @@
     "tables": "receipts",
     "pagination": "cursor",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending."
   },
   {
     "function": "ReceiptsData.get",
@@ -84,8 +84,8 @@
     "tables": "receipts",
     "pagination": "none",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending."
   },
   {
     "function": "CustomersData.list",
@@ -227,8 +227,8 @@
     "tables": "orders,order_timeline,messages,jobs",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "expectedRevision; no generic transition into paid; agent assigned/unassigned conversation scope."
+    "status": "implemented-local",
+    "notes": "B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending."
   },
   {
     "function": "OrdersData.confirmPayment",
@@ -238,8 +238,8 @@
     "tables": "orders,payments,stock_movements,domain_events",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Vendor source only; expectedRevision; bank acknowledgement validated; no screenshot path; transactional ledger/stock."
+    "status": "implemented-local",
+    "notes": "B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending."
   },
   {
     "function": "ReceiptsData.issue",
@@ -249,8 +249,8 @@
     "tables": "receipts,receipt_shares",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Vendor lock and per-order uniqueness; guarded SQL RPC; freeze snapshot; no edit/delete."
+    "status": "implemented-local",
+    "notes": "B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending."
   },
   {
     "function": "CustomersData.update",
@@ -768,5 +768,49 @@
     "idempotency": "required",
     "status": "implemented-local",
     "notes": "B3 safe intent allowlist; no approve-everything option. Activation is prospective only."
+  },
+  {
+    "function": "OrdersData.requestCheckout",
+    "method": "POST",
+    "path": "/orders/{id}/checkout",
+    "roles": "owner manager",
+    "tables": "orders,jobs",
+    "pagination": "none",
+    "idempotency": "required",
+    "status": "implemented-local",
+    "notes": "B4 explicit state-conditional operation; provider ambiguity is not blindly replayed."
+  },
+  {
+    "function": "OrdersData.cancellationActions",
+    "method": "POST",
+    "path": "/orders/{id}/cancellation-actions",
+    "roles": "owner manager",
+    "tables": "orders,stock_movements,audit_log,jobs",
+    "pagination": "none",
+    "idempotency": "required",
+    "status": "implemented-local",
+    "notes": "B4 explicit state-conditional operation; provider ambiguity is not blindly replayed."
+  },
+  {
+    "function": "ReceiptsData.share",
+    "method": "POST",
+    "path": "/receipts/{id}/share",
+    "roles": "owner manager",
+    "tables": "receipts,receipt_shares",
+    "pagination": "none",
+    "idempotency": "required",
+    "status": "implemented-local",
+    "notes": "B4 explicit state-conditional operation; provider ambiguity is not blindly replayed."
+  },
+  {
+    "function": "ReceiptsData.revoke",
+    "method": "POST",
+    "path": "/receipts/{id}/revoke",
+    "roles": "owner manager",
+    "tables": "receipt_shares,audit_log",
+    "pagination": "none",
+    "idempotency": "required",
+    "status": "implemented-local",
+    "notes": "B4 explicit state-conditional operation; provider ambiguity is not blindly replayed."
   }
 ]

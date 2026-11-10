@@ -61,6 +61,13 @@ export interface ApprovalsData {
   }): Promise<Result<Approval>>;
 }
 export interface OrdersData {
+  requestCheckout?(id: ID): Promise<Result<{ queued: boolean }>>;
+  cancellationActions?(input: {
+    id: ID;
+    refund: boolean;
+    restock: boolean;
+    confirmed: boolean;
+  }): Promise<Result<Order>>;
   list(input?: ListInput & { status?: OrderStatus }): Promise<Result<Page<Order>>>;
   get(id: ID): Promise<Result<Order>>;
   setStatus(input: {
@@ -71,10 +78,13 @@ export interface OrdersData {
   confirmPayment(input: {
     id: ID;
     source: 'vendor';
+    confirmed?: boolean;
     expectedRevision: number;
   }): Promise<Result<Order>>;
 }
 export interface ReceiptsData {
+  share?(id: ID): Promise<Result<{ url: string }>>;
+  revoke?(id: ID): Promise<Result<{ revoked: boolean }>>;
   list(input?: ListInput): Promise<Result<Page<Receipt>>>;
   get(id: ID): Promise<Result<Receipt>>;
   issue(input: { orderId: ID }): Promise<Result<Receipt>>;

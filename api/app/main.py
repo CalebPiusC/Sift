@@ -89,7 +89,11 @@ app.include_router(pipeline_router)
 async def safe_pipeline_errors(request, call_next):
     """Do not let asyncpg/provider exceptions reach access/error logs with private values."""
     try:
-        return await call_next(request)
+        response = await call_next(request)
+        if request.url.path.startswith("/v1/"):
+            response.headers["Cache-Control"] = "private, no-store"
+            response.headers["Referrer-Policy"] = "no-referrer"
+        return response
     except Exception as error:  # noqa: BLE001 -- final privacy boundary, never log private exception values
         code = getattr(error, "sqlstate", "")
         status, label = (
@@ -172,3 +176,7 @@ async def readiness(settings: Annotated[Settings, Depends(get_settings)]):
 from .replies.api import router as replies_router
 
 app.include_router(replies_router)
+
+from .commerce.api import router as commerce_router
+
+app.include_router(commerce_router)

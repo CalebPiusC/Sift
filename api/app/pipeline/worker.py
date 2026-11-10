@@ -10,6 +10,8 @@ import httpx
 
 from app.channels.base import Outgoing
 from app.channels.gmail import ChannelError
+from app.commerce import messages as commerce_messages
+from app.commerce import paystack
 from app.config import get_settings
 from app.replies import service as replies
 
@@ -34,6 +36,10 @@ class Worker:
             "gmail_watch": self.gmail_watch,
             "send": self.send,
             "reply": self.reply,
+            "checkout": lambda job: paystack.initialize(self, job),
+            "payment": lambda job: paystack.reconcile(self, job),
+            "refund": lambda job: paystack.refund(self, job),
+            "order_message": lambda job: commerce_messages.notify(self, job),
             "reservation_expiry": self.reservation_expiry,
             "takeover_timeout": self.takeover_timeout,
             "holding_reply": self.holding_reply,
@@ -350,7 +356,14 @@ class Worker:
                         return
                     if row["sender"] == "ai":
                         await self.check_hours(conn, vendor)
-                    if row["sender"] in ("ai", "vendor") or row["reply_context"]:
+                    if row["commerce_context"]:
+                        if not await commerce_messages.validate(self, conn, vendor, row):
+                            await conn.execute(
+                                "UPDATE messages SET status='blocked',delivery_error_code='UNVERIFIED_FACTS' WHERE id=$1",
+                                row["id"],
+                            )
+                            return
+                    elif row["sender"] in ("ai", "vendor") or row["reply_context"]:
                         safe, reason, sheet = await replies.recheck(conn, vendor, row)
                         if not safe:
                             await replies.block_send(conn, vendor, row, reason, sheet)
@@ -398,11 +411,26 @@ class Worker:
                 )
 
     async def reservation_expiry(self, job):
+        from app.commerce import domain
+
         async with self.db.transaction(job["vendor_id"]) as (conn, _):
+            o = await domain.lock(conn, job["vendor_id"], job["order_id"])
             await conn.execute(
                 "UPDATE stock_reservations SET status='expired' WHERE order_id=$1 AND status='active' AND expires_at<=now()",
                 job["order_id"],
             )
+            if (
+                o["status"] == "awaiting_payment"
+                and o["reservation_expires_at"]
+                and o["reservation_expires_at"] <= datetime.now(UTC)
+                and o["payment_review"] != "RESERVATION_EXPIRED"
+            ):
+                await conn.execute(
+                    "UPDATE orders SET payment_link=NULL,payment_review='RESERVATION_EXPIRED' WHERE id=$1",
+                    o["id"],
+                )
+                row = await conn.fetchrow("SELECT * FROM orders WHERE id=$1", o["id"])
+                await domain.notice(conn, row, "reservation_expired")
 
     async def takeover_timeout(self, job):
         async with self.db.transaction(job["vendor_id"]) as (conn, _):

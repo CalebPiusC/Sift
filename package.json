@@ -31,7 +31,8 @@
     "test:backend": "node --test tests/b0-reconciliation.test.mjs tests/b0-native.test.mjs tests/backend-doc.test.mjs",
     "test:pipeline": "python -m pytest api/tests -q && node --test tests/b2-native.test.mjs",
     "eval:replies": "python3 api/evals/run.py",
-    "test:replies": "python3 api/evals/run.py && python -m pytest api/tests -q && node --test tests/b2-native.test.mjs"
+    "test:replies": "python3 api/evals/run.py && python -m pytest api/tests -q && node --test tests/b2-native.test.mjs",
+    "test:commerce": "python -m pytest api/tests -q && node --test tests/b2-native.test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.16",

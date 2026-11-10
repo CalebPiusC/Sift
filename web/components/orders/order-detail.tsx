@@ -30,7 +30,10 @@ export function OrderDetail({ id, onBack }: { id: string; onBack: () => void }) 
                   {(page) => {
                     const r = page.items.find((r) => r.orderId === o.id);
                     return r ? (
-                      <ReceiptView receipt={r} sample={client.mode === 'mock'} />
+                      <div>
+                        <ReceiptView receipt={r} sample={client.mode === 'mock'} />
+                        {client.mode === 'api' && <ReceiptLinks id={r.id} />}
+                      </div>
                     ) : (
                       <IssueReceipt orderId={o.id} />
                     );
@@ -95,6 +98,17 @@ function OrderContent({ order: o }: { order: Order }) {
             {orderLabels[o.status]}
           </span>
         </div>
+        {o.paymentReview && (
+          <p role="alert" className="my-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+            Review needed: {o.paymentReview.replaceAll('_', ' ')}. Draft totals may be provisional
+            until chat details are complete.
+          </p>
+        )}
+        {o.refundStatus && (
+          <p role="status" className="my-3 text-sm">
+            Refund: {o.refundStatus}. A request is not proof of a completed refund.
+          </p>
+        )}
         <h3 className="mb-3 mt-6 text-sm font-semibold">Items</h3>
         <ul className="space-y-3">
           {o.items.map((item, i) => (
@@ -214,6 +228,7 @@ function OrderContent({ order: o }: { order: Order }) {
                       client.orders.confirmPayment({
                         id: o.id,
                         source: 'vendor',
+                        confirmed: true,
                         expectedRevision: confirm.revision,
                       }),
                     )
@@ -276,6 +291,17 @@ function OrderContent({ order: o }: { order: Order }) {
             )}
           </div>
         )}
+        {o.status === 'awaiting_payment' && client.orders.requestCheckout && !link && (
+          <Button
+            disabled={action.busy}
+            onClick={() => void action.run(() => client.orders.requestCheckout!(o.id))}
+          >
+            Create Paystack checkout
+          </Button>
+        )}
+        {o.status === 'cancelled' &&
+          o.paymentStatus === 'paid' &&
+          client.orders.cancellationActions && <CancellationActions order={o} />}
         {action.error && (
           <p role="alert" className="mt-4 text-xs text-danger">
             {action.error.message}
@@ -319,5 +345,108 @@ function OrderContent({ order: o }: { order: Order }) {
         </ol>
       </section>
     </>
+  );
+}
+
+function CancellationActions({ order: o }: { order: Order }) {
+  const { client } = useDataClient();
+  const action = useAction();
+  const [refund, setRefund] = useState(false),
+    [restock, setRestock] = useState(false),
+    [confirmed, setConfirmed] = useState(false);
+  return (
+    <section className="my-4 space-y-3 rounded-xl border border-amber-400 p-3">
+      <h3 className="font-semibold">Explicit cancellation choices</h3>
+      <p className="text-xs">
+        Nothing was refunded or restocked by cancellation. Bank refunds must be made in your bank
+        app. Paystack refund requests remain pending until reconciled.
+      </p>
+      <label className="flex min-h-12 gap-3">
+        <input
+          type="checkbox"
+          checked={refund}
+          onChange={(e) => {
+            setRefund(e.target.checked);
+            setConfirmed(false);
+          }}
+        />
+        Request full refund
+      </label>
+      <label className="flex min-h-12 gap-3">
+        <input
+          type="checkbox"
+          checked={restock}
+          disabled={!!o.restockedAt}
+          onChange={(e) => {
+            setRestock(e.target.checked);
+            setConfirmed(false);
+          }}
+        />
+        Return deducted items to available stock
+      </label>
+      <label className="flex min-h-12 gap-3">
+        <input
+          type="checkbox"
+          checked={confirmed}
+          onChange={(e) => setConfirmed(e.target.checked)}
+        />
+        I confirm these choices. Stock will be available to sell again if restock is selected.
+      </label>
+      <Button
+        disabled={action.busy || !confirmed || (!refund && !restock)}
+        onClick={() =>
+          void action.run(() =>
+            client.orders.cancellationActions!({ id: o.id, refund, restock, confirmed: true }),
+          )
+        }
+      >
+        Apply confirmed choices
+      </Button>
+      {action.error && (
+        <p role="alert" className="text-sm text-danger">
+          {action.error.message}
+        </p>
+      )}
+    </section>
+  );
+}
+function ReceiptLinks({ id }: { id: string }) {
+  const { client } = useDataClient();
+  const action = useAction();
+  const [confirm, setConfirm] = useState(false);
+  return (
+    <section className="my-3 space-y-3">
+      <Button
+        variant="outline"
+        disabled={action.busy}
+        onClick={() => void action.run(() => client.receipts.share!(id))}
+      >
+        Create or renew secure receipt link
+      </Button>
+      {!confirm ? (
+        <Button variant="outline" onClick={() => setConfirm(true)}>
+          Revoke receipt links
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          disabled={action.busy}
+          onClick={() =>
+            void action
+              .run(() => client.receipts.revoke!(id))
+              .then((r) => {
+                if (r.ok) setConfirm(false);
+              })
+          }
+        >
+          Confirm revoke all current receipt links
+        </Button>
+      )}
+      {action.error && (
+        <p role="alert" className="text-sm text-danger">
+          {action.error.message}
+        </p>
+      )}
+    </section>
   );
 }

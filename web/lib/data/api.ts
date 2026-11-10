@@ -1,5 +1,5 @@
 import type { DataClient } from './contract';
-import type { Result, DataEvent } from './types';
+import type { Result, DataEvent, Order } from './types';
 import { authConfigured, supabase } from '../supabase';
 export function createApiClient(options: {
   vendorId: string;
@@ -174,14 +174,51 @@ export function createApiClient(options: {
           { status: i.status, expectedRevision: i.expectedRevision },
           'PATCH',
         ),
-      confirmPayment: (i) =>
+      requestCheckout: (id) => request(`orders/${key(id)}/checkout`, {}, 'POST'),
+      cancellationActions: (i) =>
         request(
-          `orders/${key(i.id)}/payment`,
-          { source: i.source, expectedRevision: i.expectedRevision },
+          `orders/${key(i.id)}/cancellation-actions`,
+          { refund: i.refund, restock: i.restock, confirmed: i.confirmed },
           'POST',
         ),
+      confirmPayment: async (i) => {
+        if (!i.confirmed)
+          return {
+            ok: false,
+            error: {
+              code: 'VALIDATION',
+              message:
+                'Check your bank and confirm the full amount first. Screenshots are not proof.',
+              retryable: false,
+            },
+          };
+        const challenge = await request<{ confirmationToken: string }>(
+          `orders/${key(i.id)}/payment-confirmation`,
+          { expectedRevision: i.expectedRevision },
+          'POST',
+        );
+        if (!challenge.ok) {
+          if (challenge.error.code === 'CONFLICT') {
+            const existing = await request<Order>(`orders/${key(i.id)}`);
+            if (existing.ok && existing.data.paymentStatus === 'paid') return existing;
+          }
+          return challenge;
+        }
+        return request(
+          `orders/${key(i.id)}/payment`,
+          {
+            source: i.source,
+            expectedRevision: i.expectedRevision,
+            confirmed: true,
+            confirmationToken: challenge.data.confirmationToken,
+          },
+          'POST',
+        );
+      },
     },
     receipts: {
+      share: (id) => request(`receipts/${key(id)}/share`, {}, 'POST'),
+      revoke: (id) => request(`receipts/${key(id)}/revoke`, {}, 'POST'),
       list: (i) => request(`receipts${query(i)}`),
       get: (id) => request(`receipts/${key(id)}`),
       issue: (i) => request('receipts', i, 'POST'),
@@ -264,6 +301,9 @@ export function createApiClient(options: {
           'channel_accounts',
           'customers',
           'approvals',
+          'orders',
+          'order_timeline',
+          'receipts',
         ]) {
           channel.on(
             'postgres_changes',

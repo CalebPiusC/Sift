@@ -64,7 +64,7 @@ async def claim(conn, vendor, lease_seconds):
       WHERE id=(SELECT id FROM jobs WHERE vendor_id=$1 AND
        ((status IN ('queued','failed') AND run_at<=now() AND attempts<max_attempts)
         OR (status='running' AND locked_until<now() AND attempts<max_attempts))
-       AND kind IN ('reply','gmail_sync','gmail_watch','send','holding_reply','followup','reservation_expiry','takeover_timeout')
+       AND kind IN ('checkout','payment','refund','order_message','reply','gmail_sync','gmail_watch','send','holding_reply','followup','reservation_expiry','takeover_timeout')
        ORDER BY run_at,id FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING *
     """,
         vendor,

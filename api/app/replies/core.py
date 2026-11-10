@@ -156,6 +156,11 @@ def verify(text: str, sheet: dict) -> Verdict:
     a claim: unit price, delivery, totals and negotiated prices have distinct contexts.
     """
     errors = []
+    for url in re.findall(r"https?://[^\s]+", text):
+        if url.rstrip(".") not in sheet.get("allowed_links", []):
+            errors.append("UNBACKED_LINK")
+        else:
+            text = text.replace(url, "")
     if re.search(r"[-−+]\s*(?:₦|NGN|N)\s*\d", text, re.IGNORECASE):
         errors.append("SIGNED_AMOUNT")
     p = selected(sheet)
@@ -224,6 +229,12 @@ def verify(text: str, sheet: dict) -> Verdict:
         stock_mentioned = bool(re.search(r"\b(stock|available|left|remaining|dey)\b", stripped))
         if (
             not values
+            and not (
+                sheet.get("order_status") == "out_for_delivery"
+                and re.fullmatch(
+                    r"your order (?:status )?is out for delivery[.!]?", stripped.strip()
+                )
+            )
             and re.search(r"\b(deliver|delivery|shipping|dispatch)\b", stripped)
             and not (
                 re.search(r"\b(free delivery|free shipping)\b", stripped)
@@ -242,9 +253,10 @@ def verify(text: str, sheet: dict) -> Verdict:
             and (not p or sheet.get("negotiated_kobo", p["price_kobo"]) != 0)
         ):
             errors.append("UNBACKED_DISCOUNT")
-        if re.search(r"\b(paid|payment|transfer|receipt|screenshot)\b", stripped) and not sheet.get(
-            "payment_verified"
-        ):
+        if re.search(
+            r"\b(paid|payment|transfer|receipt|screenshot)\b",
+            re.sub(r"\b(awaiting payment|proceed to payment|pay securely)\b", "", stripped),
+        ) and not sheet.get("payment_verified"):
             errors.append("UNVERIFIED_PAYMENT")
         stock_patterns = [
             r"\b(\d+)\s*(?:pieces?|pcs|units?|pairs?|items?|packs?)\s*(?:are\s+)?(?:left|available|in stock|dey)",
