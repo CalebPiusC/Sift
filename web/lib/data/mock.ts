@@ -1,3 +1,4 @@
+import { catalogueMock } from './catalogue-mock';
 import type { DataClient } from './contract';
 import type {
   DataEvent,
@@ -100,20 +101,7 @@ export function createMockClient(
   const client: DataClient = {
     mode: 'mock',
     vendorId,
-    catalogue: {
-      list: (input) =>
-        run('catalogue', () =>
-          page(
-            state.products.filter(
-              (p) =>
-                (!input?.category || p.category === input.category) &&
-                matches(`${p.name} ${p.category}`, input),
-            ),
-            input,
-          ),
-        ),
-      get: (key) => run('catalogue', () => find(state.products, key)),
-    },
+    catalogue: catalogueMock({ products: state.products, vendorId, id, run, emit, page }),
     conversations: {
       list: (input) =>
         run('conversations', () =>

@@ -30,7 +30,7 @@ export interface Seed {
 }
 export function createSeed(vendorId = SAMPLE_VENDOR): Seed {
   const base = { vendorId };
-  const entries: [string, string, number, Product['kind']][] = [
+  const entries: [string, Product['category'], number, Product['kind']][] = [
     ['Indigo Adire Set', 'Fashion', 25000, 'product'],
     ['Ankara Wrap Dress', 'Fashion', 32000, 'product'],
     ['Linen Two-piece', 'Fashion', 45000, 'product'],
@@ -53,7 +53,7 @@ export function createSeed(vendorId = SAMPLE_VENDOR): Seed {
     ['Ceramic Mug', 'Home', 6000, 'product'],
     ['Beaded Tote Bag', 'Accessories', 18500, 'product'],
     ['Brass Drop Earrings', 'Accessories', 5500, 'product'],
-    ['Leather Slides', 'Accessories', 21000, 'product'],
+    ['Black Sneakers', 'Shoes', 21000, 'product'],
     ['Personal Styling Session', 'Services', 30000, 'service'],
     ['Bespoke Bridal Outfit', 'Custom', 150000, 'made-to-order'],
   ];
@@ -69,9 +69,19 @@ export function createSeed(vendorId = SAMPLE_VENDOR): Seed {
           ? 'Made for you. Timing confirmed before the order.'
           : 'Thoughtfully sourced and packed in Lagos.',
     kind,
+    photos: [],
+    details: {
+      sizes: category === 'Shoes' ? ['42'] : [],
+      portion: category === 'Food & drink' ? 'One portion' : '',
+      prepMinutes: category === 'Food & drink' ? 30 : null,
+      durationMinutes: kind === 'service' ? 60 : null,
+    },
+    lowStockThreshold: 5,
+    archived: false,
+    revision: 1,
     priceKobo: price * 100,
     lowestPriceKobo: Math.round(price * 0.9) * 100,
-    stock: kind === 'product' ? (i < 5 ? 8 : i === 6 ? 0 : 8 + i) : null,
+    stock: kind === 'product' ? (i < 5 ? 8 : i === 5 ? 3 : i === 6 ? 0 : 8 + i) : null,
     variants:
       i < 5
         ? [

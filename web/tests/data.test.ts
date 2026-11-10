@@ -1,3 +1,4 @@
+import { fakeExtract } from '../lib/data/catalogue-logic';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createMockClient, createApiClient, type Result, type DataClient } from '../lib/data';
 import { parseDataMode } from '../lib/data/mode';
@@ -21,7 +22,7 @@ describe('sample seed and contract', () => {
     const c = mock();
     const products = value(await c.catalogue.list());
     expect(products.total).toBe(25);
-    expect(new Set(products.items.map((p) => p.category)).size).toBe(7);
+    expect(new Set(products.items.map((p) => p.category)).size).toBe(8);
     expect(
       products.items.every(
         (p) => Number.isSafeInteger(p.priceKobo) && p.lowestPriceKobo <= p.priceKobo,
@@ -298,6 +299,35 @@ it('API adapter maps every contract operation and preserves typed error envelope
     ],
     [() => c.billing.get(), 'billing', 'GET'],
   ];
+  cases.push([
+    () =>
+      c.catalogue.update({ id: 'p', expectedRevision: 1, product: fakeExtract('Accessories', 0) }),
+    'catalogue/p',
+    'PATCH',
+  ]);
+  cases.push(
+    [
+      () => c.catalogue.extract({ photos: [], category: 'Shoes', bulk: true }),
+      'catalogue/extractions',
+      'POST',
+    ],
+    [
+      () => c.catalogue.createMany({ requestId: 'batch', products: [] }),
+      'catalogue/batches',
+      'POST',
+    ],
+    [
+      () => c.catalogue.archive({ id: 'p', expectedRevision: 1, archived: true }),
+      'catalogue/p/archive',
+      'PATCH',
+    ],
+    [() => c.catalogue.proposeText({ text: 'bag finished' }), 'catalogue/text-proposals', 'POST'],
+    [
+      () => c.catalogue.confirmText({ proposalId: 'proposal', productId: 'p' }),
+      'catalogue/text-proposals/proposal/confirm',
+      'POST',
+    ],
+  );
   for (const [operation, path, method] of cases) {
     await operation();
     expect(fetcher).toHaveBeenLastCalledWith(

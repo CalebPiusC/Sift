@@ -18,13 +18,18 @@ export interface Variant {
 }
 export interface Product extends Entity {
   name: string;
-  category: string;
+  category: import('./catalogue-types').Category;
   description: string;
   kind: 'product' | 'service' | 'made-to-order';
   priceKobo: Kobo;
   lowestPriceKobo: Kobo;
   stock: number | null;
   variants: Variant[];
+  photos: import('./catalogue-types').ProductPhoto[];
+  details: import('./catalogue-types').ProductDetails;
+  lowStockThreshold: number;
+  archived: boolean;
+  revision: number;
 }
 export interface Customer extends Entity {
   name: string;

@@ -1,6 +1,6 @@
-# Selvora frontend data contract — F1
+# Selvora frontend data contract — F1/F2
 
-**Status:** frontend contract and in-memory adapter implemented. Backend endpoints below are a target, **not a claim that they exist**. F1 changes no FastAPI routes or database migrations.
+**Status:** frontend contract and in-memory adapter implemented. Backend endpoints below are a target, **not a claim that they exist**. F1/F2 change no FastAPI routes or database migrations.
 
 ## Selecting the implementation
 
@@ -27,7 +27,7 @@ All paths are relative to `/api/v1`. Every request has `Authorization: Bearer <S
 
 | Interface.function | HTTP / input | Success data |
 |---|---|---|
-| CatalogueData.list | GET `/catalogue`, query `ListInput & {category?: string}` | `Page<Product>` |
+| CatalogueData.list | GET `/catalogue`, query `ListInput & {category?: Category, stock?: StockFilter, archived?: boolean}` | `Page<Product>` |
 | CatalogueData.get | GET `/catalogue/:id` | `Product` |
 | ConversationsData.list | GET `/conversations`, query `ListInput & {channel?, status?}` | `Page<Conversation>` |
 | ConversationsData.get | GET `/conversations/:id` | `Conversation` |
@@ -79,6 +79,32 @@ All paths are relative to `/api/v1`. Every request has `Authorization: Bearer <S
 
 The developer **Simulate incoming message** button lives in the selected conversation. It shows mutation errors and is never rendered by the API adapter. `failNext(area)` causes the next operation in that area to return one retryable `UNAVAILABLE` error; it is an async test/developer control, not a backend endpoint.
 
+## F2 catalogue operations and confirmation rules
+
+All six additional operations are typed in `catalogue-types.ts`, extended by `CatalogueData`, and available on both adapters. **Only mock implements the operations locally; API routes below remain backend targets.**
+
+| Function | Endpoint / input | Success data |
+|---|---|---|
+| catalogue.extract | POST `/catalogue/extractions`, `ExtractionInput {photos, category, bulk}` | `CatalogueDraft[]` |
+| catalogue.createMany | POST `/catalogue/batches`, `{requestId, products: ProductInput[]}` | `Product[]` |
+| catalogue.update | PATCH `/catalogue/:id`, `{expectedRevision, product: ProductInput}` | `Product` |
+| catalogue.archive | PATCH `/catalogue/:id/archive`, `{expectedRevision, archived}` | `Product` |
+| catalogue.proposeText | POST `/catalogue/text-proposals`, `{text}` | `TypedProposal` |
+| catalogue.confirmText | POST `/catalogue/text-proposals/:proposalId/confirm`, `{productId}` | `Product` |
+
+### Category, stock, photo and draft DTOs
+
+- Categories are the fixed `categories` tuple, including Shoes. Vendors choose **chips**, never a category text field. The add flow is photos → category → editable card(s) → price/floor → plain-language confirmation. `bulk: true` means one card per photo (1–10); false means one product with all photos. There is no voice input/recording capability. Customer voice-note playback/transcript DTOs from F1 remain inbound-only.
+- Mock extraction **does not read image pixels**. It returns plausible category-based names and blank prices; it must not invent catalogue facts. Shoes require tapped sizes; Food & drink requires portion and positive whole-minute prep time; Services requires positive whole-minute duration. Photos are read into session-only data URLs; neither the photos nor drafts are persisted until confirmation, and even confirmed mock records reset on refresh.
+- `ProductPhoto {id,url,name}`: UI accepts JPG/PNG/WebP only, at most 10 photos, up to 3 MB each. Mock `url` is a base64 image data URL. The future API may accept those within configured request limits and return authorised HTTPS storage URLs; upload validation/Storage/RLS still belong to the backend. Do not put customer-sensitive images at public URLs.
+- Product now includes `photos`, `details`, `lowStockThreshold` (whole number ≥0), `archived` and `revision` (starts at 1). `ProductInput` deliberately excludes id/vendorId/archived/revision; these are server-owned. All prices are integer kobo. Selling price must be positive and floor ≥0 and ≤selling price. Every variant needs a name, distinct ID, valid non-negative stock/null, and a price at least the floor.
+- If variants exist, total stock is the sum of variant stock. Either every variant tracks stock, or none does. Editing per-variant stock recomputes the total. No arbitrary stock allocation is invented. `stockBadge` precedence is Not tracked (`null`), Out of stock (`0`), Low (`1..threshold` inclusive), then In stock. `in_stock` filter excludes low/out stock; the all-stock option includes everything.
+- `catalogue.list` excludes archived products by default. `archived: true` returns only archived items. Archive/restore preserves existing orders and receipt snapshots. Revision mismatches return `CONFLICT`, never silently overwrite newer edits.
+- `createMany` validates the **entire** 1–10 item batch, including one photo per new item, before any insert. `requestId` makes duplicate confirmations idempotent; reuse with different contents returns `CONFLICT`. The future backend must make this atomic, tenant-scoped and durable rather than rely on JS memory. All successful catalogue mutations emit catalogue invalidation events.
+- Typed update grammar (mock local parser): `NAME finished`, `NAME sold out`, `NAME out of stock`; `set/update NAME stock to COUNT`; `raise/set/change/update NAME price to AMOUNT`. Supported examples: `15k` = ₦15,000, `N1.5k` = ₦1,500, `₦15,000` = ₦15,000. Negative, malformed-comma and non-finite/unsafe amounts are rejected. All query words must match the active product's name (case-insensitive). Unknown grammar yields a helpful validation error; no category inference/edit is performed here.
+- `proposeText` only proposes: it stores a session proposal snapshot and returns candidate IDs/names and a plain-word summary. More than one candidate requires a **picker**, never automatic selection. No mutation occurs until `confirmText`. The chosen ID must belong to the proposal and retain its revision; otherwise NOT_FOUND/CONFLICT. Confirmation consumes the proposal, preventing repeat execution. Cancelling sends no mutation.
+- A finished variant product sets all variant stocks to zero, stated in the summary. A positive aggregate stock change on a variant product is rejected with instructions to edit per-variant stock. Untracked stock changes are rejected. A price update sets list and every variant price to the proposed amount, explicitly stated before confirmation, leaving the floor unchanged; below-floor proposals cannot be confirmed. No discounts or negotiation are enabled.
+
 ## Exact exported entities and interfaces
 
 <!-- generated-contract:start -->
@@ -106,13 +132,18 @@ export interface Variant {
 }
 export interface Product extends Entity {
   name: string;
-  category: string;
+  category: import('./catalogue-types').Category;
   description: string;
   kind: 'product' | 'service' | 'made-to-order';
   priceKobo: Kobo;
   lowestPriceKobo: Kobo;
   stock: number | null;
   variants: Variant[];
+  photos: import('./catalogue-types').ProductPhoto[];
+  details: import('./catalogue-types').ProductDetails;
+  lowStockThreshold: number;
+  archived: boolean;
+  revision: number;
 }
 export interface Customer extends Entity {
   name: string;
@@ -288,6 +319,7 @@ export type Unsubscribe = () => void;
 ### Interfaces
 
 ```ts
+import type { CatalogueMutations, Category, StockFilter } from './catalogue-types';
 import type {
   Approval,
   AutoIntent,
@@ -312,8 +344,10 @@ import type {
   TeamMember,
   Unsubscribe,
 } from './types';
-export interface CatalogueData {
-  list(input?: ListInput & { category?: string }): Promise<Result<Page<Product>>>;
+export interface CatalogueData extends CatalogueMutations {
+  list(
+    input?: ListInput & { category?: Category; stock?: StockFilter; archived?: boolean },
+  ): Promise<Result<Page<Product>>>;
   get(id: ID): Promise<Result<Product>>;
 }
 export interface ConversationsData {
@@ -412,6 +446,67 @@ export interface DataClient {
   dispose(): Promise<void>;
 }
 export type { AutoIntent };
+```
+
+### Catalogue additions
+
+```ts
+import type { Product, ID, Result } from './types';
+export const categories = [
+  'Fashion',
+  'Shoes',
+  'Beauty',
+  'Food & drink',
+  'Home',
+  'Accessories',
+  'Services',
+  'Custom',
+] as const;
+export type Category = (typeof categories)[number];
+export type StockFilter = 'in_stock' | 'low' | 'out' | 'not_tracked';
+export interface ProductPhoto {
+  id: ID;
+  url: string;
+  name: string;
+}
+export interface ProductDetails {
+  sizes: string[];
+  portion: string;
+  prepMinutes: number | null;
+  durationMinutes: number | null;
+}
+export type ProductInput = Omit<Product, 'id' | 'vendorId' | 'archived' | 'revision'>;
+export interface ExtractionInput {
+  photos: ProductPhoto[];
+  category: Category;
+  bulk: boolean;
+}
+export interface CatalogueDraft {
+  key: ID;
+  product: ProductInput;
+}
+export interface CreateProductsInput {
+  requestId: ID;
+  products: ProductInput[];
+}
+export interface EditProductInput {
+  id: ID;
+  expectedRevision: number;
+  product: ProductInput;
+}
+export interface TypedProposal {
+  id: ID;
+  text: string;
+  candidates: { id: ID; name: string; summary: string }[];
+}
+export interface CatalogueMutations {
+  extract(input: ExtractionInput): Promise<Result<CatalogueDraft[]>>;
+  createMany(input: CreateProductsInput): Promise<Result<Product[]>>;
+  update(input: EditProductInput): Promise<Result<Product>>;
+  archive(input: { id: ID; expectedRevision: number; archived: boolean }): Promise<Result<Product>>;
+  proposeText(input: { text: string }): Promise<Result<TypedProposal>>;
+  confirmText(input: { proposalId: ID; productId: ID }): Promise<Result<Product>>;
+}
 ```
 
 <!-- generated-contract:end -->

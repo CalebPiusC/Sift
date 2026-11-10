@@ -96,6 +96,27 @@ export function createApiClient(options: {
     catalogue: {
       list: (i) => request(`catalogue${query(i)}`),
       get: (id) => request(`catalogue/${key(id)}`),
+      extract: (i) => request('catalogue/extractions', i, 'POST'),
+      createMany: (i) => request('catalogue/batches', i, 'POST'),
+      update: (i) =>
+        request(
+          `catalogue/${key(i.id)}`,
+          { expectedRevision: i.expectedRevision, product: i.product },
+          'PATCH',
+        ),
+      archive: (i) =>
+        request(
+          `catalogue/${key(i.id)}/archive`,
+          { expectedRevision: i.expectedRevision, archived: i.archived },
+          'PATCH',
+        ),
+      proposeText: (i) => request('catalogue/text-proposals', i, 'POST'),
+      confirmText: (i) =>
+        request(
+          `catalogue/text-proposals/${key(i.proposalId)}/confirm`,
+          { productId: i.productId },
+          'POST',
+        ),
     },
     conversations: {
       list: (i) => request(`conversations${query(i)}`),

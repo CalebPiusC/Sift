@@ -1,3 +1,4 @@
+import type { CatalogueMutations, Category, StockFilter } from './catalogue-types';
 import type {
   Approval,
   AutoIntent,
@@ -22,8 +23,10 @@ import type {
   TeamMember,
   Unsubscribe,
 } from './types';
-export interface CatalogueData {
-  list(input?: ListInput & { category?: string }): Promise<Result<Page<Product>>>;
+export interface CatalogueData extends CatalogueMutations {
+  list(
+    input?: ListInput & { category?: Category; stock?: StockFilter; archived?: boolean },
+  ): Promise<Result<Page<Product>>>;
   get(id: ID): Promise<Result<Product>>;
 }
 export interface ConversationsData {

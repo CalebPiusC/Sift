@@ -1,6 +1,6 @@
 # Selvora
 
-A mobile-first workspace for Nigerian online vendors. **Current work: F1 frontend data layer.** Backend work is paused while the frontend is completed.
+A mobile-first workspace for Nigerian online vendors. **Current work: F2 catalogue screens, on the F1 frontend data layer.** Backend work is paused while the frontend is completed.
 
 Replaces the previous LeadBot prototype. Includes Next.js/TypeScript/Tailwind with a shadcn-style Radix button, FastAPI, Supabase auth, PostgreSQL tenant isolation, four-screen onboarding, responsive navigation, dark mode, and an installable PWA.
 
@@ -26,7 +26,7 @@ Copy `web/.env.example` to `web/.env.local` to set the single server-read switch
 DATA_MODE=mock
 ```
 
-- **Mock:** 25 catalogue entries across seven categories, 40 customers/conversations across all five channels, English/Pidgin messages and seven customer voice-note transcripts, 21 orders spanning seven states, 15 numbered receipt snapshots, five pending approvals, channels, delivery fees for Lagos/Abuja/Ibadan, settings, insights, team and billing.
+- **Mock:** 25 catalogue entries across eight categories, 40 customers/conversations across all five channels, English/Pidgin messages and seven customer voice-note transcripts, 21 orders spanning seven states, 15 numbered receipt snapshots, five pending approvals, channels, delivery fees for Lagos/Abuja/Ibadan, settings, insights, team and billing.
 - **Realtime demo:** Inbox → **Simulate incoming message**. A customer message appears, followed by a canned sample AI greeting after about 1.2 seconds. No provider call, real message, payment or email occurs. Human mode is rechecked before the delayed reply.
 - **Read views:** catalogue search/category filters; conversation/channel search; orders/status filters; Orders → View receipts; Settings → Business/Channels/Customers/Team/Billing.
 - **Async UX:** typed result/error envelopes, loading states, retry, mutation busy/errors, realtime invalidation and cleanup on unmount. Customer voice-note transcripts are fake; no vendor recording control exists.
@@ -35,6 +35,22 @@ DATA_MODE=mock
 The full contract, including every input/output, HTTP target and error semantics, is in [`docs/api-contract.md`](docs/api-contract.md). Import contracts/types from `web/lib/data/index.ts`. Update generated declarations with `npm run docs:contract`; `npm run test:contract` prevents documentation drift.
 
 This explicit sample-data adapter is separate from the old **Explore the workspace** onboarding preview. That old shortcut is still development-only, disabled in production and whenever Supabase is configured. In mock mode no real authentication/database access happens at all.
+
+## F2 catalogue: photos, taps and typed text
+
+Use `DATA_MODE=mock`, open **Catalogue**, then **Add products**.
+
+1. Pick up to ten JPG/PNG/WebP photos (up to 3 MB each).
+2. Tap **One item per photo** for bulk, or **One item, several photos**.
+3. Tap a category chip and **Get suggestions**. Mock extraction is explicitly fake/category-based; it does not analyse photos.
+4. Review/edit one card per item. Shoes asks for sizes; Food asks for portion/prep minutes; Services asks for duration. No vendor voice controls or typed category fields.
+5. Enter price/lowest price in naira (e.g. `15k`, `N1.5k`, `₦15,000`), review plain-language summaries, and **Confirm all**. Invalid batches save nothing; retries do not duplicate items.
+
+The catalogue has search/category/stock filters, four stock badges, product detail/edit with photos, variant stock, a low-stock threshold, and archive/restore with confirmation. Typed quick edits propose first: try **black sneakers finished**, **set black sneakers stock to 8**, or **raise adire price to 30k** (the last requires picking one of two matches). Confirming is mandatory; price floors and revision conflicts are enforced. Archived products disappear from active searches without touching order/receipt history.
+
+Automated interaction tests cover ten-photo creation and a typed stock update in a 390px component container. A real Chromium mobile-layout check was attempted but blocked by missing sandbox system library `libnspr4.so`; actual browser/device layout validation remains outstanding.
+
+Mock changes/photos live only in browser-session memory. API mode has the exact typed target operations but **no new backend endpoints, real image extraction, Storage upload or persistence**. The backend remains paused.
 
 ## Phase 1 auth foundation: real signup → onboarding → workspace (API mode)
 
