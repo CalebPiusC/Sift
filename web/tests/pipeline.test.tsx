@@ -40,3 +40,21 @@ it('labels Gmail acceptance separately from recipient delivery', () => {
   render(<MessageBubble message={{ ...message, status: 'sent' }} />);
   expect(screen.getByText(/recipient delivery is not confirmed/)).toBeInTheDocument();
 });
+
+it('routes approvals, takeover and safe reply policy to the real API', async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValue({ ok: true, json: async () => ({ ok: true, data: {} }) });
+  const client = createApiClient({ vendorId: 'vendor', getToken: async () => 'token', fetcher });
+  await client.approvals.decide({ id: 'approval', action: 'reject' });
+  expect(fetcher.mock.calls.at(-1)?.[0]).toBe('/api/v1/approvals/approval/decision');
+  await client.conversations.setHumanMode({ id: 'chat', until: null });
+  expect(fetcher.mock.calls.at(-1)?.[0]).toBe('/api/v1/conversations/chat/human-mode');
+  await client.settings.updateReplyPolicy!({
+    enabled: true,
+    tone: 'friendly',
+    autoIntents: ['price'],
+    autoNegotiation: false,
+  });
+  expect(fetcher.mock.calls.at(-1)?.[0]).toBe('/api/v1/settings/reply-engine');
+});

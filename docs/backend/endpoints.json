@@ -216,8 +216,8 @@
     "tables": "approvals,messages,message_deliveries,jobs",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Lock pending decision; reread facts/revisions; agent assigned/unassigned scope; no bulk bypass."
+    "status": "implemented-local",
+    "notes": "B3 once-only decisions; stale snapshot refresh and verifier required, including at send."
   },
   {
     "function": "OrdersData.setStatus",
@@ -425,8 +425,8 @@
     "tables": "approvals",
     "pagination": "cursor",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "B3 once-only decisions; stale snapshot refresh and verifier required, including at send."
   },
   {
     "function": "ChannelsData.list",
@@ -746,5 +746,27 @@
     "idempotency": "required",
     "status": "implemented-local",
     "notes": "State-conditional retry; ambiguous sends reconcile only. Live Gmail acceptance pending."
+  },
+  {
+    "function": "SettingsData.getReplyPolicy",
+    "method": "GET",
+    "path": "/settings/reply-engine",
+    "roles": "owner manager agent",
+    "tables": "business_settings,vendors",
+    "pagination": "none",
+    "idempotency": "none",
+    "status": "implemented-local",
+    "notes": "B3 safe intent allowlist; no approve-everything option. Activation is prospective only."
+  },
+  {
+    "function": "SettingsData.updateReplyPolicy",
+    "method": "PATCH",
+    "path": "/settings/reply-engine",
+    "roles": "owner manager",
+    "tables": "business_settings,vendors",
+    "pagination": "none",
+    "idempotency": "required",
+    "status": "implemented-local",
+    "notes": "B3 safe intent allowlist; no approve-everything option. Activation is prospective only."
   }
 ]

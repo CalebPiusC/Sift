@@ -97,7 +97,15 @@ export interface ChannelsData {
   newHelperCode(): Promise<Result<HelperLink>>;
   confirmHelper(input: { id: ID }): Promise<Result<HelperLink>>;
 }
+export interface ReplyPolicy {
+  enabled: boolean;
+  autoIntents: AutoIntent[];
+  autoNegotiation: boolean;
+  tone: BusinessSettings['tone'];
+}
 export interface SettingsData {
+  getReplyPolicy?(): Promise<Result<ReplyPolicy>>;
+  updateReplyPolicy?(input: ReplyPolicy): Promise<Result<ReplyPolicy>>;
   get(): Promise<Result<BusinessSettings>>;
   update(
     input: Partial<

@@ -51,6 +51,7 @@ export function createApiClient(options: {
         cache: 'no-store',
       });
       const result = (await response.json().catch(() => null)) as Result<T> | null;
+      if (response.status === 409 && method !== 'GET') notify();
       if (
         result?.ok === false &&
         result.error &&
@@ -204,7 +205,12 @@ export function createApiClient(options: {
       confirmHelper: (i) =>
         request(`channels/whatsapp/helper/codes/${key(i.id)}/confirm`, {}, 'POST'),
     },
-    settings: { get: () => request('settings'), update: (i) => request('settings', i, 'PATCH') },
+    settings: {
+      get: () => request('settings'),
+      update: (i) => request('settings', i, 'PATCH'),
+      getReplyPolicy: () => request('settings/reply-engine'),
+      updateReplyPolicy: (i) => request('settings/reply-engine', i, 'PATCH'),
+    },
     insights: {
       get: (range) => request(`insights${range ? `?${new URLSearchParams({ ...range })}` : ''}`),
     },
@@ -252,7 +258,13 @@ export function createApiClient(options: {
           };
         await db.realtime.setAuth(token);
         const channel = db.channel(`inbox:${options.vendorId}:${crypto.randomUUID()}`);
-        for (const table of ['messages', 'conversations', 'channel_accounts', 'customers']) {
+        for (const table of [
+          'messages',
+          'conversations',
+          'channel_accounts',
+          'customers',
+          'approvals',
+        ]) {
           channel.on(
             'postgres_changes',
             { event: '*', schema: 'public', table, filter: `vendor_id=eq.${options.vendorId}` },

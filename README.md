@@ -147,3 +147,9 @@ An opt-in Gmail outbox/ingress worker and inbox API are now implemented locally.
 See [setup, tested behavior and remaining acceptance](docs/backend/gmail-pipeline.md).
 Live Gmail/hosted realtime acceptance is **pending**; API mode never falls back to samples.
 Run `PATH="$PWD/.venv/bin:$PATH" npm run test:pipeline` for Python and native PostgreSQL/Redis tests.
+
+## Reply engine (B3)
+
+See [reply safety rules, evaluation, activation and live-acceptance status](docs/backend/reply-engine.md).
+The engine is off per vendor until enabled. `npm run eval:replies` prints the120-case safety evaluation;
+root `npm run build` runs it as a required prebuild gate. Gmail acceptance remains pending authorization.

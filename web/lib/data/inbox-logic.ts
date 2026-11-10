@@ -41,7 +41,7 @@ export function channelLink(c: Conversation): { url: string; exact: boolean } {
         instagram: ['www.instagram.com', 'instagram.com'],
         facebook: ['www.facebook.com', 'm.me'],
         tiktok: ['www.tiktok.com'],
-        email: [],
+        email: ['mail.google.com'],
       };
       if (
         (c.channel === 'email' && u.protocol === 'mailto:') ||

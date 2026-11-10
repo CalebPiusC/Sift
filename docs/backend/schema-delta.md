@@ -11,24 +11,33 @@ Added columns:
 - `decided_at` timestamp with time zone; nullable
 - `decided_by` uuid; nullable
 - `revision` bigint; NOT NULL; default `1`
+- `fact_snapshot` jsonb; nullable
+- `fact_hash` text; nullable
+- `safety_reason` text; nullable
+- `outgoing_message_id` uuid; nullable
+- `decision_action` text; nullable
 
 New/changed constraints:
 
 - `approvals_confidence_check`: `CHECK (((confidence >= (0)::numeric) AND (confidence <= (1)::numeric)))`
 - `approvals_confidence_not_null`: `NOT NULL confidence`
+- `approvals_decision_action_check`: `CHECK ((decision_action = ANY (ARRAY['send'::text, 'edit'::text, 'reject'::text])))`
 - `approvals_revision_check`: `CHECK ((revision > 0))`
 - `approvals_revision_not_null`: `NOT NULL revision`
 - `approvals_vendor_id_conversation_id_message_id_fkey`: `FOREIGN KEY (vendor_id, conversation_id, message_id) REFERENCES messages(vendor_id, conversation_id, id)`
 - `approvals_vendor_id_decided_by_fkey`: `FOREIGN KEY (vendor_id, decided_by) REFERENCES vendor_members(vendor_id, id)`
+- `approvals_vendor_id_outgoing_message_id_fkey`: `FOREIGN KEY (vendor_id, outgoing_message_id) REFERENCES messages(vendor_id, id)`
 
 Added indexes (including constraint-backed and FK lookup indexes):
 
+- `approval_outgoing_fk`: `CREATE INDEX approval_outgoing_fk ON public.approvals USING btree (vendor_id, outgoing_message_id)`
 - `approvals_holding_due`: `CREATE INDEX approvals_holding_due ON public.approvals USING btree (vendor_id, holding_reply_due_at, id) WHERE ((status = 'pending'::text) AND (holding_reply_sent_at IS NULL))`
 - `approvals_pending_cursor`: `CREATE INDEX approvals_pending_cursor ON public.approvals USING btree (vendor_id, status, created_at DESC, id DESC)`
 - `b0_fk_approvals_vendor_id_conversation_id_fkey_16745`: `CREATE INDEX b0_fk_approvals_vendor_id_conversation_id_fkey_16745 ON public.approvals USING btree (vendor_id, conversation_id)`
 - `b0_fk_approvals_vendor_id_conversation_id_message_id_fkey_16745`: `CREATE INDEX b0_fk_approvals_vendor_id_conversation_id_message_id_fkey_16745 ON public.approvals USING btree (vendor_id, conversation_id, message_id)`
 - `b0_fk_approvals_vendor_id_decided_by_fkey_16745`: `CREATE INDEX b0_fk_approvals_vendor_id_decided_by_fkey_16745 ON public.approvals USING btree (vendor_id, decided_by)`
 - `b0_fk_approvals_vendor_id_message_id_fkey_16745`: `CREATE INDEX b0_fk_approvals_vendor_id_message_id_fkey_16745 ON public.approvals USING btree (vendor_id, message_id)`
+- `reply_once_per_inbound`: `CREATE UNIQUE INDEX reply_once_per_inbound ON public.approvals USING btree (vendor_id, message_id) WHERE (fact_snapshot IS NOT NULL)`
 
 ## audit_log — extended existing table
 
@@ -240,6 +249,8 @@ Added columns:
 - `away_message` text; NOT NULL; default `''::text`
 - `revision` bigint; NOT NULL; default `1`
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
+- `reply_engine_enabled` boolean; NOT NULL; default `false`
+- `reply_engine_enabled_at` timestamp with time zone; nullable
 
 New/changed constraints:
 
@@ -251,6 +262,7 @@ New/changed constraints:
 - `business_settings_hours_enabled_not_null`: `NOT NULL hours_enabled`
 - `business_settings_id_not_null`: `NOT NULL id`
 - `business_settings_pkey`: `PRIMARY KEY (id)`
+- `business_settings_reply_engine_enabled_not_null`: `NOT NULL reply_engine_enabled`
 - `business_settings_reply_languages_check`: `CHECK (((cardinality(reply_languages) > 0) AND (reply_languages <@ ARRAY['en'::text, 'pcm'::text])))`
 - `business_settings_reply_languages_not_null`: `NOT NULL reply_languages`
 - `business_settings_revision_check`: `CHECK ((revision > 0))`
@@ -895,7 +907,7 @@ New/changed constraints:
 - `jobs_created_at_not_null`: `NOT NULL created_at`
 - `jobs_dedupe_key_not_null`: `NOT NULL dedupe_key`
 - `jobs_id_not_null`: `NOT NULL id`
-- `jobs_kind_check`: `CHECK ((kind = ANY (ARRAY['ingest'::text, 'send'::text, 'holding_reply'::text, 'followup'::text, 'restock'::text, 'payment'::text, 'receipt'::text, 'usage'::text, 'invitation_email'::text, 'channel_refresh'::text, 'cleanup'::text, 'gmail_sync'::text, 'gmail_watch'::text, 'reservation_expiry'::text, 'takeover_timeout'::text])))`
+- `jobs_kind_check`: `CHECK ((kind = ANY (ARRAY['ingest'::text, 'send'::text, 'holding_reply'::text, 'followup'::text, 'restock'::text, 'payment'::text, 'receipt'::text, 'usage'::text, 'invitation_email'::text, 'channel_refresh'::text, 'cleanup'::text, 'gmail_sync'::text, 'gmail_watch'::text, 'reservation_expiry'::text, 'takeover_timeout'::text, 'reply'::text])))`
 - `jobs_kind_not_null`: `NOT NULL kind`
 - `jobs_max_attempts_check`: `CHECK ((max_attempts > 0))`
 - `jobs_max_attempts_not_null`: `NOT NULL max_attempts`
@@ -1038,12 +1050,20 @@ Added columns:
 - `reply_to_message_id` uuid; nullable
 - `delivery_error_code` text; nullable
 - `provider_account_id` uuid; nullable
+- `reply_context` jsonb; nullable
+- `lane` text; nullable
+- `lane_reason` text; nullable
+- `detected_language` text; nullable
+- `detection_confidence` numeric; nullable
 
 New/changed constraints:
 
 - `messages_delivery_error_code_check`: `CHECK ((delivery_error_code ~ '^[A-Z0-9_]{1,64}$'::text))`
+- `messages_detected_language_check`: `CHECK ((detected_language = ANY (ARRAY['en'::text, 'pcm'::text, 'mixed'::text, 'other'::text])))`
+- `messages_detection_confidence_check`: `CHECK (((detection_confidence >= (0)::numeric) AND (detection_confidence <= (1)::numeric)))`
 - `messages_kind_check`: `CHECK ((kind = ANY (ARRAY['text'::text, 'voice'::text])))`
 - `messages_kind_not_null`: `NOT NULL kind`
+- `messages_lane_check`: `CHECK ((lane = ANY (ARRAY['auto'::text, 'approval'::text, 'paused'::text])))`
 - `messages_revision_check`: `CHECK ((revision > 0))`
 - `messages_revision_not_null`: `NOT NULL revision`
 - `messages_status_check`: `CHECK ((status = ANY (ARRAY['received'::text, 'draft'::text, 'pending_approval'::text, 'blocked'::text, 'queued'::text, 'sending'::text, 'sent'::text, 'delivered'::text, 'read'::text, 'failed'::text])))`

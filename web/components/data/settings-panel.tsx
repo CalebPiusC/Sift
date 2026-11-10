@@ -6,6 +6,7 @@ import { ResourceView, panel, naira, useAction } from './shared';
 import { CustomersPanel as Customers } from './customers-panel';
 import { ChannelsSettings } from '../settings/channels';
 import { ReplySettings } from '../settings/replies';
+import { ApiReplySettings } from '../settings/reply-policy';
 import { NegotiationSettings } from '../settings/negotiation';
 import { TeamSettings } from '../settings/team';
 import { BillingSettings } from '../settings/billing';
@@ -50,6 +51,8 @@ export function SettingsPanel() {
       </nav>
       {area === 'channels' ? (
         <ChannelsSettings />
+      ) : area === 'replies' && client.mode === 'api' ? (
+        <ApiReplySettings />
       ) : area === 'negotiation' ? (
         <NegotiationSettings />
       ) : area === 'team' ? (

@@ -29,7 +29,9 @@
     "test:ui": "npm run test:demo:mobile && npm run test:mobile && npm run test:orders:mobile && npm run test:settings:mobile && npm run test:insights:mobile && npm run test:a11y && npm run test:performance",
     "docs:backend": "node scripts/write-role-matrix.mjs && node scripts/write-backend-roadmap.mjs && node scripts/write-b0-schema-report.mjs",
     "test:backend": "node --test tests/b0-reconciliation.test.mjs tests/b0-native.test.mjs tests/backend-doc.test.mjs",
-    "test:pipeline": "python -m pytest api/tests -q && node --test tests/b2-native.test.mjs"
+    "test:pipeline": "python -m pytest api/tests -q && node --test tests/b2-native.test.mjs",
+    "eval:replies": "python3 api/evals/run.py",
+    "test:replies": "python3 api/evals/run.py && python -m pytest api/tests -q && node --test tests/b2-native.test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.16",

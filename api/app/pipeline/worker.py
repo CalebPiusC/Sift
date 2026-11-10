@@ -11,6 +11,7 @@ import httpx
 from app.channels.base import Outgoing
 from app.channels.gmail import ChannelError
 from app.config import get_settings
+from app.replies import service as replies
 
 from .crypto import Crypto
 from .db import Database
@@ -32,6 +33,7 @@ class Worker:
             "gmail_sync": self.gmail_sync,
             "gmail_watch": self.gmail_watch,
             "send": self.send,
+            "reply": self.reply,
             "reservation_expiry": self.reservation_expiry,
             "takeover_timeout": self.takeover_timeout,
             "holding_reply": self.holding_reply,
@@ -155,6 +157,10 @@ class Worker:
             if job:
                 await self.run_job(job)
 
+    async def reply(self, job):
+        async with self.db.transaction(job["vendor_id"]) as (conn, _):
+            await replies.process(conn, job["vendor_id"], job["message_id"])
+
     async def gmail_sync(self, job):
         vendor, account = job["vendor_id"], job["channel_account_id"]
         async with httpx.AsyncClient(timeout=25) as client:
@@ -244,7 +250,7 @@ class Worker:
              FROM messages m JOIN conversations c ON c.vendor_id=m.vendor_id AND c.id=m.conversation_id WHERE m.id=$1 FOR UPDATE OF m""",
                 job["message_id"],
             )
-            if not row or row["status"] in ("sent", "delivered", "read"):
+            if not row or row["status"] in ("sent", "delivered", "read", "blocked"):
                 return
             if (
                 row["sender"] == "ai"
@@ -309,16 +315,58 @@ class Worker:
                 row["recipient_version"],
                 f"{vendor}:{row['channel_account_id']}:identity",
             ).decode()
-            provider_id = found or await adapter.send(
-                Outgoing(
-                    recipient,
-                    row["content"],
-                    row["email_subject"] or "Your enquiry",
-                    row["provider_thread_id"],
-                    row["rfc_message_id"],
-                    row["parent"] or "",
-                )
-            )
+            if not found:
+                async with self.db.transaction(vendor) as (conn, _):
+                    if not await conn.fetchval(
+                        "SELECT id FROM jobs WHERE id=$1 AND lease_token=$2 AND status='running' AND locked_until>now() FOR UPDATE",
+                        job["id"],
+                        job["lease_token"],
+                    ):
+                        raise ChannelError("JOB_LEASE_LOST", False, ambiguous=prior_sending)
+                    current = await conn.fetchrow(
+                        "SELECT * FROM conversations WHERE id=$1 FOR UPDATE", row["conversation_id"]
+                    )
+                    if (
+                        row["sender"] == "ai"
+                        and current["human_mode"]
+                        and (
+                            not current["human_mode_until"]
+                            or current["human_mode_until"] > datetime.now(UTC)
+                        )
+                    ):
+                        raise Deferred(
+                            current["human_mode_until"] or datetime.now(UTC) + timedelta(hours=1)
+                        )
+                    if (
+                        job["approval_id"]
+                        and await conn.fetchval(
+                            "SELECT status FROM approvals WHERE id=$1", job["approval_id"]
+                        )
+                        != "pending"
+                    ):
+                        await conn.execute(
+                            "UPDATE messages SET status='blocked' WHERE id=$1", row["id"]
+                        )
+                        return
+                    if row["sender"] == "ai":
+                        await self.check_hours(conn, vendor)
+                    if row["sender"] in ("ai", "vendor") or row["reply_context"]:
+                        safe, reason, sheet = await replies.recheck(conn, vendor, row)
+                        if not safe:
+                            await replies.block_send(conn, vendor, row, reason, sheet)
+                            return
+                    provider_id = found or await adapter.send(
+                        Outgoing(
+                            recipient,
+                            row["content"],
+                            row["email_subject"] or "Your enquiry",
+                            row["provider_thread_id"],
+                            row["rfc_message_id"],
+                            row["parent"] or "",
+                        )
+                    )
+            else:
+                provider_id = found
         async with self.db.transaction(vendor) as (conn, _):
             owned = await conn.fetchval(
                 "SELECT id FROM jobs WHERE id=$1 AND lease_token=$2 AND status='running' AND locked_until>now() FOR UPDATE",

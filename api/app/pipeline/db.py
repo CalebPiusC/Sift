@@ -28,6 +28,9 @@ class Database:
                         raise ValueError(
                             "Pipeline requires a restricted NOINHERIT login with membership in selvora_service"
                         )
+                    async with conn.transaction():
+                        await conn.execute("SET LOCAL ROLE selvora_service")
+                        await conn.execute("SELECT reply_context FROM public.messages LIMIT 0")
                     if not await conn.fetchval(
                         "SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='jobs' AND column_name='followup_id')"
                     ):

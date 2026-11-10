@@ -167,3 +167,8 @@ async def readiness(settings: Annotated[Settings, Depends(get_settings)]):
         status_code=200 if all(checks.values()) else 503,
         content={"status": "ready" if all(checks.values()) else "not_ready", "checks": checks},
     )
+
+
+from .replies.api import router as replies_router
+
+app.include_router(replies_router)
