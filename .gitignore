@@ -1,4 +1,14 @@
 .env
+.env.local
+.env.*.local
+!.env.example
+node_modules/
+.next/
 __pycache__/
-venv/
-leads.csv
+.pytest_cache/
+.venv/
+*.pyc
+web/tsconfig.tsbuildinfo
+
+*.egg-info/
+.ruff_cache/
