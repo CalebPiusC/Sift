@@ -1,6 +1,6 @@
 # Selvora
 
-A mobile-first workspace for Nigerian online vendors. **Phase 1: foundation, including pre-Phase-2 hardening.**
+A mobile-first workspace for Nigerian online vendors. **Current work: F1 frontend data layer.** Backend work is paused while the frontend is completed.
 
 Replaces the previous LeadBot prototype. Includes Next.js/TypeScript/Tailwind with a shadcn-style Radix button, FastAPI, Supabase auth, PostgreSQL tenant isolation, four-screen onboarding, responsive navigation, dark mode, and an installable PWA.
 
@@ -11,18 +11,36 @@ Replaces the previous LeadBot prototype. Includes Next.js/TypeScript/Tailwind wi
 - Docker Compose v2 for local PostgreSQL/Redis (optional for automated tests)
 - A Supabase project for actual signup, email confirmation and Google OAuth
 
-## Quick visual preview (no credentials)
+## F1: run the sample-backed frontend (no credentials)
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`. In development only, choose **Explore the workspace** and complete the four onboarding screens. This is explicitly labelled **Preview** and is disabled in production builds or whenever Supabase is configured: it does not create an account, persist business data, or send messages. Only the theme preference is stored locally. Refresh resets the preview.
+Open `http://localhost:3000`. The default `DATA_MODE=mock` opens the fictional **Adire by Tola** workspace with a persistent **Sample data** banner. No signup or external service is needed. All sample mutations are in memory; refresh resets them. Only the theme preference persists locally.
 
-## Real signup → onboarding → workspace
+Copy `web/.env.example` to `web/.env.local` to set the single server-read switch explicitly:
+
+```dotenv
+DATA_MODE=mock
+```
+
+- **Mock:** 25 catalogue entries across seven categories, 40 customers/conversations across all five channels, English/Pidgin messages and seven customer voice-note transcripts, 21 orders spanning seven states, 15 numbered receipt snapshots, five pending approvals, channels, delivery fees for Lagos/Abuja/Ibadan, settings, insights, team and billing.
+- **Realtime demo:** Inbox → **Simulate incoming message**. A customer message appears, followed by a canned sample AI greeting after about 1.2 seconds. No provider call, real message, payment or email occurs. Human mode is rechecked before the delayed reply.
+- **Read views:** catalogue search/category filters; conversation/channel search; orders/status filters; Orders → View receipts; Settings → Business/Channels/Customers/Team/Billing.
+- **Async UX:** typed result/error envelopes, loading states, retry, mutation busy/errors, realtime invalidation and cleanup on unmount. Customer voice-note transcripts are fake; no vendor recording control exists.
+- **API:** set `DATA_MODE=api` and restart. The banner/developer controls disappear; Supabase sign-in is used. The future same-origin API adapter does **not** fall back to samples. Its data endpoints and realtime transport are intentionally not implemented in the backend yet.
+
+The full contract, including every input/output, HTTP target and error semantics, is in [`docs/api-contract.md`](docs/api-contract.md). Import contracts/types from `web/lib/data/index.ts`. Update generated declarations with `npm run docs:contract`; `npm run test:contract` prevents documentation drift.
+
+This explicit sample-data adapter is separate from the old **Explore the workspace** onboarding preview. That old shortcut is still development-only, disabled in production and whenever Supabase is configured. In mock mode no real authentication/database access happens at all.
+
+## Phase 1 auth foundation: real signup → onboarding → workspace (API mode)
 
 ### 1. Configure Supabase
+
+First set `DATA_MODE=api` in `web/.env.local`; default mock mode intentionally does not show real auth.
 
 1. Create a Supabase project.
 2. Apply both SQL files in `supabase/migrations/`, in filename order, in the Supabase SQL editor, as the database owner (`postgres`). Each migration runs in one transaction. **Do not run `tests/bootstrap.sql` or `tests/seed.sql` in a hosted project.** Supabase already owns the `auth` schema.
@@ -121,7 +139,7 @@ npm audit
 Individual suites:
 
 ```sh
-npm test              # 15 web tests (Supabase network boundary is mocked)
+npm test              # frontend data/UI and existing auth/preview tests (Supabase network boundary is mocked)
 npm run test:db       # 25 PGlite security/invariant tests
 npm run test:db:native # 24-session concurrency + shared isolation/hosted-runner tests
 npm run test:security  # browser environment/source guard tests
@@ -141,13 +159,13 @@ GitHub Actions runs these suites, formatting/lint checks for Python, and the pro
 - Manifest, 192/512px icons, service worker and offline fallback. **No authenticated pages or customer data are cached.**
 - On an HTTPS origin (or localhost), Chromium's **Install app** button appears once the browser emits `beforeinstallprompt`. It is browser-controlled, not guaranteed inside an embedded preview. Open the preview in its own tab to install. On iPhone/iPad use Safari → Share → Add to Home Screen. Offline access intentionally shows a safe reconnect screen, not stale private conversations.
 
-## What works / what remains
+## Phase 1 baseline scope (F1 sample frontend additions above)
 
 **Implemented and tested:** monorepo, infrastructure configuration, migration and RLS, auth integrations, four-step persistent onboarding, mobile/desktop shell, dark mode, empty states, PWA installation event and safe offline fallback, API identity boundary and CI.
 
 **Requires external setup:** real Supabase project/environment variables, deployed migration, Google provider credentials, callback allowlist and working email delivery. No live provider credentials were available during implementation, so email delivery and Google consent have not been exercised against a real project. The credential-free preview is deliberately separate from real auth.
 
-**Not part of Phase 1:** live channels, webhooks/signatures/raw-event storage, queue worker, AI/LLM providers, transcription, numeric verification, approval/send/edit/reject processing, human takeover, chat-style catalogue writes, real orders/insights, Paystack, subscriptions, Storage policies and realtime delivery. Redis is provisioned but not consumed yet. No AI replies or payment automation can run in this foundation. Channel connections remain “connect later”; catalogue entry is not replaced with a spreadsheet/form.
+**Not part of Phase 1:** live channels, webhooks/signatures/raw-event storage, queue worker, AI/LLM providers, transcription, numeric verification, approval/send/edit/reject processing, human takeover, chat-style catalogue writes, real orders/insights, Paystack, subscriptions, Storage policies and realtime delivery. Redis is provisioned but not consumed yet. No real AI replies or payment automation can run in this foundation. F1 only simulates canned greetings. Channel connections remain “connect later”; catalogue entry is not replaced with a spreadsheet/form.
 
 Docker is not installed in the implementation sandbox, so Compose startup was not executed there. RLS ran successfully through PGlite and native PostgreSQL, independent of Docker. Native PostgreSQL binaries are installed by npm for tests only; run native tests as an unprivileged OS user (not root). No database files enter Git.
 
@@ -212,8 +230,8 @@ Every Next build loads `scripts/check-browser-env.mjs` through `web/next.config.
 7. Create/configure a Google OAuth client; add Supabase's displayed OAuth callback in Google, then enable the Google provider and enter credentials **inside Supabase**.
 8. Copy `api/.env.example` to `api/.env`; fill Supabase settings and the exact `WEB_ORIGINS` list. Keep all future Gemini/Paystack/service keys server-only.
 9. If using local infrastructure, copy root `.env.example` to `.env`, choose a strong local Postgres password and run `docker compose up -d`. Existing volumes require applying migration 002 manually; init mounts run only on a fresh volume.
-10. Restart/rebuild the web app after env changes. Sign up, confirm email or Google consent, complete onboarding, refresh, and verify the saved workspace. Production without auth configuration intentionally offers no preview bypass.
+10. Restart/rebuild the web app after env changes. Sign up, confirm email or Google consent, complete onboarding, refresh, and verify the saved workspace. In API mode, production without auth configuration intentionally offers no preview bypass.
 11. Privately set `SUPABASE_TEST_DATABASE_URL` to your direct/session database connection; run `npm run test:db:supabase`, then `npm run test:all` and `npm run build`. The live-project isolation result has not been pre-claimed.
 12. Deploy on HTTPS for installation. Open outside an embedded preview to test browser installation; use Safari Share → Add to Home Screen on iOS. Review hosted database/platform log redaction as described above.
 
-**Phase 2 has not started.**
+**Backend Phase 2 has not started. F1 is frontend-only.**

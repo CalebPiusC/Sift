@@ -8,9 +8,23 @@ import type { Tab, Vendor, InstallEvent } from '../lib/workspace-types';
 import { AuthScreen } from './auth-screen';
 import { OnboardingScreen } from './onboarding-screen';
 import { AppShell } from './app-shell';
+import { useDataClient } from './data/provider';
 export function Workspace() {
-  const [stage, setStage] = useState<'loading' | 'auth' | 'onboard' | 'app'>('loading');
-  const [vendor, setVendor] = useState<Vendor | null>(null);
+  const { client, configureVendor } = useDataClient();
+  const sample = client.mode === 'mock';
+  const [stage, setStage] = useState<'loading' | 'auth' | 'onboard' | 'app'>(
+    sample ? 'app' : 'loading',
+  );
+  const [vendor, setVendor] = useState<Vendor | null>(
+    sample
+      ? {
+          id: client.vendorId,
+          business_name: 'Adire by Tola',
+          business_type: 'mixed',
+          tone: 'Pidgin-friendly',
+        }
+      : null,
+  );
   const [tab, setTab] = useState<Tab>('Inbox');
   const [dark, setDark] = useState(false);
   const [error, setError] = useState('');
@@ -40,6 +54,7 @@ export function Workspace() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
   useEffect(() => {
+    if (sample) return;
     if (new URLSearchParams(window.location.search).has('auth_error')) {
       setError('Your sign-in link could not be verified. Please try signing in again.');
     }
@@ -88,6 +103,9 @@ export function Workspace() {
       subscription.unsubscribe();
     };
   }, []);
+  useEffect(() => {
+    if (!sample) configureVendor(vendor?.id ?? '');
+  }, [vendor?.id, sample, configureVendor]);
   const theme = () => {
     setDark(!dark);
     document.documentElement.classList.toggle('dark', !dark);
@@ -146,6 +164,11 @@ export function Workspace() {
     }
   }
   async function logout() {
+    if (sample) {
+      setTab('Inbox');
+      return;
+    }
+
     if (!preview) {
       const { error } = await supabase().auth.signOut();
       if (error) {

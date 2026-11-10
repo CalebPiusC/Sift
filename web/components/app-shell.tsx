@@ -1,6 +1,8 @@
 'use client';
 import type { ReactNode } from 'react';
 import { Button } from './ui/button';
+import { useDataClient } from './data/provider';
+import { WorkspaceData } from './data/workspace-data';
 import {
   Inbox,
   ShoppingBag,
@@ -51,9 +53,14 @@ export function AppShell({
   install,
   setInstall,
 }: Props) {
+  const { client } = useDataClient();
+  const dataConnected = client.mode === 'mock' || Boolean(client.vendorId);
   return (
     <div className="min-h-screen lg:pl-64">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-slate-200 bg-white px-5 py-7 dark:border-slate-800 dark:bg-slate-900 lg:flex">
+      <aside
+        style={{ top: client.mode === 'mock' ? '2.5rem' : 0 }}
+        className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-slate-200 bg-white px-5 py-7 dark:border-slate-800 dark:bg-slate-900 lg:flex"
+      >
         <div className="px-3">{brand}</div>
         <div className="mt-10 flex items-center gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-orange-50 text-sm font-bold text-amber-700 dark:bg-amber-950">
@@ -98,13 +105,15 @@ export function AppShell({
         </div>
         <div className="mt-5 flex items-center justify-between px-2">
           <span className="text-[10px] text-slate-400">A little more possible.</span>
-          <button
-            aria-label="Sign out"
-            onClick={() => void logout()}
-            className="grid h-11 w-11 place-items-center text-slate-400"
-          >
-            <LogOut size={17} />
-          </button>
+          {client.mode !== 'mock' && (
+            <button
+              aria-label="Sign out"
+              onClick={() => void logout()}
+              className="grid h-11 w-11 place-items-center text-slate-400"
+            >
+              <LogOut size={17} />
+            </button>
+          )}
         </div>
       </aside>
       <header className="flex h-20 items-center justify-between border-b border-slate-200 bg-white px-5 dark:border-slate-800 dark:bg-slate-900 sm:px-9">
@@ -116,7 +125,7 @@ export function AppShell({
         <div className="flex items-center gap-2 sm:gap-4">
           <span className="hidden items-center gap-2 rounded-full bg-slate-50 px-3 py-2 text-[11px] text-slate-500 dark:bg-slate-800 sm:flex">
             <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-            Setup in progress
+            {client.mode === 'mock' ? 'Sample workspace' : 'Setup in progress'}
           </span>
           {themeButton}
           <span className="grid h-9 w-9 place-items-center rounded-full bg-indigo-100 text-xs font-semibold text-primary">
@@ -180,7 +189,9 @@ export function AppShell({
             </Button>
           )}
         </div>
-        {tab === 'Inbox' ? (
+        {dataConnected ? (
+          <WorkspaceData tab={tab} />
+        ) : tab === 'Inbox' ? (
           <>
             <section className="relative mb-7 overflow-hidden rounded-2xl bg-[#25216b] p-6 text-white sm:p-8">
               <div className="relative z-10 max-w-xl">

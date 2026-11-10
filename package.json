@@ -11,12 +11,14 @@
     "typecheck": "npm run typecheck -w web",
     "test:db": "node --test tests/rls.test.mjs",
     "test:pwa": "node --test tests/pwa.test.mjs",
-    "test:all": "npm test && npm run test:db && npm run test:db:native && npm run test:pwa && npm run test:security && npm run typecheck",
+    "test:all": "npm test && npm run test:db && npm run test:db:native && npm run test:pwa && npm run test:security && npm run typecheck && npm run test:contract",
     "format": "prettier --write web tests/*.mjs package.json docker-compose.yml",
     "test:db:native": "node --test tests/native-postgres.test.mjs",
     "test:db:supabase": "node scripts/test-supabase-rls.mjs",
     "test:security": "node --test tests/browser-env.test.mjs",
-    "check:browser-env": "node scripts/check-browser-env.mjs"
+    "check:browser-env": "node scripts/check-browser-env.mjs",
+    "docs:contract": "node scripts/write-api-contract.mjs",
+    "test:contract": "node --test tests/contract-doc.test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.16",
