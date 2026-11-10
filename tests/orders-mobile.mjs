@@ -36,7 +36,7 @@ try {
   await fits('order list');
   await page.getByRole('button', { name: 'Draft', exact: true }).click();
   await page.getByText('3 orders', { exact: true }).waitFor();
-  await page.getByRole('button', { name: 'Open order-1', exact: true }).click();
+  await page.getByRole('button', { name: /^Open order-1\s/ }).click();
   await page
     .getByText('Screenshots can be faked. Check your bank before confirming.', { exact: true })
     .waitFor();
@@ -129,7 +129,7 @@ try {
     .getByRole('navigation', { name: 'Mobile navigation' })
     .getByRole('button', { name: 'Inbox', exact: true })
     .click();
-  await page.getByRole('button', { name: 'Open chat with Chidinma Okafor', exact: true }).click();
+  await page.getByRole('button', { name: /^Open chat with Chidinma Okafor/ }).click();
   await page
     .getByLabel('Chat messages')
     .getByText('Your order order-1 has been delivered. Thank you for shopping with us!', {

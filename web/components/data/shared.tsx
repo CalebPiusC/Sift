@@ -2,6 +2,7 @@
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import type { DataError, Resource, Result } from '../../lib/data';
+import { LoadingSkeleton } from '../ui/loading-skeleton';
 import { Button } from '../ui/button';
 export { naira } from '../../lib/data/money';
 export const panel =
@@ -13,12 +14,7 @@ export function ResourceView<T>({
   resource: Resource<T> & { retry: () => void };
   children: (data: T) => ReactNode;
 }) {
-  if (resource.status === 'loading')
-    return (
-      <p role="status" className="animate-pulse p-6 text-sm text-slate-500">
-        Loading…
-      </p>
-    );
+  if (resource.status === 'loading') return <LoadingSkeleton />;
   if (resource.status === 'error')
     return (
       <div role="alert" className="rounded-xl border border-red-200 p-5 text-sm text-danger">

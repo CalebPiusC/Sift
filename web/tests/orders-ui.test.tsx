@@ -15,7 +15,7 @@ it('runs a draft through verified payment to delivered and issues a read-only re
   const user = userEvent.setup();
   renderOrders();
   await screen.findByText('21 orders');
-  await user.click(screen.getByRole('button', { name: /^Open order-1$/ }));
+  await user.click(screen.getByRole('button', { name: /^Open order-1\s/ }));
   expect(
     await screen.findByText('Screenshots can be faked. Check your bank before confirming.'),
   ).toBeInTheDocument();
@@ -71,7 +71,7 @@ it('filters/searches all states and opens immutable historic receipts', async ()
   await screen.findByText('21 orders');
   await user.click(screen.getByRole('button', { name: 'View receipts' }));
   await screen.findByText('12 receipts');
-  await user.click(screen.getByRole('button', { name: 'Open receipt 1' }));
+  await user.click(screen.getByRole('button', { name: /^Open Receipt #0001/ }));
   expect(await screen.findByRole('region', { name: 'Digital receipt' })).toHaveTextContent(
     'Receipt #0001',
   );
@@ -80,7 +80,7 @@ it('restocks a selected variant only after explicit review and confirmation', as
   const user = userEvent.setup();
   renderOrders();
   await screen.findByText('21 orders');
-  await user.click(screen.getByRole('button', { name: /^Open order-1$/ }));
+  await user.click(screen.getByRole('button', { name: /^Open order-1\s/ }));
   await screen.findByRole('button', { name: 'Mark awaiting payment' });
   await user.click(screen.getByRole('button', { name: 'Mark awaiting payment' }));
   await user.click(await screen.findByRole('button', { name: 'Payment received' }));
@@ -105,7 +105,7 @@ it('cancels only with confirmation and does not mistake a new screenshot for pay
   const user = userEvent.setup();
   renderOrders();
   await screen.findByText('21 orders');
-  await user.click(screen.getByRole('button', { name: 'Open order-2' }));
+  await user.click(screen.getByRole('button', { name: /^Open order-2\s/ }));
   await user.click(await screen.findByRole('button', { name: 'Simulate payment screenshot' }));
   await screen.findByText('Screenshots can be faked. Check your bank before confirming.');
   expect(screen.getByText('Not paid · awaiting verification')).toBeInTheDocument();

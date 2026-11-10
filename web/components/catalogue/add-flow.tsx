@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDataClient } from '../data/provider';
 import { Button } from '../ui/button';
 import { panel, naira, useAction } from '../data/shared';
@@ -48,6 +48,10 @@ export function AddFlow({ onClose }: { onClose: () => void }) {
   const { client } = useDataClient();
   const action = useAction();
   const [step, setStep] = useState(0);
+  const title = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    title.current?.focus();
+  }, [step]);
   const [photos, setPhotos] = useState<ProductPhoto[]>([]);
   const [category, setCategory] = useState<Category>('Fashion');
   const [bulk, setBulk] = useState(true);
@@ -103,7 +107,7 @@ export function AddFlow({ onClose }: { onClose: () => void }) {
           Cancel
         </Button>
       </div>
-      <h2 className="text-2xl font-semibold">
+      <h2 ref={title} tabIndex={-1} className="text-2xl font-semibold">
         {
           [
             'Start with a photo.',
@@ -154,6 +158,10 @@ export function AddFlow({ onClose }: { onClose: () => void }) {
               <div className="mb-4 flex items-center gap-3">
                 {d.product.photos[0] && (
                   <img
+                    loading="lazy"
+                    decoding="async"
+                    width={128}
+                    height={128}
                     src={d.product.photos[0].url}
                     alt={`Item ${i + 1} photo`}
                     className="h-16 w-16 rounded-xl object-cover"

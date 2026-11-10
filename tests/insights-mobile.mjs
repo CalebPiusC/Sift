@@ -100,7 +100,7 @@ try {
     () => document.querySelector('textarea')?.value === 'Prefers indigo. Deliver after 5pm.',
   );
   await page.getByRole('button', { name: 'Inbox', exact: true }).click();
-  await page.getByRole('button', { name: 'Open chat with Chidinma Okafor', exact: true }).click();
+  await page.getByRole('button', { name: /^Open chat with Chidinma Okafor/ }).click();
   await page.getByRole('region', { name: 'Language summary', exact: true }).last().waitFor();
   assert.ok((await page.getByText('English summary', { exact: true }).count()) > 0);
   await fits('language summary');

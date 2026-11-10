@@ -4,6 +4,7 @@ import { useDataClient } from './provider';
 import { useResource } from '../../lib/data/use-resource';
 import type { ExtrasSnapshot, FollowupSettings } from '../../lib/data/extras-types';
 import { ResourceView, panel, useAction } from './shared';
+import { EmptyState } from '../ui/empty-state';
 import { Button } from '../ui/button';
 import { CustomersPanel } from './customers-panel';
 const time = (s: string) =>
@@ -110,6 +111,12 @@ function Followups({ data }: { data: ExtrasSnapshot }) {
         </p>
       )}
       <h4 className="font-semibold">Scheduled & sent</h4>
+      {!data.followups.length && (
+        <EmptyState
+          title="No follow-ups yet"
+          description="Cold-lead follow-ups will appear here when scheduled."
+        />
+      )}
       {data.followups.map((f) => (
         <article className={panel} aria-label={`Follow-up ${f.customerName}`} key={f.id}>
           <div className="flex flex-wrap justify-between gap-2">
@@ -160,6 +167,12 @@ function Spam({ data }: { data: ExtrasSnapshot }) {
         Flags are signals, not proof. Review the original text. Block is a sample moderation
         decision only—it does not block an external account. Links are not clickable.
       </p>
+      {!data.flags.length && (
+        <EmptyState
+          title="No flagged messages"
+          description="Messages flagged for review will appear here."
+        />
+      )}
       {data.flags.map((f) => (
         <article className={panel} aria-label={`Flag ${f.id}`} key={f.id}>
           <h4 className="font-semibold">{f.customerName}</h4>
@@ -258,6 +271,12 @@ function Restock({ data }: { data: ExtrasSnapshot }) {
         )}
       </ResourceView>
       <h4 className="font-semibold">Customer alert requests</h4>
+      {!data.restock.length && (
+        <EmptyState
+          title="No restock requests"
+          description="Customer requests to hear about restocked items will appear here."
+        />
+      )}
       {data.restock.map((a) => (
         <article className={panel} key={a.id}>
           <h5 className="font-semibold">{a.productName}</h5>

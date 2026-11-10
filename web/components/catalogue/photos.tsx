@@ -1,4 +1,6 @@
 'use client';
+import { photoPreview } from '../../lib/photo-preview';
+import { useDataClient } from '../data/provider';
 import { useState } from 'react';
 import type { ProductPhoto } from '../../lib/data';
 import { Button } from '../ui/button';
@@ -9,6 +11,7 @@ export function Photos({
   photos: ProductPhoto[];
   onChange: (photos: ProductPhoto[]) => void;
 }) {
+  const { preferences } = useDataClient();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   async function read(files: FileList | null) {
@@ -31,16 +34,11 @@ export function Photos({
     setBusy(true);
     try {
       const added = await Promise.all(
-        list.map(
-          (file) =>
-            new Promise<ProductPhoto>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () =>
-                resolve({ id: crypto.randomUUID(), url: String(reader.result), name: file.name });
-              reader.onerror = () => reject(new Error('read'));
-              reader.readAsDataURL(file);
-            }),
-        ),
+        list.map(async (file) => ({
+          id: crypto.randomUUID(),
+          url: await photoPreview(file, preferences.lowData),
+          name: file.name,
+        })),
       );
       onChange([...photos, ...added]);
     } catch {
@@ -55,6 +53,10 @@ export function Photos({
         {photos.map((p, i) => (
           <div key={p.id} className="w-24">
             <img
+              loading="lazy"
+              decoding="async"
+              width={128}
+              height={128}
               src={p.url}
               alt={`Product photo ${i + 1}`}
               className="h-24 w-24 rounded-xl object-cover"
@@ -71,7 +73,7 @@ export function Photos({
           </div>
         ))}
       </div>
-      <label className="mt-3 inline-flex min-h-12 cursor-pointer items-center rounded-xl border border-dashed border-primary px-5 text-sm font-semibold text-primary dark:text-indigo-300">
+      <label className="mt-3 focus-within:ring-2 focus-within:ring-primary inline-flex min-h-12 cursor-pointer items-center rounded-xl border border-dashed border-primary px-5 text-sm font-semibold text-primary dark:text-indigo-300">
         {busy ? 'Opening photos…' : 'Choose photos'}
         <input
           aria-label="Choose product photos"
@@ -87,7 +89,8 @@ export function Photos({
         />
       </label>
       <p className="mt-2 text-xs text-slate-400">
-        Photos only · JPG, PNG, WebP · Up to 10, 3 MB each
+        Photos only · JPG, PNG, WebP · Up to 10, 3 MB each. Resized locally; low-data uses smaller
+        640px previews.
       </p>
       {error && (
         <p role="alert" className="mt-2 text-sm text-danger">

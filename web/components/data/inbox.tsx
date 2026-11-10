@@ -253,13 +253,15 @@ export function InboxPanel() {
                         return (
                           <button
                             data-testid="conversation-row"
-                            aria-label={`Open chat with ${c.customerName}`}
                             key={c.id}
                             onClick={() => open(c.id)}
                             aria-pressed={selected === c.id}
                             className={`flex min-h-24 w-full min-w-0 gap-3 rounded-xl border p-3 text-left ${selected === c.id ? 'border-indigo-200 bg-indigo-50 dark:border-indigo-800 dark:bg-indigo-950' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                           >
-                            <ChannelIcon channel={c.channel} />
+                            <span className="sr-only">Open chat with </span>
+                            <span aria-hidden="true">
+                              <ChannelIcon channel={c.channel} />
+                            </span>
                             <span className="min-w-0 flex-1">
                               <span className="flex items-start justify-between gap-2">
                                 <span className="truncate text-sm font-semibold">

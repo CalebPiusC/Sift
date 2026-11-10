@@ -162,6 +162,19 @@ export function Workspace() {
     setBusy(true);
     setError('');
     try {
+      if (sample) {
+        const result = await client.settings.update({
+          businessName: profile.business_name.trim(),
+          businessType: profile.business_type,
+          tone: profile.tone,
+        });
+        if (!result.ok) throw new Error(result.error.message);
+        setVendor({ ...profile, id: client.vendorId, business_name: profile.business_name.trim() });
+        setStep(0);
+        setStage('app');
+        setTab('Inbox');
+        return;
+      }
       if (preview && !previewAllowed()) throw new Error('Preview is disabled.');
       const id = preview && previewAllowed() ? 'preview-vendor' : await saveProfile(profile);
       setVendor({ ...profile, business_name: profile.business_name.trim(), id });
@@ -190,6 +203,17 @@ export function Workspace() {
     setStage('auth');
     setStep(0);
     setError('');
+  }
+  function replayOnboarding() {
+    if (!sample) return;
+    setProfile({
+      business_name: vendor?.business_name ?? 'Adire by Tola',
+      business_type: vendor?.business_type ?? 'products',
+      tone: vendor?.tone ?? 'friendly',
+    });
+    setStep(0);
+    setError('');
+    setStage('onboard');
   }
   const brand = (
     <div className="flex items-center gap-2.5">
@@ -262,7 +286,19 @@ export function Workspace() {
     );
   return (
     <AppShell
-      {...{ brand, themeButton, preview, vendor, tab, setTab, logout, error, install, setInstall }}
+      {...{
+        brand,
+        themeButton,
+        preview,
+        vendor,
+        tab,
+        setTab,
+        logout,
+        error,
+        install,
+        setInstall,
+        replayOnboarding,
+      }}
     />
   );
 }

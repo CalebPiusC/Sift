@@ -357,3 +357,14 @@ notes, configuration and moderation/alert decisions persist until reload.
 
 Phone acceptance: `SELVORA_TEST_URL=http://localhost:3001 npm run test:insights:mobile`.
 This covers 390×844 touch, 320px layout, light/dark, date states, all extras and saved memory.
+
+### F7 — polished phone demo
+
+See [the click-by-click demo](docs/frontend-demo.md) and
+[accessibility, low-data and performance notes](docs/frontend-quality.md).
+Settings → **Try sample onboarding** replays onboarding without leaving the mock workspace.
+
+`SELVORA_TEST_URL=http://localhost:3001 npm run test:ui` runs the complete phone demo,
+existing regression journeys, light/dark accessibility scans and throttled network/CPU checks.
+Heavy secondary screens are lazy-loaded; low-data lists are text-first, uploaded photos are
+locally resized, and loading/error/empty states and keyboard focus are shared across screens.

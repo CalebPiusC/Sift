@@ -1,3 +1,7 @@
+import { vi } from 'vitest';
+vi.mock('../lib/photo-preview', () => ({
+  photoPreview: async () => 'data:image/jpeg;base64,c2FtcGxl',
+}));
 import { it, expect } from 'vitest';
 import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

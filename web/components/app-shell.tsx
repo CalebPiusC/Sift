@@ -37,6 +37,7 @@ interface Props {
   tab: Tab;
   setTab: (t: Tab) => void;
   logout: () => Promise<void>;
+  replayOnboarding: () => void;
   error: string;
   install: InstallEvent | null;
   setInstall: (e: InstallEvent | null) => void;
@@ -49,6 +50,7 @@ export function AppShell({
   tab,
   setTab,
   logout,
+  replayOnboarding,
   error,
   install,
   setInstall,
@@ -63,6 +65,9 @@ export function AppShell({
   const dataConnected = client.mode === 'mock' || Boolean(client.vendorId);
   return (
     <div className="min-h-screen lg:pl-64">
+      <a href="#workspace-main" className="skip-link">
+        Skip to workspace
+      </a>
       <aside
         style={{ top: client.mode === 'mock' ? '2.5rem' : 0 }}
         className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-slate-200 bg-white px-5 py-7 dark:border-slate-800 dark:bg-slate-900 lg:flex"
@@ -150,7 +155,16 @@ export function AppShell({
           </button>
         </div>
       )}
-      <main className="mx-auto max-w-7xl px-5 pb-28 pt-8 sm:px-9 lg:pb-10">
+      <main
+        id="workspace-main"
+        tabIndex={-1}
+        className="mx-auto max-w-7xl px-5 pb-28 pt-8 sm:px-9 lg:pb-10"
+      >
+        {client.mode === 'mock' && tab === 'Settings' && (
+          <Button variant="outline" className="mb-5" onClick={replayOnboarding}>
+            Try sample onboarding
+          </Button>
+        )}
         {error && (
           <p role="alert" className="mb-4 text-sm text-danger">
             {error}

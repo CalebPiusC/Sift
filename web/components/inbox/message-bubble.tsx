@@ -106,7 +106,7 @@ export function MessageBubble({
             </p>
           </article>
         )}
-        <p className="mt-1 text-right text-[10px] opacity-60">
+        <p className="mt-1 text-right text-[10px] text-slate-600 dark:text-slate-300">
           <time dateTime={m.createdAt}>{messageTime(m.createdAt)}</time>
           {m.sender !== 'customer' &&
             ` · ${m.status === 'sent' ? (sample ? 'Sent (sample)' : 'Sent') : m.status.replaceAll('_', ' ')}`}

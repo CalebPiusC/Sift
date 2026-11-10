@@ -9,7 +9,8 @@ import { EditCard } from './edit-card';
 import { ProductSummary } from './add-flow';
 import { validateProduct, stockBadge, stockLabels } from '../../lib/data/catalogue-logic';
 export function ProductDetail({ id, onClose }: { id: string; onClose: () => void }) {
-  const { client } = useDataClient();
+  const { client, preferences } = useDataClient();
+  const [showPhotos, setShowPhotos] = useState(false);
   const product = useResource(useCallback(() => client.catalogue.get(id), [client, id]));
   const [edit, setEdit] = useState<Product | null>(null);
   const [review, setReview] = useState(false);
@@ -89,14 +90,24 @@ export function ProductDetail({ id, onClose }: { id: string; onClose: () => void
                   </span>
                 </div>
                 <div className="mb-5 flex flex-wrap gap-3">
-                  {p.photos.map((photo) => (
-                    <img
-                      key={photo.id}
-                      src={photo.url}
-                      alt={photo.name}
-                      className="h-28 w-28 rounded-xl object-cover"
-                    />
-                  ))}
+                  {preferences.lowData && !showPhotos && p.photos.length > 0 && (
+                    <Button variant="outline" onClick={() => setShowPhotos(true)}>
+                      Load product photos
+                    </Button>
+                  )}
+                  {(!preferences.lowData || showPhotos) &&
+                    p.photos.map((photo) => (
+                      <img
+                        loading="lazy"
+                        decoding="async"
+                        width={128}
+                        height={128}
+                        key={photo.id}
+                        src={photo.url}
+                        alt={photo.name}
+                        className="h-28 w-28 rounded-xl object-cover"
+                      />
+                    ))}
                 </div>
                 <ProductSummary product={p} />
                 <p className="mt-4 text-sm leading-6 text-slate-500">{p.description}</p>

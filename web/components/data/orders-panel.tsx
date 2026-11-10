@@ -88,10 +88,10 @@ export function OrdersPanel() {
                   <button
                     key={r.id}
                     onClick={() => setReceiptId(r.id)}
-                    aria-label={`Open receipt ${r.number}`}
                     className={`${panel} min-w-0 text-left`}
                   >
-                    <ReceiptText className="mb-4 text-primary" size={24} />
+                    <span className="sr-only">Open </span>
+                    <ReceiptText aria-hidden="true" className="mb-4 text-primary" size={24} />
                     <h3 className="font-semibold">Receipt #{String(r.number).padStart(4, '0')}</h3>
                     <p className="mt-2 text-sm text-slate-500">{r.customerName}</p>
                     <p className="mt-4 text-xl font-semibold">{naira(r.totalKobo)}</p>
@@ -129,10 +129,10 @@ export function OrdersPanel() {
                 {page.items.map((o) => (
                   <button
                     key={o.id}
-                    aria-label={`Open ${o.id}`}
                     onClick={() => setSelected(o.id)}
                     className={`${panel} min-w-0 text-left`}
                   >
+                    <span className="sr-only">Open {o.id} </span>
                     <span className="flex flex-wrap items-center justify-between gap-2">
                       <ShoppingBag size={20} className="text-primary" />
                       <span className="rounded-full bg-indigo-50 px-3 py-2 text-[10px] font-semibold text-primary dark:bg-indigo-950 dark:text-indigo-300">

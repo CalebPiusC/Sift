@@ -33,7 +33,7 @@ it('shows approval facts/countdown in chat and makes edit and reject actionable 
   const user = userEvent.setup();
   renderInbox();
   await screen.findByText('40 conversations');
-  await user.click(screen.getByRole('button', { name: 'Open chat with Chidinma Okafor' }));
+  await user.click(screen.getByRole('button', { name: /^Open chat with Chidinma Okafor/ }));
   const card = await screen.findByRole('article', { name: 'Approval approval-1' });
   expect(within(card).getByText('Indigo Adire Set')).toBeInTheDocument();
   expect(within(card).getByText('Stock')).toBeInTheDocument();
@@ -59,7 +59,7 @@ it('persists customer notes, tags and flag, closes with Escape and restores focu
   const user = userEvent.setup();
   renderInbox();
   await screen.findByText('40 conversations');
-  await user.click(screen.getByRole('button', { name: 'Open chat with Chidinma Okafor' }));
+  await user.click(screen.getByRole('button', { name: /^Open chat with Chidinma Okafor/ }));
   await user.click(await screen.findByRole('button', { name: 'Customer details' }));
   const dialog = await screen.findByRole('dialog', { name: 'Customer details' });
   expect(await within(dialog).findByText('Past orders')).toBeInTheDocument();
@@ -103,15 +103,15 @@ it('keeps an unsent reply through realtime updates and shows clear take-over and
   const user = userEvent.setup();
   renderInbox();
   await screen.findByText('40 conversations');
-  await user.click(screen.getByRole('button', { name: 'Open chat with Chidinma Okafor' }));
+  await user.click(screen.getByRole('button', { name: /^Open chat with Chidinma Okafor/ }));
   await user.click(await screen.findByRole('button', { name: 'Let me check that for you.' }));
   expect(screen.getByLabelText('Your reply')).toHaveValue('Let me check that for you.');
   await user.click(screen.getByRole('button', { name: 'Back to inbox' }));
-  await user.click(screen.getByRole('button', { name: 'Open chat with Musa Bello' }));
+  await user.click(screen.getByRole('button', { name: /^Open chat with Musa Bello/ }));
   await screen.findByText('AI assistant active');
   expect(screen.getByLabelText('Your reply')).toHaveValue('');
   await user.click(screen.getByRole('button', { name: 'Back to inbox' }));
-  await user.click(screen.getByRole('button', { name: 'Open chat with Chidinma Okafor' }));
+  await user.click(screen.getByRole('button', { name: /^Open chat with Chidinma Okafor/ }));
   await screen.findByText('AI assistant active');
   expect(screen.getByLabelText('Your reply')).toHaveValue('Let me check that for you.');
   await user.click(screen.getByRole('button', { name: 'Take Over' }));

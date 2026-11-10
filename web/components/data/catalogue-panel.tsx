@@ -106,24 +106,34 @@ export function CataloguePanel() {
               <p className="mb-4 text-xs text-slate-400">
                 {page.total} items {archived ? '· Archived' : ''}
               </p>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <div
+                className={
+                  preferences.lowData ? 'space-y-3' : 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3'
+                }
+              >
                 {page.items.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => setSelected(p.id)}
-                    className={`${panel} min-h-48 text-left transition hover:border-indigo-300`}
+                    className={`${panel} ${preferences.lowData ? 'w-full min-h-24' : 'min-h-48'} text-left transition hover:border-indigo-300`}
                   >
-                    <div className="mb-4 grid h-28 place-items-center overflow-hidden rounded-xl bg-indigo-50 text-indigo-500 dark:bg-indigo-950">
-                      {p.photos[0] && !preferences.lowData ? (
-                        <img
-                          src={p.photos[0].url}
-                          alt={p.name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <Package size={35} strokeWidth={1} />
-                      )}
-                    </div>
+                    {!preferences.lowData && (
+                      <div className="mb-4 grid h-28 place-items-center overflow-hidden rounded-xl bg-indigo-50 text-indigo-500 dark:bg-indigo-950">
+                        {p.photos[0] && !preferences.lowData ? (
+                          <img
+                            loading="lazy"
+                            decoding="async"
+                            width={128}
+                            height={128}
+                            src={p.photos[0].url}
+                            alt={p.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <Package size={35} strokeWidth={1} />
+                        )}
+                      </div>
+                    )}
                     <p className="text-[10px] uppercase tracking-widest text-slate-400">
                       {p.category} · {p.kind}
                     </p>

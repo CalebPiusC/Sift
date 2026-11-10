@@ -22,11 +22,16 @@
     "test:mobile": "node tests/inbox-mobile.mjs",
     "test:orders:mobile": "node tests/orders-mobile.mjs",
     "test:settings:mobile": "node tests/settings-mobile.mjs",
-    "test:insights:mobile": "node tests/insights-mobile.mjs"
+    "test:insights:mobile": "node tests/insights-mobile.mjs",
+    "test:demo:mobile": "node tests/frontend-demo.mjs",
+    "test:a11y": "node tests/frontend-a11y.mjs",
+    "test:performance": "node tests/frontend-performance.mjs",
+    "test:ui": "npm run test:demo:mobile && npm run test:mobile && npm run test:orders:mobile && npm run test:settings:mobile && npm run test:insights:mobile && npm run test:a11y && npm run test:performance"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.16",
     "@sparticuz/chromium": "^153.0.0",
+    "axe-core": "^4.14.0",
     "embedded-postgres": "^18.6.0-beta.19",
     "pg": "^8.23.1",
     "playwright-core": "^1.65.0",

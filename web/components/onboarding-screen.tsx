@@ -1,5 +1,5 @@
 'use client';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Button } from './ui/button';
 import { ArrowRight } from 'lucide-react';
 import { Choice, ChannelIcon } from './workspace-parts';
@@ -28,6 +28,10 @@ export function OnboardingScreen({
   setStep,
   finish,
 }: Props) {
+  const title = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    title.current?.focus();
+  }, [step]);
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-7">
       <header className="flex items-center justify-between">
@@ -49,7 +53,7 @@ export function OnboardingScreen({
         <p className="text-xs font-semibold uppercase tracking-widest text-primary dark:text-indigo-300">
           A LITTLE INTRODUCTION · {step + 1} OF 4
         </p>
-        <h1 className="mb-3 mt-4 text-3xl font-bold tracking-tight">
+        <h1 ref={title} tabIndex={-1} className="mb-3 mt-4 text-3xl font-bold tracking-tight">
           {
             [
               'What’s your business called?',
@@ -65,7 +69,7 @@ export function OnboardingScreen({
               'Let’s put a name to the dream. You can change this later.',
               'We’ll shape your workspace around the way you work.',
               'Your assistant should sound like you. Pick your natural style.',
-              'WhatsApp, Instagram, Facebook, TikTok and email — one inbox. Channel connections are coming next.',
+              'WhatsApp, Instagram, Facebook, TikTok and email — one inbox. Connect your own accounts later in Settings. TikTok availability is being confirmed.',
             ][step]
           }
         </p>

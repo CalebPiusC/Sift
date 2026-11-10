@@ -19,7 +19,7 @@ try {
       `${label}: no horizontal overflow`,
     );
   await fits('inbox');
-  await page.getByRole('button', { name: 'Open chat with Chidinma Okafor', exact: true }).click();
+  await page.getByRole('button', { name: /^Open chat with Chidinma Okafor/ }).click();
   await page
     .getByText('Original language: Nigerian Pidgin · transcript, not a translation', {
       exact: true,
@@ -122,7 +122,7 @@ try {
     await page.getByRole('tab', { name: 'Inbox', exact: true }).click();
     if (width === 1280)
       await page.getByRole('button', { name: 'Switch to dark mode', exact: true }).click();
-    await page.getByRole('button', { name: 'Open chat with Chidinma Okafor', exact: true }).click();
+    await page.getByRole('button', { name: /^Open chat with Chidinma Okafor/ }).click();
     await page.getByText('AI assistant active', { exact: true }).waitFor();
     await fits(`${width}px conversation`);
     if (width < 1024) {
