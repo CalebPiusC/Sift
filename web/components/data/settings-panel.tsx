@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { useDataClient } from './provider';
 import { useResource } from '../../lib/data/use-resource';
 import { ResourceView, panel, naira, useAction } from './shared';
+import { CustomersPanel as Customers } from './customers-panel';
 import { ChannelsSettings } from '../settings/channels';
 import { ReplySettings } from '../settings/replies';
 import { NegotiationSettings } from '../settings/negotiation';
@@ -131,29 +132,5 @@ function Business({ settings: s }: { settings: BusinessSettings }) {
         </p>
       )}
     </section>
-  );
-}
-function Customers() {
-  const { client } = useDataClient();
-  const resource = useResource(useCallback(() => client.customers.list({ limit: 100 }), [client]));
-  return (
-    <ResourceView resource={resource}>
-      {(page) => (
-        <section className="grid gap-3 sm:grid-cols-2">
-          {page.items.map((c) => (
-            <article key={c.id} className={panel}>
-              <h3 className="text-sm font-semibold">{c.name}</h3>
-              <p className="mt-2 text-xs text-slate-500">
-                {c.city} · {c.language === 'pcm' ? 'Pidgin' : 'English'}
-              </p>
-              <p className="mt-2 break-words text-xs text-slate-500">{c.email}</p>
-              <p className="mt-3 text-[10px] text-slate-500">
-                Open their inbox conversation → Customer details to edit notes and tags.
-              </p>
-            </article>
-          ))}
-        </section>
-      )}
-    </ResourceView>
   );
 }

@@ -39,6 +39,7 @@ export function inboxSimulator(
       const m = state.messages.find((m) => m.id === incoming.data.id)!;
       m.kind = 'voice';
       m.language = 'pcm';
+      m.englishSummary = 'The customer wants to ask about this adire.';
       m.voice = { durationSeconds: 12, transcript: text, audioUrl: null };
       incoming.data = structuredClone(m);
     }

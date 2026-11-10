@@ -179,7 +179,16 @@ export function createApiClient(options: {
         request(`channels/whatsapp/helper/codes/${key(i.id)}/confirm`, {}, 'POST'),
     },
     settings: { get: () => request('settings'), update: (i) => request('settings', i, 'PATCH') },
-    insights: { get: () => request('insights') },
+    insights: {
+      get: (range) => request(`insights${range ? `?${new URLSearchParams({ ...range })}` : ''}`),
+    },
+    extras: {
+      get: () => request('extras'),
+      configure: (i) => request('extras/followups/settings', i, 'PATCH'),
+      followup: (i) => request(`extras/followups/${key(i.id)}`, { action: i.action }, 'PATCH'),
+      moderate: (i) => request(`extras/flags/${key(i.id)}`, { action: i.action }, 'PATCH'),
+      notifyRestock: (i) => request(`extras/restock/${key(i.id)}`, {}, 'POST'),
+    },
     team: {
       list: () => request('team'),
       invite: (i) => request('team/invitations', i, 'POST'),

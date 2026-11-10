@@ -1,3 +1,5 @@
+import { extrasMock } from './extras-mock';
+import { insightsReport, validRange } from './insights-logic';
 import { settingsMock } from './settings-mock';
 import { ordersMock } from './orders-mock';
 import { inboxSimulator } from './inbox-simulator';
@@ -258,7 +260,9 @@ export function createMockClient(
       list: (input) =>
         run('customers', () =>
           page(
-            state.customers.filter((c) => matches(`${c.name} ${c.city}`, input)),
+            state.customers.filter((c) =>
+              matches(`${c.name} ${c.city} ${c.notes} ${c.tags.join(' ')}`, input),
+            ),
             input,
           ),
         ),
@@ -288,29 +292,14 @@ export function createMockClient(
     },
     channels: configuration.channels,
     settings: configuration.settings,
+    extras: extrasMock(state, run, emit),
     insights: {
-      get: () =>
-        run('insights', () => {
-          const sales = state.orders.filter(
-            (o) => o.paymentStatus === 'paid' && o.status !== 'cancelled',
-          );
-          const days = new Map<string, number>();
-          for (const o of sales) {
-            const day = o.createdAt.slice(0, 10);
-            days.set(day, (days.get(day) ?? 0) + o.totalKobo);
-          }
-          return ok({
-            revenueKobo: sales.reduce((n, o) => n + o.totalKobo, 0),
-            orderCount: state.orders.length,
-            conversationCount: state.conversations.length,
-            pendingApprovals: state.approvals.filter((a) => a.status === 'pending').length,
-            dailySales: [...days].sort().map(([date, revenueKobo]) => ({ date, revenueKobo })),
-            byChannel: state.channels.map((c) => ({
-              channel: c.channel,
-              conversations: state.conversations.filter((x) => x.channel === c.channel).length,
-            })),
-          });
-        }),
+      get: (range) =>
+        run('insights', () =>
+          range && !validRange(range)
+            ? fail('VALIDATION', 'Choose valid start and end dates in order.')
+            : ok(insightsReport(state, range)),
+        ),
     },
     team: configuration.team,
     billing: configuration.billing,

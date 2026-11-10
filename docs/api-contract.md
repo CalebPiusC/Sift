@@ -208,6 +208,7 @@ export interface Conversation extends Entity {
   humanModeUntil: ISODate | null;
 }
 export interface Message extends Entity {
+  englishSummary?: string | null;
   conversationId: ID;
   sender: 'customer' | 'ai' | 'vendor';
   kind: 'text' | 'voice';
@@ -394,6 +395,7 @@ export interface DataEvent {
     | 'customers'
     | 'channels'
     | 'settings'
+    | 'extras'
     | 'insights'
     | 'team'
     | 'billing';
@@ -521,7 +523,9 @@ export interface SettingsData {
   ): Promise<Result<BusinessSettings>>;
 }
 export interface InsightsData {
-  get(): Promise<Result<Insights>>;
+  get(
+    range?: import('./extras-types').DateRange,
+  ): Promise<Result<import('./extras-types').InsightsReport>>;
 }
 export interface TeamData {
   setRole(input: { id: ID; role: Exclude<Role, 'owner'> }): Promise<Result<TeamMember>>;
@@ -564,6 +568,7 @@ export interface DataClient {
   channels: ChannelsData;
   settings: SettingsData;
   insights: InsightsData;
+  extras: import('./extras-types').ExtrasData;
   team: TeamData;
   billing: BillingData;
   realtime: RealtimeData;
@@ -680,6 +685,65 @@ export interface BillingOffer {
 }
 ```
 
+### Insights and extras additions
+
+```ts
+import type { Entity, ISODate, Result, Insights } from './types';
+export interface DateRange {
+  from: string;
+  to: string;
+}
+export interface InsightsReport extends Insights {
+  responseSeconds: number | null;
+  responseSamples: number;
+  stages: { label: string; value: number }[];
+  topProducts: { label: string; value: number }[];
+  hours: { label: string; value: number }[];
+  handling: { label: string; value: number }[];
+}
+export interface FollowupSettings {
+  enabled: boolean;
+  afterHours: number;
+  style: 'friendly' | 'professional' | 'Pidgin-friendly';
+}
+export interface Followup extends Entity {
+  customerName: string;
+  conversationId: string;
+  scheduledAt: ISODate;
+  sentAt: ISODate | null;
+  status: 'scheduled' | 'sent' | 'cancelled';
+  text: string;
+}
+export interface FlaggedMessage extends Entity {
+  customerName: string;
+  channel: string;
+  text: string;
+  reason: string;
+  createdAt: ISODate;
+  status: 'flagged' | 'cleared' | 'blocked';
+}
+export interface RestockAlert extends Entity {
+  productId: string;
+  productName: string;
+  customerName: string;
+  createdAt: ISODate;
+  status: 'waiting' | 'notified';
+}
+export interface ExtrasSnapshot {
+  followupSettings: FollowupSettings;
+  followups: Followup[];
+  flags: FlaggedMessage[];
+  restock: RestockAlert[];
+}
+export interface ExtrasData {
+  get(): Promise<Result<ExtrasSnapshot>>;
+  configure(input: FollowupSettings): Promise<Result<FollowupSettings>>;
+  followup(input: { id: string; action: 'cancel' | 'simulate_send' }): Promise<Result<Followup>>;
+  moderate(input: { id: string; action: 'not_spam' | 'block' }): Promise<Result<FlaggedMessage>>;
+  notifyRestock(input: { id: string }): Promise<Result<RestockAlert>>;
+}
+```
+
 <!-- generated-contract:end -->
 
 ## F5 configuration semantics (backend handoff, not implemented)
@@ -701,3 +765,23 @@ rate limits/secret storage require backend work before production.
 Billing offer selection is not checkout and grants no entitlement. Usage/trial and sample
 prices are illustrative. Verified Paystack payments and entitlements remain backend-owned.
 Preferences are per-workspace in-memory in mock; API adapter does not fall back to mock.
+
+## F6 insights/extras handoff (not a backend implementation)
+
+`insights.get({from,to})` accepts inclusive YYYY-MM-DD WAT dates, rejects invalid or reversed
+ranges, and returns actual-state aggregates with null response time for no completed pairs.
+Leads/stages are an activity-filtered snapshot. Response pairs are dated by first sent reply;
+unanswered bursts are excluded. Revenue/paid units use payment dates, falling back to creation
+for older data, excluding unpaid/cancelled orders. AI/vendor share counts sent messages.
+
+`extras.get` returns session follow-up configuration/history, flagged messages and customer
+restock requests. Configure accepts only enabled, whole hours 24–720 and supported style.
+Pending schedules use last activity, clamped to now if overdue. Cancel/simulate-send resolve
+only scheduled entries; sends require enabled/open/cold and no active human takeover.
+Simulation changes queue history only and deliberately bypasses due time. Moderation resolves
+only flagged entries. Restock notification simulation rejects missing/archived/unavailable
+products and already-notified requests. These mock actions never invoke external providers.
+API routes use authenticated tenant headers and never fall back to mocks; API UI hides send/
+restock simulators. Real scheduling, consent/opt-out, provider blocking, variant-specific
+subscriptions, translation verification and delivery confirmations require backend work.
+`Message.englishSummary` is optional; missing summaries are never manufactured by the UI.

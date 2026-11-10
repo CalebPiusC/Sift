@@ -21,7 +21,8 @@
     "test:contract": "node --test tests/contract-doc.test.mjs",
     "test:mobile": "node tests/inbox-mobile.mjs",
     "test:orders:mobile": "node tests/orders-mobile.mjs",
-    "test:settings:mobile": "node tests/settings-mobile.mjs"
+    "test:settings:mobile": "node tests/settings-mobile.mjs",
+    "test:insights:mobile": "node tests/insights-mobile.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.16",

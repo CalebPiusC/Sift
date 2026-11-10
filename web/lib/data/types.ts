@@ -59,6 +59,7 @@ export interface Conversation extends Entity {
   humanModeUntil: ISODate | null;
 }
 export interface Message extends Entity {
+  englishSummary?: string | null;
   conversationId: ID;
   sender: 'customer' | 'ai' | 'vendor';
   kind: 'text' | 'voice';
@@ -245,6 +246,7 @@ export interface DataEvent {
     | 'customers'
     | 'channels'
     | 'settings'
+    | 'extras'
     | 'insights'
     | 'team'
     | 'billing';

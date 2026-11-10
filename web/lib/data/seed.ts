@@ -185,6 +185,7 @@ export function createSeed(vendorId = SAMPLE_VENDOR): Seed {
       voice: null,
       status: 'received',
       language: i % 2 ? 'en' : 'pcm',
+      englishSummary: i % 2 ? null : 'The customer saw the adire on your page and likes it.',
       createdAt: at(i * 7 + 2),
     },
     {
@@ -213,6 +214,10 @@ export function createSeed(vendorId = SAMPLE_VENDOR): Seed {
         i % 6 === 0 ? { durationSeconds: 18 + i, transcript: c.lastMessage, audioUrl: null } : null,
       status: 'received',
       language: i % 2 ? 'en' : 'pcm',
+      englishSummary:
+        i % 2
+          ? null
+          : 'The customer asks whether the adire is still available and how much delivery costs.',
       createdAt: c.updatedAt,
     },
   ]);

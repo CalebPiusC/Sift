@@ -112,7 +112,9 @@ export interface SettingsData {
   ): Promise<Result<BusinessSettings>>;
 }
 export interface InsightsData {
-  get(): Promise<Result<Insights>>;
+  get(
+    range?: import('./extras-types').DateRange,
+  ): Promise<Result<import('./extras-types').InsightsReport>>;
 }
 export interface TeamData {
   setRole(input: { id: ID; role: Exclude<Role, 'owner'> }): Promise<Result<TeamMember>>;
@@ -155,6 +157,7 @@ export interface DataClient {
   channels: ChannelsData;
   settings: SettingsData;
   insights: InsightsData;
+  extras: import('./extras-types').ExtrasData;
   team: TeamData;
   billing: BillingData;
   realtime: RealtimeData;

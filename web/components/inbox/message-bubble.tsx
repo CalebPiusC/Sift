@@ -48,6 +48,30 @@ export function MessageBubble({
         ) : (
           <p className="whitespace-pre-wrap break-words">{m.text}</p>
         )}
+        {m.sender === 'customer' && m.language !== 'en' && (
+          <section
+            aria-label="Language summary"
+            className="my-3 grid grid-cols-2 gap-3 rounded-xl border border-slate-300 p-3 dark:border-slate-600"
+          >
+            <div className="min-w-0">
+              <h4 className="text-[10px] font-bold">Original · Nigerian Pidgin</h4>
+              <p className="mt-2 whitespace-pre-wrap break-words text-xs">
+                {m.voice?.transcript || m.text}
+              </p>
+            </div>
+            <div className="min-w-0">
+              <h4 className="text-[10px] font-bold">English summary</h4>
+              <p className="mt-2 break-words text-xs">
+                {m.englishSummary || 'Summary unavailable. Review the original before replying.'}
+              </p>
+              {m.englishSummary && sample && (
+                <p className="mt-2 text-[10px] text-slate-500">
+                  Sample summary · not live translation
+                </p>
+              )}
+            </div>
+          </section>
+        )}
         {m.product && (
           <article
             aria-label="Shared product"

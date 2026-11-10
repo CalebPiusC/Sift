@@ -325,3 +325,35 @@ Every section remains labelled Sample data. Backend development remains paused.
 Validation: `npm run test:all`, `npm run build`, and, against a running mock server,
 `SELVORA_TEST_URL=http://localhost:3001 npm run test:settings:mobile`.
 Existing `test:mobile` and `test:orders:mobile` remain regression checks.
+
+### F6 — Insights and extras (mock frontend)
+
+Open **Insights** → Overview / Follow-ups / Spam & scam / Restock / Customers.
+Customers is also available through Settings. All views use the same sample session;
+notes, configuration and moderation/alert decisions persist until reload.
+
+- Seven mobile bar-chart views have text summaries, accessible chart descriptions and
+  a From/To picker using inclusive Africa/Lagos dates. Leads/stages use last conversation
+  activity; response time uses completed incoming-burst → first sent-reply pairs dated
+  by reply time. Unanswered bursts are excluded. Conversion is a current-stage snapshot,
+  not a historical transition funnel. AI/vendor is sent-message share, not fully handled
+  chats. Top products count confirmed paid units; revenue includes delivery, uses payment
+  date (creation-date fallback for older samples), and excludes cancelled orders.
+- Cold-lead follow-ups: enable, 24–720 whole hours, three styles, scheduled/sent/cancelled
+  history. Pending timings use last activity (overdue becomes due now); sent history stays
+  unchanged. Explicit simulation can bypass due time but requires enabled/open/cold and
+  no active Take Over. There is **no scheduler or external send**; simulation changes queue
+  history only. Real consent, opt-out, deduplication and channel-window enforcement are backend work.
+- Spam/scam flags show original text and reason; Not spam and confirmed Block retain local
+  decisions. There is no connected classifier or external account blocking.
+- Restock requests and live low-stock product/variant counts; untracked stock/services are
+  excluded. Explicit alert simulation checks non-archived available stock and changes status
+  only—no customer is actually notified.
+- Customer search includes name/city/tags/notes, details, conversation and order history,
+  editable bounded notes/tags. No fabricated purchase history or payment claims.
+- Pidgin customer text/voice transcripts show original and English summary side by side.
+  Seeded summaries are labelled **Sample summary · not live translation**; unavailable
+  summaries ask the vendor to review the original. Original audio/transcripts remain separate.
+
+Phone acceptance: `SELVORA_TEST_URL=http://localhost:3001 npm run test:insights:mobile`.
+This covers 390×844 touch, 320px layout, light/dark, date states, all extras and saved memory.
