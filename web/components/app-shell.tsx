@@ -1,5 +1,5 @@
 'use client';
-import type { ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Button } from './ui/button';
 import { useDataClient } from './data/provider';
 import { WorkspaceData } from './data/workspace-data';
@@ -56,6 +56,7 @@ export function AppShell({
   setInstall,
 }: Props) {
   const { client, preferences } = useDataClient();
+  const [collapsed, setCollapsed] = useState(false);
   const tabLabel = (name: string) =>
     preferences.language === 'pcm'
       ? (({ Catalogue: 'Wetin you sell', Insights: 'How market' } as Record<string, string>)[
@@ -64,17 +65,39 @@ export function AppShell({
       : name;
   const dataConnected = client.mode === 'mock' || Boolean(client.vendorId);
   return (
-    <div className="min-h-screen lg:pl-64">
+    <div
+      style={{ '--sidebar-width': collapsed ? '5rem' : '16rem' } as CSSProperties}
+      className={`min-h-screen ${collapsed ? 'md:pl-20' : 'md:pl-64'}`}
+    >
       <a href="#workspace-main" className="skip-link">
         Skip to workspace
       </a>
       <aside
         style={{ top: client.mode === 'mock' ? '2.5rem' : 0 }}
-        className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-slate-200 bg-white px-5 py-7 dark:border-slate-800 dark:bg-slate-900 lg:flex"
+        aria-label="Workspace sidebar"
+        className={`fixed inset-y-0 left-0 z-20 hidden flex-col border-r border-slate-200 bg-white py-7 dark:border-slate-800 dark:bg-slate-900 md:flex ${collapsed ? 'w-20 px-2' : 'w-64 px-5'}`}
       >
-        <div className="px-3">{brand}</div>
-        <div className="mt-10 flex items-center gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-orange-50 text-sm font-bold text-amber-700 dark:bg-amber-950">
+        <div className="overflow-hidden px-1">
+          {collapsed ? (
+            <span aria-label="Selvora" className="block text-center text-xl font-bold text-primary">
+              S
+            </span>
+          ) : (
+            brand
+          )}
+        </div>
+        <button
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-expanded={!collapsed}
+          onClick={() => setCollapsed(!collapsed)}
+          className="mt-4 min-h-11 rounded-xl border border-slate-200 text-sm dark:border-slate-700"
+        >
+          {collapsed ? '→' : '← Collapse'}
+        </button>
+        <div
+          className={`${collapsed ? 'hidden' : 'flex'} mt-5 items-center gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700`}
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-orange-50 text-sm font-bold text-amber-700 dark:bg-amber-950 dark:text-amber-200">
             {vendor?.business_name.slice(0, 2).toUpperCase()}
           </span>
           <div className="min-w-0">
@@ -82,24 +105,32 @@ export function AppShell({
             <p className="mt-1 text-[11px] text-slate-400">Your workspace</p>
           </div>
         </div>
-        <p className="mb-3 mt-8 px-3 text-[10px] font-semibold uppercase tracking-[.2em] text-slate-400">
+        <p
+          className={`${collapsed ? 'sr-only' : ''} mb-3 mt-8 px-3 text-[10px] font-semibold uppercase tracking-[.2em] text-slate-400`}
+        >
           WORKSPACE
         </p>
         <nav aria-label="Main navigation" className="space-y-2">
           {tabs.map(({ name, icon: Icon }) => (
             <button
               key={name}
+              aria-label={tabLabel(name)}
+              title={collapsed ? tabLabel(name) : undefined}
               aria-current={tab === name ? 'page' : undefined}
               onClick={() => setTab(name)}
               className={`flex min-h-12 w-full items-center gap-3 rounded-xl px-4 text-sm font-medium transition ${tab === name ? 'bg-indigo-50 text-primary dark:bg-indigo-950 dark:text-indigo-300' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
             >
               <Icon size={19} />
-              {tabLabel(name)}
-              {tab === name && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
+              {!collapsed && tabLabel(name)}
+              {!collapsed && tab === name && (
+                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
+              )}
             </button>
           ))}
         </nav>
-        <div className="mt-auto rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
+        <div
+          className={`${collapsed ? 'hidden' : ''} mt-auto rounded-2xl bg-slate-50 p-4 dark:bg-slate-800`}
+        >
           <div className="mb-3 grid h-8 w-8 place-items-center rounded-lg bg-white text-primary dark:bg-slate-900">
             <Headphones size={17} />
           </div>
@@ -115,7 +146,9 @@ export function AppShell({
           </button>
         </div>
         <div className="mt-5 flex items-center justify-between px-2">
-          <span className="text-[10px] text-slate-400">A little more possible.</span>
+          {!collapsed && (
+            <span className="text-[10px] text-slate-400">A little more possible.</span>
+          )}
           {client.mode !== 'mock' && (
             <button
               aria-label="Sign out"
@@ -128,8 +161,8 @@ export function AppShell({
         </div>
       </aside>
       <header className="flex h-20 items-center justify-between border-b border-slate-200 bg-white px-5 dark:border-slate-800 dark:bg-slate-900 sm:px-9">
-        <div className="lg:hidden">{brand}</div>
-        <div className="hidden items-center gap-2 text-xs text-slate-400 lg:flex">
+        <div className="md:hidden">{brand}</div>
+        <div className="hidden items-center gap-2 text-xs text-slate-400 md:flex">
           Workspace <ChevronRight size={13} />
           <span className="font-medium text-slate-600 dark:text-slate-200">{tab}</span>
         </div>
@@ -158,7 +191,7 @@ export function AppShell({
       <main
         id="workspace-main"
         tabIndex={-1}
-        className="mx-auto max-w-7xl px-5 pb-28 pt-8 sm:px-9 lg:pb-10"
+        className="mx-auto max-w-7xl px-5 pb-28 pt-8 sm:px-9 md:pb-10"
       >
         {client.mode === 'mock' && tab === 'Settings' && (
           <Button variant="outline" className="mb-5" onClick={replayOnboarding}>
@@ -435,7 +468,7 @@ export function AppShell({
       </main>
       <nav
         aria-label="Mobile navigation"
-        className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] dark:border-slate-800 dark:bg-slate-900 lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] dark:border-slate-800 dark:bg-slate-900 md:hidden"
       >
         {tabs.map(({ name, icon: Icon }) => (
           <button

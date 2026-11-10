@@ -8,6 +8,7 @@ import { stockBadge, stockLabels } from '../../lib/data/catalogue-logic';
 import { ResourceView, naira, panel } from './shared';
 import { Button } from '../ui/button';
 import { AddFlow } from '../catalogue/add-flow';
+import { SidePanel } from '../ui/side-panel';
 import { ProductDetail } from '../catalogue/detail';
 import { TypedEdit } from '../catalogue/typed-edit';
 export function CataloguePanel() {
@@ -32,7 +33,7 @@ export function CataloguePanel() {
     ),
   );
   if (add) return <AddFlow onClose={() => setAdd(false)} />;
-  if (selected) return <ProductDetail id={selected} onClose={() => setSelected('')} />;
+
   return (
     <section>
       <div className="mb-6 flex flex-wrap justify-between gap-4">
@@ -142,7 +143,7 @@ export function CataloguePanel() {
                       {naira(p.priceKobo)}
                     </p>
                     <span
-                      className={`mt-3 inline-flex rounded-full px-2 py-1 text-xs ${p.stock === 0 ? 'bg-red-50 text-danger dark:bg-red-950' : stockBadge(p) === 'low' ? 'bg-amber-50 text-warning dark:bg-amber-950' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}
+                      className={`mt-3 inline-flex rounded-full px-2 py-1 text-xs ${p.stock === 0 ? 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300' : stockBadge(p) === 'low' ? 'bg-amber-50 text-warning dark:bg-amber-950' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}
                     >
                       {stockLabels[stockBadge(p)]}
                       {p.stock !== null ? ` · ${p.stock}` : ''}
@@ -180,6 +181,11 @@ export function CataloguePanel() {
             </>
           )}
         </ResourceView>
+      )}
+      {selected && (
+        <SidePanel label="Product details and editing" onClose={() => setSelected('')}>
+          <ProductDetail id={selected} onClose={() => setSelected('')} />
+        </SidePanel>
       )}
     </section>
   );

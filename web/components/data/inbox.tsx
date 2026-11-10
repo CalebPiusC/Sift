@@ -83,6 +83,44 @@ export function InboxPanel() {
     void action.run(() => client.conversations.markRead(id));
   }
   const pending = approvals.status === 'success' ? approvals.data.items : [];
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (!window.matchMedia('(min-width: 1024px)').matches || tab !== 'Inbox') return;
+      const target = event.target as HTMLElement;
+      if (event.key === 'Escape') {
+        if (document.querySelector('[aria-modal="true"]')) return;
+        setSelected('');
+        document.querySelector<HTMLElement>('[data-testid="conversation-row"]')?.focus();
+        return;
+      }
+      if (
+        target.closest('input,textarea,select,[contenteditable="true"],[role="dialog"]') ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey
+      )
+        return;
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+      const rows = [
+        ...document.querySelectorAll<HTMLButtonElement>('[data-testid="conversation-row"]'),
+      ];
+      if (!rows.length) return;
+      const index = rows.indexOf(document.activeElement as HTMLButtonElement);
+      const next =
+        index < 0
+          ? event.key === 'ArrowDown'
+            ? 0
+            : rows.length - 1
+          : Math.max(0, Math.min(rows.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1)));
+      event.preventDefault();
+      rows[next].focus();
+      rows[next].scrollIntoView({ block: 'nearest' });
+      // Enter uses the focused row's native button activation.
+    };
+    document.addEventListener('keydown', key);
+    return () => document.removeEventListener('keydown', key);
+  }, [tab]);
+
   return (
     <div className="min-w-0 space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-2">
@@ -168,7 +206,7 @@ export function InboxPanel() {
             )}
           </ResourceView>
         ) : (
-          <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(260px,330px)_minmax(0,1fr)]">
+          <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(230px,280px)_minmax(0,1fr)] xl:grid-cols-[minmax(220px,260px)_minmax(0,1fr)_minmax(220px,260px)]">
             <section
               className={`${panel} min-w-0 ${selected ? 'hidden lg:block' : ''}`}
               aria-label="Conversation list"

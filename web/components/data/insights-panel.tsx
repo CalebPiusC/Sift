@@ -112,7 +112,7 @@ export function InsightsPanel() {
                 const total = d.handling.reduce((n, r) => n + r.value, 0);
                 return (
                   <>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
                       {[
                         ['Revenue', naira(d.revenueKobo)],
                         ['Orders created', d.orderCount],

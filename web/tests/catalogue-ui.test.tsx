@@ -86,7 +86,12 @@ it('detail edits remain unsaved until confirmation, including per-variant stock 
   expect(screen.getByRole('button', { name: 'Confirm changes' })).toBeInTheDocument();
   expect(screen.getByText('2 in stock · Low-stock alert at 4')).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Confirm changes' }));
-  expect(await screen.findByText('Low', { exact: true })).toBeInTheDocument();
+  expect(
+    await within(screen.getByRole('dialog', { name: 'Product details and editing' })).findByText(
+      'Low',
+      { exact: true },
+    ),
+  ).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Archive item' }));
   await user.click(screen.getByRole('button', { name: 'Confirm archive' }));
   expect(await screen.findByText('24 items')).toBeInTheDocument();

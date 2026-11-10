@@ -10,9 +10,11 @@ import { Button } from '../ui/button';
 export function CustomerDrawer({
   customerId,
   onClose,
+  embedded = false,
 }: {
   customerId: string;
   onClose: () => void;
+  embedded?: boolean;
 }) {
   const { client } = useDataClient();
   const ref = useRef<HTMLElement>(null);
@@ -21,6 +23,7 @@ export function CustomerDrawer({
   );
   const orders = useResource(useCallback(() => client.orders.list({ limit: 100 }), [client]));
   useEffect(() => {
+    if (embedded) return;
     const previous = document.activeElement as HTMLElement | null;
     ref.current?.focus();
     const key = (e: KeyboardEvent) => {
@@ -55,25 +58,34 @@ export function CustomerDrawer({
       document.body.style.overflow = old;
       previous?.focus();
     };
-  }, [onClose]);
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40" onClick={onClose}>
+  }, [onClose, embedded]);
+  const content = (
+    <div
+      className={
+        embedded ? 'hidden min-w-0 xl:block' : 'fixed inset-0 z-50 flex justify-end bg-slate-950/40'
+      }
+      onClick={embedded ? undefined : onClose}
+    >
       <aside
         ref={ref}
         tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="customer-title"
-        className="h-full w-full max-w-md overflow-y-auto bg-white p-5 shadow-xl dark:bg-slate-900"
+        role={embedded ? 'region' : 'dialog'}
+        aria-modal={embedded ? undefined : true}
+        aria-label="Customer details"
+        className={
+          embedded
+            ? 'h-[calc(100dvh-220px)] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900'
+            : 'h-full w-full max-w-md overflow-y-auto bg-white p-5 shadow-xl dark:bg-slate-900'
+        }
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between gap-2">
-          <h2 id="customer-title" className="text-lg font-semibold">
-            Customer details
-          </h2>
-          <Button variant="outline" onClick={onClose}>
-            Close details
-          </Button>
+          <h2 className="text-lg font-semibold">Customer details</h2>
+          {!embedded && (
+            <Button variant="outline" onClick={onClose}>
+              Close details
+            </Button>
+          )}
         </div>
         <ResourceView resource={customer}>
           {(c) => (
@@ -116,9 +128,9 @@ export function CustomerDrawer({
           )}
         </ResourceView>
       </aside>
-    </div>,
-    document.body,
+    </div>
   );
+  return embedded ? content : createPortal(content, document.body);
 }
 function CustomerForm({ customer: c }: { customer: Customer }) {
   const { client } = useDataClient();

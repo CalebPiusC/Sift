@@ -7,6 +7,7 @@ import { useDataClient } from './provider';
 import { useResource } from '../../lib/data/use-resource';
 import { ResourceView, naira, panel } from './shared';
 import { Button } from '../ui/button';
+import { SidePanel } from '../ui/side-panel';
 import { OrderDetail } from '../orders/order-detail';
 import { ReceiptView } from '../orders/receipt-view';
 export function OrdersPanel() {
@@ -25,7 +26,7 @@ export function OrdersPanel() {
   const receiptList = useResource(
     useCallback(() => client.receipts.list({ search, limit: 100 }), [client, search]),
   );
-  if (selected) return <OrderDetail key={selected} id={selected} onBack={() => setSelected('')} />;
+
   if (receiptId) return <ReceiptDetail id={receiptId} onBack={() => setReceiptId('')} />;
   return (
     <section className="min-w-0 space-y-5">
@@ -125,7 +126,54 @@ export function OrdersPanel() {
                   No orders match. Try another filter or search.
                 </p>
               )}
-              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-4 hidden overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 md:block">
+                <table className="w-full text-left text-sm">
+                  <caption className="sr-only">
+                    Orders with customer, status, payment and total
+                  </caption>
+                  <thead className="bg-slate-50 text-xs dark:bg-slate-800">
+                    <tr>
+                      {['Order', 'Customer', 'Status', 'Payment', 'Total'].map((label) => (
+                        <th key={label} scope="col" className="p-4">
+                          {label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {page.items.map((o) => (
+                      <tr key={o.id} className="border-t border-slate-200 dark:border-slate-800">
+                        <td className="p-4">
+                          <button
+                            onClick={() => setSelected(o.id)}
+                            className="min-h-11 font-semibold text-primary dark:text-indigo-300"
+                            aria-label={`Open ${o.id}`}
+                          >
+                            {o.id}
+                          </button>
+                          <p className="text-xs text-slate-500">
+                            {new Date(o.createdAt).toLocaleDateString('en-NG')}
+                          </p>
+                        </td>
+                        <td className="p-4">{o.customerName}</td>
+                        <td className="p-4">{orderLabels[o.status]}</td>
+                        <td className="p-4">
+                          {o.paymentStatus === 'paid' ? 'Payment verified' : 'Payment not verified'}
+                          {o.paymentScreenshotReceived && o.paymentStatus === 'unpaid' && (
+                            <p className="text-xs text-warning">
+                              Screenshot received · bank check needed
+                            </p>
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap p-4 font-semibold">
+                          {naira(o.totalKobo)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 grid gap-4 md:hidden">
                 {page.items.map((o) => (
                   <button
                     key={o.id}
@@ -163,6 +211,11 @@ export function OrdersPanel() {
             </>
           )}
         </ResourceView>
+      )}
+      {selected && (
+        <SidePanel label="Order details" onClose={() => setSelected('')}>
+          <OrderDetail key={selected} id={selected} onBack={() => setSelected('')} />
+        </SidePanel>
       )}
     </section>
   );

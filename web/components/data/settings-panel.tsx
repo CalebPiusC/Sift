@@ -27,53 +27,60 @@ export function SettingsPanel() {
             : 'Manage your business settings.'}
         </p>
       </div>
-      <nav aria-label="Settings sections" className="flex flex-wrap gap-2">
-        {[
-          'business',
-          'channels',
-          'replies',
-          'negotiation',
-          'team',
-          'billing',
-          'preferences',
-          'customers',
-        ].map((key) => (
-          <button
-            key={key}
-            aria-label={key}
-            onClick={() => setArea(key)}
-            aria-pressed={area === key}
-            className={`min-h-12 rounded-xl px-4 text-xs capitalize ${area === key ? 'bg-primary text-white' : 'border border-slate-200 dark:border-slate-700'}`}
-          >
-            {key}
-          </button>
-        ))}
-      </nav>
-      {area === 'channels' ? (
-        <ChannelsSettings />
-      ) : area === 'replies' && client.mode === 'api' ? (
-        <ApiReplySettings />
-      ) : area === 'negotiation' ? (
-        <NegotiationSettings />
-      ) : area === 'team' ? (
-        <TeamSettings />
-      ) : area === 'billing' ? (
-        <BillingSettings />
-      ) : area === 'customers' ? (
-        <Customers />
-      ) : (
-        <ResourceView resource={settings}>
-          {(s) =>
-            area === 'replies' ? (
-              <ReplySettings settings={s} />
-            ) : area === 'preferences' ? (
-              <PreferencesSettings value={s.preferences} />
-            ) : (
-              <Business settings={s} />
-            )
-          }
-        </ResourceView>
-      )}
+      <div className="grid min-w-0 gap-6 md:grid-cols-[160px_minmax(0,1fr)]">
+        <nav
+          aria-label="Settings sections"
+          className="flex flex-wrap content-start gap-2 md:flex-col md:items-stretch"
+        >
+          {[
+            'business',
+            'channels',
+            'replies',
+            'negotiation',
+            'team',
+            'billing',
+            'preferences',
+            'customers',
+          ].map((key) => (
+            <button
+              key={key}
+              aria-label={key}
+              onClick={() => setArea(key)}
+              aria-pressed={area === key}
+              className={`min-h-12 rounded-xl px-4 text-xs capitalize ${area === key ? 'bg-primary text-white' : 'border border-slate-200 dark:border-slate-700'}`}
+            >
+              {key}
+            </button>
+          ))}
+        </nav>
+        <div className="min-w-0 max-w-3xl">
+          {area === 'channels' ? (
+            <ChannelsSettings />
+          ) : area === 'replies' && client.mode === 'api' ? (
+            <ApiReplySettings />
+          ) : area === 'negotiation' ? (
+            <NegotiationSettings />
+          ) : area === 'team' ? (
+            <TeamSettings />
+          ) : area === 'billing' ? (
+            <BillingSettings />
+          ) : area === 'customers' ? (
+            <Customers />
+          ) : (
+            <ResourceView resource={settings}>
+              {(s) =>
+                area === 'replies' ? (
+                  <ReplySettings settings={s} />
+                ) : area === 'preferences' ? (
+                  <PreferencesSettings value={s.preferences} />
+                ) : (
+                  <Business settings={s} />
+                )
+              }
+            </ResourceView>
+          )}
+        </div>
+      </div>
     </section>
   );
 }
