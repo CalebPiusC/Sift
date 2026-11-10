@@ -1,5 +1,6 @@
 import { Mic, Sparkles } from 'lucide-react';
 import type { Message } from '../../lib/data';
+import { orderLabels } from '../../lib/data/order-logic';
 import { naira } from '../../lib/data/money';
 export const messageTime = (time: string) =>
   new Date(time).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' });
@@ -73,7 +74,7 @@ export function MessageBubble({
             ))}
             <p className="mt-2 font-semibold">Total {naira(m.order.totalKobo)}</p>
             <p className="text-xs capitalize">
-              {m.order.status} ·{' '}
+              {orderLabels[m.order.status]} ·{' '}
               {m.order.paymentStatus === 'paid' ? 'Payment confirmed' : 'Awaiting verified payment'}
             </p>
             <p className="text-[10px] text-slate-500">

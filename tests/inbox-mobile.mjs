@@ -1,22 +1,8 @@
 import assert from 'node:assert/strict';
-import { join, dirname } from 'node:path';
-import { tmpdir } from 'node:os';
-import { createRequire } from 'node:module';
+import { join } from 'node:path';
 import { mkdir } from 'node:fs/promises';
-import { chromium as playwright } from 'playwright-core';
-import chromium, { inflate, setupLambdaEnvironment } from '@sparticuz/chromium';
-// Linux CI images may lack Chromium's shared libraries. Use this package's bundled
-// AL2023 libraries, including on cached /tmp/chromium runs (which skip extraction).
-if (process.platform === 'linux') {
-  const require = createRequire(import.meta.url);
-  await inflate(join(dirname(require.resolve('@sparticuz/chromium')), '../bin/al2023.tar.br'));
-  setupLambdaEnvironment(join(tmpdir(), 'al2023/lib'));
-}
-const browser = await playwright.launch({
-  args: chromium.args,
-  executablePath: await chromium.executablePath(),
-  headless: true,
-});
+import { launchBrowser } from './helpers/chromium.mjs';
+const browser = await launchBrowser();
 try {
   const page = await browser.newPage({
     viewport: { width: 390, height: 844 },

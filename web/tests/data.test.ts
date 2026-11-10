@@ -73,7 +73,7 @@ describe('sample seed and contract', () => {
     const c = mock();
     expect(value(await c.conversations.get('conversation-1')).customerId).toBe('customer-1');
     expect(value(await c.customers.get('customer-1')).name).toBe('Chidinma Okafor');
-    expect(value(await c.orders.get('order-1')).status).toBe('pending');
+    expect(value(await c.orders.get('order-1')).status).toBe('draft');
     expect(value(await c.settings.get()).autoNegotiation).toBe(false);
     expect(value(await c.team.list())).toHaveLength(3);
     expect(value(await c.billing.get()).plan).toBe('growth');
@@ -171,15 +171,22 @@ describe('async mutations and events', () => {
   });
   it('only explicit vendor payment permits order progression and receipt issuance', async () => {
     const c = mock();
-    expect((await c.orders.setStatus({ id: 'order-1', status: 'confirmed' })).ok).toBe(false);
-    expect((await c.receipts.issue({ orderId: 'order-1' })).ok).toBe(false);
     expect(
-      value(await c.orders.confirmPayment({ id: 'order-1', source: 'vendor' })).paymentSource,
+      (await c.orders.setStatus({ id: 'order-1', status: 'preparing', expectedRevision: 1 })).ok,
+    ).toBe(false);
+    expect((await c.receipts.issue({ orderId: 'order-1' })).ok).toBe(false);
+    await c.orders.setStatus({ id: 'order-1', status: 'awaiting_payment', expectedRevision: 1 });
+    expect(
+      value(await c.orders.confirmPayment({ id: 'order-1', source: 'vendor', expectedRevision: 2 }))
+        .paymentSource,
     ).toBe('vendor');
-    expect(value(await c.orders.setStatus({ id: 'order-1', status: 'confirmed' })).status).toBe(
-      'confirmed',
-    );
-    expect((await c.orders.setStatus({ id: 'order-1', status: 'delivered' })).ok).toBe(false);
+    expect(
+      value(await c.orders.setStatus({ id: 'order-1', status: 'preparing', expectedRevision: 3 }))
+        .status,
+    ).toBe('preparing');
+    expect(
+      (await c.orders.setStatus({ id: 'order-1', status: 'delivered', expectedRevision: 3 })).ok,
+    ).toBe(false);
     const [a, b] = await Promise.all([
       c.receipts.issue({ orderId: 'order-1' }),
       c.receipts.issue({ orderId: 'order-1' }),
@@ -280,8 +287,16 @@ it('API adapter maps every contract operation and preserves typed error envelope
     [() => c.approvals.decide({ id: 'a', action: 'reject' }), 'approvals/a/decision', 'POST'],
     [() => c.orders.list(), 'orders', 'GET'],
     [() => c.orders.get('o'), 'orders/o', 'GET'],
-    [() => c.orders.setStatus({ id: 'o', status: 'confirmed' }), 'orders/o/status', 'PATCH'],
-    [() => c.orders.confirmPayment({ id: 'o', source: 'vendor' }), 'orders/o/payment', 'POST'],
+    [
+      () => c.orders.setStatus({ id: 'o', status: 'preparing', expectedRevision: 1 }),
+      'orders/o/status',
+      'PATCH',
+    ],
+    [
+      () => c.orders.confirmPayment({ id: 'o', source: 'vendor', expectedRevision: 1 }),
+      'orders/o/payment',
+      'POST',
+    ],
     [() => c.receipts.list(), 'receipts', 'GET'],
     [() => c.receipts.get('r'), 'receipts/r', 'GET'],
     [() => c.receipts.issue({ orderId: 'o' }), 'receipts', 'POST'],

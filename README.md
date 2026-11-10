@@ -1,6 +1,6 @@
 # Selvora
 
-A mobile-first workspace for Nigerian online vendors. **Current work: F3 mobile-first inbox, on the F1 data layer and F2 catalogue.** Backend work is paused while the frontend is completed.
+A mobile-first workspace for Nigerian online vendors. **Current work: F4 orders and immutable receipts, alongside the F3 inbox and F2 catalogue.** Backend work is paused while the frontend is completed.
 
 Replaces the previous LeadBot prototype. Includes Next.js/TypeScript/Tailwind with a shadcn-style Radix button, FastAPI, Supabase auth, PostgreSQL tenant isolation, four-screen onboarding, responsive navigation, dark mode, and an installable PWA.
 
@@ -79,6 +79,35 @@ SELVORA_TEST_URL=http://localhost:3001 npm run test:mobile
 `test:mobile` runs real headless Chromium at **390 × 844 with touch enabled**. It checks chat simulation, rich bubbles, Send/Edit/Reject, AI silence in takeover, vendor reply, hand-back/resumed AI, customer drawer, notification defaults, no horizontal overflow and no browser exceptions. Additional layout/composer checks cover 320px/360px phones and 1280px dark-mode desktop. Browser libraries are test-only, provided through npm (Linux x64 CI); no system Chromium install is required. Optional `SELVORA_SCREENSHOT_DIR=/tmp/selvora-shots` saves a review screenshot outside Git. The earlier F2 sandbox-browser-library blocker has been resolved for this test harness; the F2 ten-item path still has its separate component acceptance test.
 
 The current thread shows the latest 100 messages; full older-history pagination is not connected. All mock changes reset on refresh. API mode retains honest missing-endpoint/realtime errors—no sample fallback. See `docs/api-contract.md` for the updated backend targets.
+
+## F4 orders, payments and receipts
+
+With `DATA_MODE=mock`, open **Orders** and select **order-1** (Chidinma Okafor). It starts as a draft for four Indigo Adire Sets with delivery, totalling **₦102,500**. Its customer screenshot is explicitly **unverified**.
+
+1. Tap **Mark awaiting payment**. Every status action shows the short message the customer will receive before you tap it; successful mock updates also appear in the linked inbox and order timeline.
+2. The **sample Paystack link** can be copied/shared. It is a non-payable placeholder, prominently marked **do not pay**, not a real checkout.
+3. Tap **Payment received**, check the bank-verification acknowledgement, then **Confirm payment received**. Cancelling the confirmation leaves the order unpaid. A screenshot can never confirm payment; the exact warning is “Screenshots can be faked. Check your bank before confirming.” Other unpaid orders offer **Simulate payment screenshot** to test this boundary.
+4. The order becomes **Paid**. Tracked variant stock is deducted **once** (Medium/Indigo 5 → 1; total 8 → 4). Low-stock/restock prompts appear. Restock the selected variant by entering units → **Review restock** → **Confirm restock**; no quantity is guessed. Changed stock revisions require a new review.
+5. Tap **Issue receipt**. The receipt number is sequential for this vendor (seed receipts #0001–#0012, then #0013). Business name, customer, items/variants, totals, payment source and issuance date are frozen. There is no receipt edit/delete action. Repeated issuance returns the same receipt.
+6. **Download PDF** produces an actual PDF file with an embedded naira-capable font, not a print-dialog placeholder. The generator wraps long lines and supports multiple pages. Copy/share the **sample receipt share link** to view its read-only snapshot in a fresh browser session at `/receipts/shared#sample=...`.
+7. Tap **Mark preparing → Mark out for delivery → Mark delivered**. The paid state and receipt stay intact, and the linked inbox receives the previewed delivery updates.
+
+The list supports all seven states (Draft, Awaiting payment, Paid, Preparing, Out for delivery, Delivered, Cancelled) and search by order/customer/item. **View receipts** has receipt-number/customer search and read-only detail. Cancellation needs confirmation and **does not automatically refund, restock or change issued receipts**. Refund processing remains outside this phase.
+
+**Stock shortages:** receiving real money is not rejected merely because stock ran short. The mock records payment, deducts available tracked quantities without going negative, and prominently records any fulfilment shortfall. Missing variants are not guessed; untracked items are not decremented. Restocking adds inventory only—it does not claim a historical shortfall was fulfilled. Seed historical paid orders are already-paid sample snapshots, not a reconstructed inventory ledger.
+
+**Sharing boundaries:** sample links carry an unsigned fictional receipt snapshot in the URL fragment so the demo works without a backend. They are clearly labelled **sample / not proof of payment**, not secure production receipts. They contain the displayed receipt/customer name, so share deliberately; they exclude delivery addresses, phones and email. API mode requires a backend-provided secure `shareUrl` and real Paystack URL. No real checkout creation, webhook verification, external message delivery, database persistence or signed receipt-hosting service was added.
+
+```sh
+npm run test:all
+npm run build
+# With the mock app already running:
+npm run test:orders:mobile
+# Optional alternate local/preview URL:
+SELVORA_TEST_URL=http://localhost:3001 npm run test:orders:mobile
+```
+
+The real Chromium test at **390 × 844** completes draft → paid → delivered, proves screenshot safety, exercises copy/share, confirms a variant restock, downloads/parses the PDF, checks an immutable receipt link in a fresh context, and checks delivery updates in the inbox. `SELVORA_SCREENSHOT_DIR=/tmp/selvora-orders` optionally saves a receipt screenshot/PDF outside Git. PDF unit coverage includes multi-page output and invalid totals; a rendered PDF was also visually reviewed (not just text extraction). Mock data resets on refresh.
 
 ## Phase 1 auth foundation: real signup → onboarding → workspace (API mode)
 

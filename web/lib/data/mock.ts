@@ -1,17 +1,9 @@
+import { ordersMock } from './orders-mock';
 import { inboxSimulator } from './inbox-simulator';
 import { humanMode } from './inbox-logic';
 import { catalogueMock } from './catalogue-mock';
 import type { DataClient } from './contract';
-import type {
-  DataEvent,
-  ID,
-  ListInput,
-  Message,
-  Page,
-  Result,
-  ErrorCode,
-  OrderStatus,
-} from './types';
+import type { DataEvent, ID, ListInput, Message, Page, Result, ErrorCode } from './types';
 import { createSeed, SAMPLE_VENDOR } from './seed';
 const clone = <T>(value: T): T => structuredClone(value);
 const ok = <T>(data: T): Result<T> => ({ ok: true, data: clone(data) });
@@ -146,6 +138,7 @@ export function createMockClient(
     later(tick, 1000);
   }
   later(tick, 1000);
+  const commerce = ordersMock({ state, vendorId, id, run, emit, page, addMessage });
   const client: DataClient = {
     mode: 'mock',
     vendorId,
@@ -257,89 +250,8 @@ export function createMockClient(
           return ok(a);
         }),
     },
-    orders: {
-      list: (input) =>
-        run('orders', () =>
-          page(
-            state.orders.filter(
-              (o) =>
-                (!input?.status || o.status === input.status) &&
-                matches(`${o.id} ${o.customerName}`, input),
-            ),
-            input,
-          ),
-        ),
-      get: (key) => run('orders', () => find(state.orders, key)),
-      setStatus: (input) =>
-        run('orders', () => {
-          const o = state.orders.find((o) => o.id === input.id);
-          if (!o) return fail('NOT_FOUND', 'Order not found.');
-          const transitions: Record<OrderStatus, OrderStatus[]> = {
-            pending: ['confirmed', 'cancelled'],
-            confirmed: ['processing', 'cancelled'],
-            processing: ['shipped', 'cancelled'],
-            shipped: ['delivered'],
-            delivered: ['refunded'],
-            cancelled: [],
-            refunded: [],
-          };
-          if (o.status === input.status) return ok(o);
-          if (!transitions[o.status].includes(input.status))
-            return fail('CONFLICT', 'That order status transition is not allowed.');
-          if (input.status !== 'cancelled' && o.paymentStatus !== 'paid')
-            return fail('CONFLICT', 'Confirm payment before progressing this order.');
-          o.status = input.status;
-          emit('orders', o.id);
-          emit('insights', vendorId);
-          return ok(o);
-        }),
-      confirmPayment: (input) =>
-        run('orders', () => {
-          const o = state.orders.find((o) => o.id === input.id);
-          if (!o) return fail('NOT_FOUND', 'Order not found.');
-          if (input.source !== 'vendor')
-            return fail('VALIDATION', 'Only explicit vendor confirmation is accepted here.');
-          if (o.status === 'cancelled' || o.status === 'refunded')
-            return fail('CONFLICT', 'This order cannot receive payment.');
-          if (o.paymentStatus === 'unpaid') {
-            o.paymentStatus = 'paid';
-            o.paymentSource = 'vendor';
-            for (const c of state.conversations.filter((c) => c.customerId === o.customerId)) {
-              c.stage = 'paid';
-              emit('conversations', c.id);
-            }
-            emit('orders', o.id);
-            emit('insights', vendorId);
-          }
-          return ok(o);
-        }),
-    },
-    receipts: {
-      list: (input) => run('receipts', () => page(state.receipts, input)),
-      get: (key) => run('receipts', () => find(state.receipts, key)),
-      issue: (input) =>
-        run('receipts', () => {
-          const existing = state.receipts.find((r) => r.orderId === input.orderId);
-          if (existing) return ok(existing);
-          const o = state.orders.find((o) => o.id === input.orderId);
-          if (!o) return fail('NOT_FOUND', 'Order not found.');
-          if (o.paymentStatus !== 'paid') return fail('CONFLICT', 'Confirmed payment is required.');
-          const r = {
-            id: id('receipt'),
-            vendorId,
-            orderId: o.id,
-            number: state.receipts.reduce((n, r) => Math.max(n, r.number), 0) + 1,
-            totalKobo: o.totalKobo,
-            items: clone(o.items),
-            deliveryFeeKobo: o.deliveryFeeKobo,
-            customerName: o.customerName,
-            issuedAt: new Date().toISOString(),
-          };
-          state.receipts.push(r);
-          emit('receipts', r.id, 'created');
-          return ok(r);
-        }),
-    },
+    orders: commerce.orders,
+    receipts: commerce.receipts,
     customers: {
       list: (input) =>
         run('customers', () =>
@@ -432,7 +344,7 @@ export function createMockClient(
       get: () =>
         run('insights', () => {
           const sales = state.orders.filter(
-            (o) => o.paymentStatus === 'paid' && !['cancelled', 'refunded'].includes(o.status),
+            (o) => o.paymentStatus === 'paid' && o.status !== 'cancelled',
           );
           const days = new Map<string, number>();
           for (const o of sales) {
@@ -487,6 +399,7 @@ export function createMockClient(
     },
     developer: {
       simulateIncoming: (input) => run('messages', () => simulate(input)),
+      simulatePaymentScreenshot: (input) => commerce.screenshot(input.orderId),
       failNext: async (area) => {
         failures.add(area);
         return ok(null);

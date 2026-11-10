@@ -215,23 +215,54 @@ export function createSeed(vendorId = SAMPLE_VENDOR): Seed {
     },
   ]);
   const statuses: OrderStatus[] = [
-    'pending',
-    'confirmed',
-    'processing',
-    'shipped',
+    'draft',
+    'awaiting_payment',
+    'paid',
+    'preparing',
+    'out_for_delivery',
     'delivered',
     'cancelled',
-    'refunded',
   ];
   const fees = { Lagos: 250000, Abuja: 500000, Ibadan: 300000 };
   const orders = Array.from({ length: 21 }, (_, i): Order => {
     const c = customers[i];
     const p = products[i % products.length];
     const status = statuses[i % 7];
-    const paid = ['confirmed', 'processing', 'shipped', 'delivered', 'refunded'].includes(status);
+    const paid = ['paid', 'preparing', 'out_for_delivery', 'delivered'].includes(status);
+    const quantity = i === 0 ? 4 : 1;
     return {
       ...base,
       id: `order-${i + 1}`,
+      revision: 1,
+      conversationId: conversations[i].id,
+      deliveryAddress: `${12 + i} ${c.city === 'Lagos' ? 'Adetokunbo Ademola Street, Victoria Island' : c.city === 'Abuja' ? 'Gimbiya Street, Garki' : 'Bodija Road, Bodija'}, ${c.city}, Nigeria`,
+      paymentScreenshotReceived: i === 0,
+      paymentLink:
+        status === 'draft' ? null : `https://paystack.com/pay/selvora-sample-do-not-pay-${i + 1}`,
+      paidAt: paid ? at(i * 120) : null,
+      stockMovements: [],
+      timeline: [
+        {
+          id: `order-${i + 1}-created`,
+          at: at(i * 120 + 10),
+          label: 'Draft created',
+          customerMessage: null,
+        },
+        ...(status !== 'draft'
+          ? [
+              {
+                id: `order-${i + 1}-seed`,
+                at: at(i * 120),
+                label: paid
+                  ? 'Payment verified · sample history'
+                  : status === 'cancelled'
+                    ? 'Order cancelled'
+                    : 'Awaiting payment',
+                customerMessage: null,
+              },
+            ]
+          : []),
+      ],
       customerId: c.id,
       customerName: c.name,
       items: [
@@ -239,14 +270,15 @@ export function createSeed(vendorId = SAMPLE_VENDOR): Seed {
           productId: p.id,
           name: p.name,
           variantId: p.variants[0]?.id ?? null,
-          quantity: 1,
+          variantName: p.variants[0]?.name ?? null,
+          quantity,
           unitPriceKobo: p.priceKobo,
         },
       ],
       status,
       city: c.city,
       deliveryFeeKobo: fees[c.city],
-      totalKobo: p.priceKobo + fees[c.city],
+      totalKobo: p.priceKobo * quantity + fees[c.city],
       paymentStatus: paid ? 'paid' : 'unpaid',
       paymentSource: paid ? (i % 2 ? 'vendor' : 'paystack') : null,
       createdAt: at(i * 120),
@@ -259,6 +291,10 @@ export function createSeed(vendorId = SAMPLE_VENDOR): Seed {
       id: `receipt-${i + 1}`,
       orderId: o.id,
       number: i + 1,
+      vendorName: 'Adire by Tola',
+      subtotalKobo: o.items.reduce((n, item) => n + item.quantity * item.unitPriceKobo, 0),
+      paymentSource: o.paymentSource!,
+      shareUrl: null,
       totalKobo: o.totalKobo,
       items: structuredClone(o.items),
       deliveryFeeKobo: o.deliveryFeeKobo,

@@ -141,8 +141,18 @@ export function createApiClient(options: {
     orders: {
       list: (i) => request(`orders${query(i)}`),
       get: (id) => request(`orders/${key(id)}`),
-      setStatus: (i) => request(`orders/${key(i.id)}/status`, { status: i.status }, 'PATCH'),
-      confirmPayment: (i) => request(`orders/${key(i.id)}/payment`, { source: i.source }, 'POST'),
+      setStatus: (i) =>
+        request(
+          `orders/${key(i.id)}/status`,
+          { status: i.status, expectedRevision: i.expectedRevision },
+          'PATCH',
+        ),
+      confirmPayment: (i) =>
+        request(
+          `orders/${key(i.id)}/payment`,
+          { source: i.source, expectedRevision: i.expectedRevision },
+          'POST',
+        ),
     },
     receipts: {
       list: (i) => request(`receipts${query(i)}`),

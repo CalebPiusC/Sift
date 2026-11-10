@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { orderLabels } from '../../lib/data/order-logic';
 import type { Customer } from '../../lib/data';
 import { useResource } from '../../lib/data/use-resource';
 import { useDataClient } from '../data/provider';
@@ -100,7 +101,7 @@ export function CustomerDrawer({
                             {o.items.map((i) => `${i.quantity} × ${i.name}`).join(', ')}
                           </p>
                           <p className="capitalize">
-                            {o.status} ·{' '}
+                            {orderLabels[o.status]} ·{' '}
                             {o.paymentStatus === 'paid' ? 'Payment confirmed' : 'Unpaid'}
                           </p>
                         </li>

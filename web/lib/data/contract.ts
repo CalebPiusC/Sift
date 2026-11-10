@@ -57,8 +57,16 @@ export interface ApprovalsData {
 export interface OrdersData {
   list(input?: ListInput & { status?: OrderStatus }): Promise<Result<Page<Order>>>;
   get(id: ID): Promise<Result<Order>>;
-  setStatus(input: { id: ID; status: OrderStatus }): Promise<Result<Order>>;
-  confirmPayment(input: { id: ID; source: 'vendor' }): Promise<Result<Order>>;
+  setStatus(input: {
+    id: ID;
+    status: OrderStatus;
+    expectedRevision: number;
+  }): Promise<Result<Order>>;
+  confirmPayment(input: {
+    id: ID;
+    source: 'vendor';
+    expectedRevision: number;
+  }): Promise<Result<Order>>;
 }
 export interface ReceiptsData {
   list(input?: ListInput): Promise<Result<Page<Receipt>>>;
@@ -117,6 +125,7 @@ export interface MockControls {
     conversationId: ID;
     scenario?: 'greeting' | 'product' | 'ready_to_pay' | 'approval' | 'voice' | 'order';
   }): Promise<Result<Message>>;
+  simulatePaymentScreenshot(input: { orderId: ID }): Promise<Result<Order>>;
   failNext(area: DataEvent['area']): Promise<Result<null>>;
 }
 export interface DataClient {

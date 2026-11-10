@@ -96,15 +96,44 @@ export interface Approval extends Entity {
   holdingReplySentAt: ISODate | null;
 }
 export type OrderStatus =
-  'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+  | 'draft'
+  | 'awaiting_payment'
+  | 'paid'
+  | 'preparing'
+  | 'out_for_delivery'
+  | 'delivered'
+  | 'cancelled';
 export interface OrderItem {
+  variantName?: string | null;
   productId: ID;
   name: string;
   variantId: ID | null;
   quantity: number;
   unitPriceKobo: Kobo;
 }
+export interface OrderTimelineEntry {
+  id: ID;
+  at: ISODate;
+  label: string;
+  customerMessage: string | null;
+}
+export interface StockMovement {
+  productId: ID;
+  variantId: ID | null;
+  requested: number;
+  deducted: number;
+  shortfall: number;
+  note: string;
+}
 export interface Order extends Entity {
+  revision: number;
+  conversationId: ID | null;
+  deliveryAddress: string;
+  paymentScreenshotReceived: boolean;
+  paymentLink: string | null;
+  paidAt: ISODate | null;
+  stockMovements: StockMovement[];
+  timeline: OrderTimelineEntry[];
   customerId: ID;
   customerName: string;
   items: OrderItem[];
@@ -117,6 +146,10 @@ export interface Order extends Entity {
   createdAt: ISODate;
 }
 export interface Receipt extends Entity {
+  vendorName: string;
+  subtotalKobo: Kobo;
+  paymentSource: 'vendor' | 'paystack';
+  shareUrl: string | null;
   orderId: ID;
   number: number;
   totalKobo: Kobo;
