@@ -21,6 +21,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./tests/bootstrap.sql:/docker-entrypoint-initdb.d/001-auth.sql:ro
       - ./supabase/migrations/202611100001_foundation.sql:/docker-entrypoint-initdb.d/002-foundation.sql:ro
+      - ./supabase/migrations/202611100002_receipt_privileges.sql:/docker-entrypoint-initdb.d/003-receipt-privileges.sql:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U selvora']
       interval: 5s

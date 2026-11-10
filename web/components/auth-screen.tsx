@@ -2,7 +2,7 @@
 import type { ReactNode } from 'react';
 import { Button } from './ui/button';
 import { Sparkles, ArrowRight, Loader2 } from 'lucide-react';
-import { authConfigured } from '../lib/supabase';
+import { previewAllowed } from '../lib/preview';
 interface Props {
   brand: ReactNode;
   themeButton: ReactNode;
@@ -168,7 +168,7 @@ export function AuthScreen({
               {signUp ? 'Sign in' : 'Create an account'}
             </button>
           </p>
-          {!authConfigured() && (
+          {previewAllowed() && (
             <div className="mt-6 rounded-xl border border-dashed border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-900 dark:bg-indigo-950">
               <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
                 Local preview · Supabase is not configured. No account or business data will be

@@ -1,4 +1,6 @@
 import type { NextConfig } from 'next';
+import { checkBrowserEnv } from '../scripts/check-browser-env.mjs';
+
 const config: NextConfig = {
   allowedDevOrigins: ['*.e2b.app'],
   async headers() {
@@ -13,4 +15,7 @@ const config: NextConfig = {
     ];
   },
 };
-export default config;
+export default async function nextConfig(): Promise<NextConfig> {
+  await checkBrowserEnv(process.cwd());
+  return config;
+}

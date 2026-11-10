@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Sun, Moon, Loader2 } from 'lucide-react';
 import { supabase, authConfigured } from '../lib/supabase';
+import { previewAllowed } from '../lib/preview';
 import { saveProfile, type Profile } from '../lib/onboarding';
 import type { Tab, Vendor, InstallEvent } from '../lib/workspace-types';
 import { AuthScreen } from './auth-screen';
@@ -97,7 +98,9 @@ export function Workspace() {
     setNotice('');
     if (!authConfigured()) {
       setError(
-        'Authentication needs Supabase configuration. You can explore the clearly labelled preview below.',
+        previewAllowed()
+          ? 'Authentication needs Supabase configuration. You can explore the clearly labelled preview below.'
+          : 'Authentication is not configured. Please contact the workspace administrator.',
       );
       return;
     }
@@ -132,7 +135,8 @@ export function Workspace() {
     setBusy(true);
     setError('');
     try {
-      const id = preview ? 'preview-vendor' : await saveProfile(profile);
+      if (preview && !previewAllowed()) throw new Error('Preview is disabled.');
+      const id = preview && previewAllowed() ? 'preview-vendor' : await saveProfile(profile);
       setVendor({ ...profile, business_name: profile.business_name.trim(), id });
       setStage('app');
     } catch (e) {
@@ -200,6 +204,7 @@ export function Workspace() {
           authenticate,
         }}
         onPreview={() => {
+          if (!previewAllowed()) return;
           setPreview(true);
           setStage('onboard');
           setError('');

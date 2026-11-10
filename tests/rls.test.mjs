@@ -28,6 +28,7 @@ before(async () => {
   for (const file of [
     'tests/bootstrap.sql',
     'supabase/migrations/202611100001_foundation.sql',
+    'supabase/migrations/202611100002_receipt_privileges.sql',
     'tests/seed.sql',
   ])
     await db.exec(await readFile(file, 'utf8'));
@@ -225,4 +226,78 @@ test('clients cannot fake Paystack confirmations or bypass vendor payment RPC', 
     db.query('select public.confirm_vendor_payment($1,$2)', [B, other]),
     /Forbidden/,
   );
+});
+test('owner membership failure rolls back vendor creation and audit entry', async () => {
+  const user = '55555555-5555-4555-8555-555555555555';
+  await db.exec('reset role');
+  await db.query('insert into auth.users(id) values($1)', [user]);
+  const before = (await db.query('select count(*)::int as n from public.vendors')).rows[0].n;
+  await db.exec(`create function public.test_fail_membership() returns trigger language plpgsql as $$
+ begin if new.user_id='${user}'::uuid then raise exception 'Injected membership failure';end if;return new;end $$;
+ create trigger test_fail_membership before insert on public.vendor_members for each row execute function public.test_fail_membership();`);
+  try {
+    await asUser(user);
+    await assert.rejects(
+      db.query("select public.onboard_vendor('Rollback Bakes','products','friendly')"),
+      /Injected membership failure/,
+    );
+    await db.exec('reset role');
+    assert.equal(
+      (await db.query('select count(*)::int as n from public.vendors')).rows[0].n,
+      before,
+    );
+    assert.equal(
+      (await db.query('select * from public.vendor_members where user_id=$1', [user])).rows.length,
+      0,
+    );
+    assert.equal(
+      (await db.query('select * from public.audit_log where actor_id=$1', [user])).rows.length,
+      0,
+    );
+  } finally {
+    await db.exec(
+      'reset role;drop trigger test_fail_membership on public.vendor_members;drop function public.test_fail_membership()',
+    );
+  }
+});
+test('receipts resist UPDATE and DELETE by app owner, manager, agent, service role and database owner', async () => {
+  await db.exec('reset role');
+  const receipt = (await db.query('select id from public.receipts where vendor_id=$1 limit 1', [A]))
+    .rows[0].id;
+  for (const [index, role] of ['manager', 'agent'].entries()) {
+    const user = `66666666-6666-4666-8666-66666666666${index}`;
+    await db.query('insert into auth.users(id) values($1)', [user]);
+    await db.query('insert into public.vendor_members(vendor_id,user_id,role) values($1,$2,$3)', [
+      A,
+      user,
+      role,
+    ]);
+  }
+  for (const user of [
+    USER,
+    '66666666-6666-4666-8666-666666666660',
+    '66666666-6666-4666-8666-666666666661',
+  ]) {
+    await asUser(user);
+    for (const sql of [
+      'update public.receipts set total_kobo=0 where id=$1',
+      'delete from public.receipts where id=$1',
+    ])
+      await assert.rejects(db.query(sql, [receipt]), /permission denied/);
+  }
+  await db.exec('set role service_role');
+  // A genuine BYPASSRLS role can read both vendors, but cannot mutate receipts.
+  assert.ok((await db.query('select distinct vendor_id from public.receipts')).rows.length >= 2);
+  for (const sql of [
+    'update public.receipts set total_kobo=0 where id=$1',
+    'delete from public.receipts where id=$1',
+  ])
+    await assert.rejects(db.query(sql, [receipt]), /permission denied/);
+  await assert.rejects(db.exec('truncate public.receipts'), /permission denied/);
+  await db.exec('reset role');
+  for (const sql of [
+    'update public.receipts set total_kobo=0 where id=$1',
+    'delete from public.receipts where id=$1',
+  ])
+    await assert.rejects(db.query(sql, [receipt]), /immutable/);
 });
