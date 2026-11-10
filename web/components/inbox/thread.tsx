@@ -82,6 +82,9 @@ export function MessageThread({
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <h3 className="font-semibold">{c.customerName}</h3>
+                    {c.assignedName && (
+                      <p className="text-xs text-slate-500">Assigned to {c.assignedName}</p>
+                    )}
                     <p className="mt-1 text-xs text-slate-500">
                       {channelLabels[c.channel]} ·{' '}
                       <strong

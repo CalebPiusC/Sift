@@ -308,3 +308,20 @@ Every Next build loads `scripts/check-browser-env.mjs` through `web/next.config.
 12. Deploy on HTTPS for installation. Open outside an embedded preview to test browser installation; use Safari Share → Add to Home Screen on iOS. Review hosted database/platform log redaction as described above.
 
 **Backend Phase 2 has not started. F1 is frontend-only.**
+
+### F5 — channels and settings (mock frontend)
+
+Open **Settings** in `DATA_MODE=mock npm run dev`, or use the production preview.
+All settings persist in the current in-memory workspace; reload resets sample data.
+Every section remains labelled Sample data. Backend development remains paused.
+
+- **Channels:** five own-account cards; explicit simulated authorisation/reconnection. TikTok availability is being confirmed and it cannot become connected. WhatsApp helper is a separate side channel for quick vendor updates, never the account replying to customers. Four-digit codes expire after ten minutes; new codes invalidate previous ones. No live helper number is configured, so do not send codes anywhere—use the disclosed simulator.
+- **Replies:** seven safe per-intent auto lanes, auto-negotiation off by default, tone/languages, WAT business hours and away message. No approve-everything mode. Routine mock greetings demonstrate professional/Pidgin language and closed-hours away replies; approval and Take Over safeguards remain intact. These are templates, not a connected AI translator.
+- **Negotiation:** actual catalogue/variant floors and counter previews; midpoint rounded to nearest ₦100, clamped to floor/list, never a send or price edit. Worked example: ₦10,000 offer / ₦20,000 list / ₦15,000 floor → ₦15,000 counter.
+- **Team:** invitations, active-member assignment, manager/agent role changes, protected owner and session audit. Explicit simulated acceptance sends no email. This is a mock owner session, not server-side RBAC.
+- **Billing:** trial/usage meter, monthly/yearly (ten months’ price), volume tiers and PAYG bundles. All prices are sample placeholders. Paystack buttons only retain a selection; no checkout, charge, plan change or added credit occurs.
+- **Preferences:** saved dark/low-data/notification/language preferences apply across screens. Low-data skips catalogue grid thumbnails (opening details can deliberately load images). Notifications filter in-app alerts, not browser push. English/Pidgin changes supported navigation labels; full-app translation is not connected.
+
+Validation: `npm run test:all`, `npm run build`, and, against a running mock server,
+`SELVORA_TEST_URL=http://localhost:3001 npm run test:settings:mobile`.
+Existing `test:mobile` and `test:orders:mobile` remain regression checks.

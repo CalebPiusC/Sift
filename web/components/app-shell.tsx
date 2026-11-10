@@ -53,7 +53,13 @@ export function AppShell({
   install,
   setInstall,
 }: Props) {
-  const { client } = useDataClient();
+  const { client, preferences } = useDataClient();
+  const tabLabel = (name: string) =>
+    preferences.language === 'pcm'
+      ? (({ Catalogue: 'Wetin you sell', Insights: 'How market' } as Record<string, string>)[
+          name
+        ] ?? name)
+      : name;
   const dataConnected = client.mode === 'mock' || Boolean(client.vendorId);
   return (
     <div className="min-h-screen lg:pl-64">
@@ -83,7 +89,7 @@ export function AppShell({
               className={`flex min-h-12 w-full items-center gap-3 rounded-xl px-4 text-sm font-medium transition ${tab === name ? 'bg-indigo-50 text-primary dark:bg-indigo-950 dark:text-indigo-300' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
             >
               <Icon size={19} />
-              {name}
+              {tabLabel(name)}
               {tab === name && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
             </button>
           ))}
@@ -362,7 +368,7 @@ export function AppShell({
                 >
                   <span className="flex items-center gap-3 text-sm">
                     <ChannelIcon name={name} />
-                    {name}
+                    {tabLabel(name)}
                   </span>
                   <span className="text-[11px] text-slate-400">Connect later</span>
                 </div>
@@ -425,7 +431,7 @@ export function AppShell({
             className={`flex min-h-[72px] flex-col items-center justify-center gap-1.5 text-[10px] ${tab === name ? 'text-primary dark:text-indigo-300' : 'text-slate-400'}`}
           >
             <Icon size={21} />
-            {name}
+            {tabLabel(name)}
           </button>
         ))}
       </nav>

@@ -1,3 +1,4 @@
+import { settingsMock } from './settings-mock';
 import { ordersMock } from './orders-mock';
 import { inboxSimulator } from './inbox-simulator';
 import { humanMode } from './inbox-logic';
@@ -138,6 +139,7 @@ export function createMockClient(
     later(tick, 1000);
   }
   later(tick, 1000);
+  const configuration = settingsMock({ state, vendorId, id, run, emit });
   const commerce = ordersMock({ state, vendorId, id, run, emit, page, addMessage });
   const client: DataClient = {
     mode: 'mock',
@@ -284,62 +286,8 @@ export function createMockClient(
           return ok(c);
         }),
     },
-    channels: { list: () => run('channels', () => ok(state.channels)) },
-    settings: {
-      get: () => run('settings', () => ok(state.settings)),
-      update: (input) =>
-        run('settings', () => {
-          if (
-            input.businessName !== undefined &&
-            (input.businessName.trim().length < 2 || input.businessName.trim().length > 80)
-          )
-            return fail('VALIDATION', 'Business name must contain 2 to 80 characters.');
-          if (
-            input.businessType &&
-            !['products', 'services', 'made-to-order', 'mixed'].includes(input.businessType)
-          )
-            return fail('VALIDATION', 'Unknown business type.');
-          if (input.tone && !['friendly', 'professional', 'Pidgin-friendly'].includes(input.tone))
-            return fail('VALIDATION', 'Unknown business tone.');
-          if (input.autoNegotiation !== undefined && typeof input.autoNegotiation !== 'boolean')
-            return fail('VALIDATION', 'Auto-negotiation must be on or off.');
-          const allowed = [
-            'greeting',
-            'price',
-            'availability',
-            'variants',
-            'delivery_info',
-            'order_status',
-            'alternatives',
-          ];
-          if (input.autoIntents?.some((intent) => !allowed.includes(intent)))
-            return fail('VALIDATION', 'This intent needs vendor approval.');
-          if (
-            input.deliveryFees?.some(
-              (f) =>
-                !['Lagos', 'Abuja', 'Ibadan'].includes(f.city) ||
-                !Number.isSafeInteger(f.feeKobo) ||
-                f.feeKobo < 0,
-            )
-          )
-            return fail('VALIDATION', 'Delivery fees must be non-negative integer kobo.');
-          // Explicit allowlist: IDs/tenant scope cannot be overwritten by untyped callers.
-          for (const key of [
-            'businessName',
-            'businessType',
-            'tone',
-            'autoNegotiation',
-            'autoIntents',
-            'deliveryFees',
-          ] as const) {
-            if (input[key] !== undefined)
-              Object.assign(state.settings, { [key]: clone(input[key]) });
-          }
-          state.settings.businessName = state.settings.businessName.trim();
-          emit('settings', state.settings.id);
-          return ok(state.settings);
-        }),
-    },
+    channels: configuration.channels,
+    settings: configuration.settings,
     insights: {
       get: () =>
         run('insights', () => {
@@ -364,32 +312,8 @@ export function createMockClient(
           });
         }),
     },
-    team: {
-      list: () => run('team', () => ok(state.team)),
-      invite: (input) =>
-        run('team', () => {
-          if (
-            !input.name.trim() ||
-            !/^\S+@\S+\.\S+$/.test(input.email) ||
-            !['manager', 'agent'].includes(input.role)
-          )
-            return fail('VALIDATION', 'Provide a name, email and manager/agent role.');
-          if (state.team.some((m) => m.email.toLowerCase() === input.email.toLowerCase()))
-            return fail('CONFLICT', 'This teammate already exists.');
-          const m = {
-            id: id('team'),
-            vendorId,
-            ...input,
-            name: input.name.trim(),
-            email: input.email.toLowerCase(),
-            status: 'invited' as const,
-          };
-          state.team.push(m);
-          emit('team', m.id, 'created');
-          return ok(m);
-        }),
-    },
-    billing: { get: () => run('billing', () => ok(state.billing)) },
+    team: configuration.team,
+    billing: configuration.billing,
     realtime: {
       subscribe: async (listener) => {
         if (disposed) return fail('UNAVAILABLE', 'This data session has ended.');
@@ -398,6 +322,7 @@ export function createMockClient(
       },
     },
     developer: {
+      simulateInviteAccepted: (input) => configuration.acceptInvite(input.memberId),
       simulateIncoming: (input) => run('messages', () => simulate(input)),
       simulatePaymentScreenshot: (input) => commerce.screenshot(input.orderId),
       failNext: async (area) => {

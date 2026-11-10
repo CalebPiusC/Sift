@@ -1,15 +1,24 @@
 'use client';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { defaultPreferences } from '../../lib/data/preferences';
+import type { Preferences } from '../../lib/data';
 import type { DataClient, DataMode } from '../../lib/data';
 import { createApiClient, createMockClient } from '../../lib/data';
 import { authConfigured, supabase } from '../../lib/supabase';
 const fallback = createApiClient({ vendorId: '', getToken: async () => null });
 const Context = createContext<{
   client: DataClient;
+  preferences: Preferences;
   revision: number;
   configureVendor: (id: string) => void;
-}>({ client: fallback, revision: 0, configureVendor: () => {} });
+}>({ client: fallback, preferences: defaultPreferences, revision: 0, configureVendor: () => {} });
 export function DataProvider({ mode, children }: { mode: DataMode; children: ReactNode }) {
+  const [preferences, setPreferences] = useState<Preferences>(defaultPreferences);
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', preferences.darkMode);
+    document.documentElement.dataset.lowData = String(preferences.lowData);
+    document.documentElement.lang = preferences.language === 'pcm' ? 'pcm' : 'en';
+  }, [preferences]);
   const [vendorId, configureVendor] = useState('');
   const [client, setClient] = useState<DataClient | null>(null);
   const [revision, setRevision] = useState(0);
@@ -29,8 +38,17 @@ export function DataProvider({ mode, children }: { mode: DataMode; children: Rea
     let unsubscribe: (() => void) | undefined;
     setClient(next);
     setRevision(0);
+    let preferenceRequest = 0;
+    async function refreshPreferences() {
+      const request = ++preferenceRequest;
+      const result = await next.settings.get();
+      if (active && request === preferenceRequest && result.ok)
+        setPreferences(result.data.preferences);
+    }
+    void refreshPreferences();
     void next.realtime
-      .subscribe(() => {
+      .subscribe((event) => {
+        if (event.area === 'settings') void refreshPreferences();
         if (active) setRevision((n) => n + 1);
       })
       .then((result) => {
@@ -63,7 +81,7 @@ export function DataProvider({ mode, children }: { mode: DataMode; children: Rea
         )}
       </div>
       {client && client.mode === mode ? (
-        <Context.Provider key={mode} value={{ client, revision, configureVendor }}>
+        <Context.Provider key={mode} value={{ client, preferences, revision, configureVendor }}>
           {children}
         </Context.Provider>
       ) : (

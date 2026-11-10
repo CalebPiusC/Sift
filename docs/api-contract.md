@@ -193,6 +193,8 @@ export interface Customer extends Entity {
   createdAt: ISODate;
 }
 export interface Conversation extends Entity {
+  assignedTo: ID | null;
+  assignedName: string | null;
   stage: LeadStage;
   threadUrl: string | null;
   suggestedReplies: string[];
@@ -310,7 +312,7 @@ export interface Receipt extends Entity {
 export interface ChannelAccount extends Entity {
   channel: Channel;
   displayName: string;
-  status: 'connected' | 'disconnected';
+  status: 'connected' | 'disconnected' | 'expired';
   ownAccount: boolean;
 }
 export type AutoIntent =
@@ -322,6 +324,9 @@ export type AutoIntent =
   | 'order_status'
   | 'alternatives';
 export interface BusinessSettings extends Entity {
+  replyLanguages: import('./settings-types').AppLanguage[];
+  businessHours: import('./settings-types').BusinessHours;
+  preferences: import('./settings-types').Preferences;
   businessName: string;
   businessType: BusinessType;
   tone: Tone;
@@ -336,6 +341,10 @@ export interface TeamMember extends Entity {
   status: 'active' | 'invited';
 }
 export interface Billing extends Entity {
+  offers: import('./settings-types').BillingOffer[];
+  selectedOfferId: ID | null;
+  trialEndsAt: ISODate;
+  bundleBalance: number;
   plan: 'starter' | 'growth';
   status: 'trial' | 'active' | 'past_due';
   monthlyPriceKobo: Kobo;
@@ -398,6 +407,7 @@ export type Unsubscribe = () => void;
 ### Interfaces
 
 ```ts
+import type { HelperLink, ChannelAttempt, AuditEntry } from './settings-types';
 import type { CatalogueMutations, Category, StockFilter } from './catalogue-types';
 import type {
   Approval,
@@ -485,6 +495,11 @@ export interface CustomersData {
 }
 export interface ChannelsData {
   list(): Promise<Result<ChannelAccount[]>>;
+  begin(input: { channel: ChannelAccount['channel'] }): Promise<Result<ChannelAttempt>>;
+  complete(input: { attemptId: ID }): Promise<Result<ChannelAccount>>;
+  helper(): Promise<Result<HelperLink | null>>;
+  newHelperCode(): Promise<Result<HelperLink>>;
+  confirmHelper(input: { id: ID }): Promise<Result<HelperLink>>;
 }
 export interface SettingsData {
   get(): Promise<Result<BusinessSettings>>;
@@ -498,6 +513,9 @@ export interface SettingsData {
         | 'autoNegotiation'
         | 'autoIntents'
         | 'deliveryFees'
+        | 'replyLanguages'
+        | 'businessHours'
+        | 'preferences'
       >
     >,
   ): Promise<Result<BusinessSettings>>;
@@ -506,6 +524,9 @@ export interface InsightsData {
   get(): Promise<Result<Insights>>;
 }
 export interface TeamData {
+  setRole(input: { id: ID; role: Exclude<Role, 'owner'> }): Promise<Result<TeamMember>>;
+  assign(input: { conversationId: ID; memberId: ID | null }): Promise<Result<Conversation>>;
+  audit(): Promise<Result<AuditEntry[]>>;
   list(): Promise<Result<TeamMember[]>>;
   invite(input: {
     name: string;
@@ -514,6 +535,7 @@ export interface TeamData {
   }): Promise<Result<TeamMember>>;
 }
 export interface BillingData {
+  selectOffer(input: { offerId: ID }): Promise<Result<Billing>>;
   get(): Promise<Result<Billing>>;
 }
 export interface RealtimeData {
@@ -525,6 +547,7 @@ export interface MockControls {
     conversationId: ID;
     scenario?: 'greeting' | 'product' | 'ready_to_pay' | 'approval' | 'voice' | 'order';
   }): Promise<Result<Message>>;
+  simulateInviteAccepted(input: { memberId: ID }): Promise<Result<TeamMember>>;
   simulatePaymentScreenshot(input: { orderId: ID }): Promise<Result<Order>>;
   failNext(area: DataEvent['area']): Promise<Result<null>>;
 }
@@ -611,4 +634,70 @@ export interface CatalogueMutations {
 }
 ```
 
+### Settings additions
+
+```ts
+import type { Entity, ID, ISODate, Channel, Kobo } from './types';
+export type AppLanguage = 'en' | 'pcm';
+export interface Preferences {
+  lowData: boolean;
+  darkMode: boolean;
+  language: AppLanguage;
+  notifications: { readyToPay: boolean; needsYou: boolean };
+}
+export interface BusinessHours {
+  enabled: boolean;
+  timezone: 'Africa/Lagos';
+  days: { day: number; closed: boolean; opens: string; closes: string }[];
+  awayMessage: string;
+}
+export interface HelperLink {
+  id: ID;
+  code: string;
+  expiresAt: ISODate;
+  status: 'pending' | 'linked';
+  helperNumber: string | null;
+}
+export interface ChannelAttempt {
+  id: ID;
+  channel: Channel;
+  expiresAt: ISODate;
+  status: 'pending' | 'completed';
+}
+export interface AuditEntry extends Entity {
+  actorName: string;
+  action: string;
+  subject: string;
+  at: ISODate;
+}
+export interface BillingOffer {
+  id: ID;
+  name: string;
+  kind: 'monthly' | 'yearly' | 'volume' | 'bundle';
+  priceKobo: Kobo;
+  conversations: number;
+  description: string;
+}
+```
+
 <!-- generated-contract:end -->
+
+## F5 configuration semantics (backend handoff, not implemented)
+
+Channel `begin` creates a ten-minute latest-attempt-only authorisation flow; `complete`
+returns own-account status. TikTok completion returns `NOT_IMPLEMENTED`. Helper
+`newHelperCode` replaces any prior four-digit code and expires at ten minutes;
+`confirmHelper` is mock-only UI simulation. API UI checks status instead of pretending
+that clicking a button authorises the link. A configured number is nullable, never invented.
+Helper linking must never connect or send customer-channel messages.
+
+Settings updates allow only supported intents, tones, reply languages, seven unique
+same-day Africa/Lagos hours, bounded away message and typed preferences. Tenant identity
+cannot be changed. Negotiation is off by default and never undercuts stored floors.
+Team assignment accepts only active same-vendor members or null; owner is protected.
+Real invitations, authentication, role checks, immutable durable audit and helper code
+rate limits/secret storage require backend work before production.
+
+Billing offer selection is not checkout and grants no entitlement. Usage/trial and sample
+prices are illustrative. Verified Paystack payments and entitlements remain backend-owned.
+Preferences are per-workspace in-memory in mock; API adapter does not fall back to mock.

@@ -1,6 +1,7 @@
 import type { createSeed } from './seed';
 import type { DataEvent, ID, Message, Result } from './types';
 import type { MockControls } from './contract';
+import { isBusinessOpen } from './settings-logic';
 import { humanMode } from './inbox-logic';
 import { naira } from './money';
 type Context = {
@@ -107,6 +108,11 @@ export function inboxSimulator(
         emit('approvals', a.id, 'created');
         return;
       }
+      if (!isBusinessOpen(state.settings.businessHours)) {
+        if (state.settings.autoIntents.includes('greeting'))
+          addMessage(c.id, state.settings.businessHours.awayMessage, 'ai');
+        return;
+      }
       if (scenario === 'product') {
         if (!state.settings.autoIntents.includes('price')) return;
         const p = state.products.find((p) => !p.archived && p.name === 'Indigo Adire Set');
@@ -144,7 +150,11 @@ export function inboxSimulator(
       if (state.settings.autoIntents.includes('greeting'))
         addMessage(
           c.id,
-          `Hello! Welcome to ${state.settings.businessName}. How can we help you today?`,
+          state.settings.replyLanguages.length === 1 && state.settings.replyLanguages[0] === 'pcm'
+            ? `Welcome to ${state.settings.businessName}! How we fit help you today?`
+            : state.settings.tone === 'professional'
+              ? `Good day. Welcome to ${state.settings.businessName}. How may we assist you?`
+              : `Hello! Welcome to ${state.settings.businessName}. How can we help you today?`,
           'ai',
         );
     }, ctx.replyDelayMs);

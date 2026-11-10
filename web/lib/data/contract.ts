@@ -1,3 +1,4 @@
+import type { HelperLink, ChannelAttempt, AuditEntry } from './settings-types';
 import type { CatalogueMutations, Category, StockFilter } from './catalogue-types';
 import type {
   Approval,
@@ -85,6 +86,11 @@ export interface CustomersData {
 }
 export interface ChannelsData {
   list(): Promise<Result<ChannelAccount[]>>;
+  begin(input: { channel: ChannelAccount['channel'] }): Promise<Result<ChannelAttempt>>;
+  complete(input: { attemptId: ID }): Promise<Result<ChannelAccount>>;
+  helper(): Promise<Result<HelperLink | null>>;
+  newHelperCode(): Promise<Result<HelperLink>>;
+  confirmHelper(input: { id: ID }): Promise<Result<HelperLink>>;
 }
 export interface SettingsData {
   get(): Promise<Result<BusinessSettings>>;
@@ -98,6 +104,9 @@ export interface SettingsData {
         | 'autoNegotiation'
         | 'autoIntents'
         | 'deliveryFees'
+        | 'replyLanguages'
+        | 'businessHours'
+        | 'preferences'
       >
     >,
   ): Promise<Result<BusinessSettings>>;
@@ -106,6 +115,9 @@ export interface InsightsData {
   get(): Promise<Result<Insights>>;
 }
 export interface TeamData {
+  setRole(input: { id: ID; role: Exclude<Role, 'owner'> }): Promise<Result<TeamMember>>;
+  assign(input: { conversationId: ID; memberId: ID | null }): Promise<Result<Conversation>>;
+  audit(): Promise<Result<AuditEntry[]>>;
   list(): Promise<Result<TeamMember[]>>;
   invite(input: {
     name: string;
@@ -114,6 +126,7 @@ export interface TeamData {
   }): Promise<Result<TeamMember>>;
 }
 export interface BillingData {
+  selectOffer(input: { offerId: ID }): Promise<Result<Billing>>;
   get(): Promise<Result<Billing>>;
 }
 export interface RealtimeData {
@@ -125,6 +138,7 @@ export interface MockControls {
     conversationId: ID;
     scenario?: 'greeting' | 'product' | 'ready_to_pay' | 'approval' | 'voice' | 'order';
   }): Promise<Result<Message>>;
+  simulateInviteAccepted(input: { memberId: ID }): Promise<Result<TeamMember>>;
   simulatePaymentScreenshot(input: { orderId: ID }): Promise<Result<Order>>;
   failNext(area: DataEvent['area']): Promise<Result<null>>;
 }

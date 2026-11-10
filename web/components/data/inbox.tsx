@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useDataClient } from './provider';
 import { useResource } from '../../lib/data/use-resource';
 import { ResourceView, panel, useAction } from './shared';
@@ -12,7 +12,7 @@ import type { NotificationPreferences } from '../inbox/notifications';
 import { Notifications } from '../inbox/notifications';
 import { messageTime } from '../inbox/message-bubble';
 export function InboxPanel() {
-  const { client } = useDataClient();
+  const { client, preferences } = useDataClient();
   const [channel, setChannel] = useState<Channel | ''>('');
   const [stage, setStage] = useState<LeadStage | ''>('');
   const [needsMe, setNeedsMe] = useState(false);
@@ -26,6 +26,40 @@ export function InboxPanel() {
     needs: true,
     read: new Set(),
   });
+  useEffect(
+    () =>
+      setNotificationPreferences((p) => ({
+        ...p,
+        ready: preferences.notifications.readyToPay,
+        needs: preferences.notifications.needsYou,
+      })),
+    [preferences.notifications.readyToPay, preferences.notifications.needsYou],
+  );
+  const updateNotificationPreferences: typeof setNotificationPreferences = (update) => {
+    const next = typeof update === 'function' ? update(notificationPreferences) : update;
+    setNotificationPreferences(next);
+    if (
+      next.ready !== notificationPreferences.ready ||
+      next.needs !== notificationPreferences.needs
+    )
+      void action
+        .run(() =>
+          client.settings.update({
+            preferences: {
+              ...preferences,
+              notifications: { readyToPay: next.ready, needsYou: next.needs },
+            },
+          }),
+        )
+        .then((result) => {
+          if (!result.ok)
+            setNotificationPreferences((p) => ({
+              ...p,
+              ready: preferences.notifications.readyToPay,
+              needs: preferences.notifications.needsYou,
+            }));
+        });
+  };
   const conversations = useResource(
     useCallback(
       () =>
@@ -124,7 +158,7 @@ export function InboxPanel() {
                 {(a) => (
                   <Notifications
                     preferences={notificationPreferences}
-                    setPreferences={setNotificationPreferences}
+                    setPreferences={updateNotificationPreferences}
                     conversations={p.items}
                     approvals={a.items}
                     onOpen={open}
@@ -247,6 +281,11 @@ export function InboxPanel() {
                               <span className="my-1 block truncate text-xs text-slate-500">
                                 {c.lastMessage}
                               </span>
+                              {c.assignedName && (
+                                <span className="mb-1 block text-[10px] text-slate-500">
+                                  Assigned to {c.assignedName}
+                                </span>
+                              )}
                               <span className="flex flex-wrap items-center gap-1 text-[9px] font-semibold">
                                 <span className="rounded-full bg-slate-100 px-2 py-1 dark:bg-slate-800">
                                   {stages[c.stage]}

@@ -10,7 +10,7 @@ import { OnboardingScreen } from './onboarding-screen';
 import { AppShell } from './app-shell';
 import { useDataClient } from './data/provider';
 export function Workspace() {
-  const { client, configureVendor } = useDataClient();
+  const { client, preferences, configureVendor } = useDataClient();
   const sample = client.mode === 'mock';
   const [stage, setStage] = useState<'loading' | 'auth' | 'onboard' | 'app'>(
     sample ? 'app' : 'loading',
@@ -42,7 +42,7 @@ export function Workspace() {
   const [install, setInstall] = useState<InstallEvent | null>(null);
   const [preview, setPreview] = useState(false);
   useEffect(() => {
-    const saved = localStorage.getItem('selvora-theme') === 'dark';
+    const saved = sample ? preferences.darkMode : localStorage.getItem('selvora-theme') === 'dark';
     setDark(saved);
     document.documentElement.classList.toggle('dark', saved);
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -106,7 +106,16 @@ export function Workspace() {
   useEffect(() => {
     if (!sample) configureVendor(vendor?.id ?? '');
   }, [vendor?.id, sample, configureVendor]);
+  useEffect(() => {
+    if (sample) setDark(preferences.darkMode);
+  }, [sample, preferences.darkMode]);
   const theme = () => {
+    if (sample) {
+      void client.settings.update({
+        preferences: { ...preferences, darkMode: !preferences.darkMode },
+      });
+      return;
+    }
     setDark(!dark);
     document.documentElement.classList.toggle('dark', !dark);
     localStorage.setItem('selvora-theme', !dark ? 'dark' : 'light');

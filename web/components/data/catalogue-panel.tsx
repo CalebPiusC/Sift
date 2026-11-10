@@ -11,7 +11,7 @@ import { AddFlow } from '../catalogue/add-flow';
 import { ProductDetail } from '../catalogue/detail';
 import { TypedEdit } from '../catalogue/typed-edit';
 export function CataloguePanel() {
-  const { client } = useDataClient();
+  const { client, preferences } = useDataClient();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<Category | ''>('');
   const [stock, setStock] = useState<StockFilter | ''>('');
@@ -114,7 +114,7 @@ export function CataloguePanel() {
                     className={`${panel} min-h-48 text-left transition hover:border-indigo-300`}
                   >
                     <div className="mb-4 grid h-28 place-items-center overflow-hidden rounded-xl bg-indigo-50 text-indigo-500 dark:bg-indigo-950">
-                      {p.photos[0] ? (
+                      {p.photos[0] && !preferences.lowData ? (
                         <img
                           src={p.photos[0].url}
                           alt={p.name}

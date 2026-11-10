@@ -44,6 +44,8 @@ export interface Customer extends Entity {
   createdAt: ISODate;
 }
 export interface Conversation extends Entity {
+  assignedTo: ID | null;
+  assignedName: string | null;
   stage: LeadStage;
   threadUrl: string | null;
   suggestedReplies: string[];
@@ -161,7 +163,7 @@ export interface Receipt extends Entity {
 export interface ChannelAccount extends Entity {
   channel: Channel;
   displayName: string;
-  status: 'connected' | 'disconnected';
+  status: 'connected' | 'disconnected' | 'expired';
   ownAccount: boolean;
 }
 export type AutoIntent =
@@ -173,6 +175,9 @@ export type AutoIntent =
   | 'order_status'
   | 'alternatives';
 export interface BusinessSettings extends Entity {
+  replyLanguages: import('./settings-types').AppLanguage[];
+  businessHours: import('./settings-types').BusinessHours;
+  preferences: import('./settings-types').Preferences;
   businessName: string;
   businessType: BusinessType;
   tone: Tone;
@@ -187,6 +192,10 @@ export interface TeamMember extends Entity {
   status: 'active' | 'invited';
 }
 export interface Billing extends Entity {
+  offers: import('./settings-types').BillingOffer[];
+  selectedOfferId: ID | null;
+  trialEndsAt: ISODate;
+  bundleBalance: number;
   plan: 'starter' | 'growth';
   status: 'trial' | 'active' | 'past_due';
   monthlyPriceKobo: Kobo;

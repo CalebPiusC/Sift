@@ -169,11 +169,33 @@ export function createApiClient(options: {
           'PATCH',
         ),
     },
-    channels: { list: () => request('channels') },
+    channels: {
+      list: () => request('channels'),
+      begin: (i) => request('channels/connections', i, 'POST'),
+      complete: (i) => request(`channels/connections/${key(i.attemptId)}/complete`, {}, 'POST'),
+      helper: () => request('channels/whatsapp/helper'),
+      newHelperCode: () => request('channels/whatsapp/helper/codes', {}, 'POST'),
+      confirmHelper: (i) =>
+        request(`channels/whatsapp/helper/codes/${key(i.id)}/confirm`, {}, 'POST'),
+    },
     settings: { get: () => request('settings'), update: (i) => request('settings', i, 'PATCH') },
     insights: { get: () => request('insights') },
-    team: { list: () => request('team'), invite: (i) => request('team/invitations', i, 'POST') },
-    billing: { get: () => request('billing') },
+    team: {
+      list: () => request('team'),
+      invite: (i) => request('team/invitations', i, 'POST'),
+      setRole: (i) => request(`team/${key(i.id)}/role`, { role: i.role }, 'PATCH'),
+      assign: (i) =>
+        request(
+          `conversations/${key(i.conversationId)}/assignment`,
+          { memberId: i.memberId },
+          'PATCH',
+        ),
+      audit: () => request('team/audit'),
+    },
+    billing: {
+      get: () => request('billing'),
+      selectOffer: (i) => request('billing/selection', i, 'PATCH'),
+    },
     realtime: {
       subscribe: async () => ({
         ok: false,
