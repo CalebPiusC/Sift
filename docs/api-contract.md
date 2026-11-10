@@ -1,6 +1,6 @@
 # Selvora frontend data contract — F1/F2
 
-**Status:** frontend contract and in-memory adapter implemented. Backend endpoints below are a target, **not a claim that they exist**. F1/F2 change no FastAPI routes or database migrations.
+**Status:** frontend contract and in-memory adapter implemented. Backend endpoints below are a target, **not a claim that they exist**. F1/F2/F3 change no FastAPI routes or database migrations.
 
 ## Selecting the implementation
 
@@ -105,6 +105,22 @@ All six additional operations are typed in `catalogue-types.ts`, extended by `Ca
 - `proposeText` only proposes: it stores a session proposal snapshot and returns candidate IDs/names and a plain-word summary. More than one candidate requires a **picker**, never automatic selection. No mutation occurs until `confirmText`. The chosen ID must belong to the proposal and retain its revision; otherwise NOT_FOUND/CONFLICT. Confirmation consumes the proposal, preventing repeat execution. Cancelling sends no mutation.
 - A finished variant product sets all variant stocks to zero, stated in the summary. A positive aggregate stock change on a variant product is rejected with instructions to edit per-variant stock. Untracked stock changes are rejected. A price update sets list and every variant price to the proposed amount, explicitly stated before confirmation, leaving the floor unchanged; below-floor proposals cannot be confirmed. No discounts or negotiation are enabled.
 
+## F3 inbox additions and runtime semantics
+
+Frontend-only: no channel delivery, backend routes, hosted realtime transport or database changes are implemented here. Every operation still returns `Result<T>` and is tenant-scoped by the adapter/session (future backend must enforce authentication/RLS). Customer details never accept vendor IDs or arbitrary property updates.
+
+- `Conversation` adds `stage: LeadStage` (`new | interested | ready_to_pay | paid | cold`), nullable `threadUrl`, and `suggestedReplies: string[]`. `conversations.list` now accepts `stage` and `needsMe` in addition to channel/status/search. Needs me selects pending approvals. Mode is active human only while `humanModeUntil` is future; list/header show it explicitly. Mock expiry clears the field/emits a conversation event. Explicit payment confirmation updates associated conversation stages to paid; ready-to-pay simulation never alters payment state.
+- `setHumanMode` remains PATCH `/conversations/:id/human-mode` with `{until}`. UI takes over for 30 minutes; null hands back. Every delayed mock AI/holding send rechecks the current chat mode and status immediately before sending. It does not pause other chats. Vendor sends and explicit approval decisions remain available while paused. Real backend send-time locking, timeout scheduling, original-account integration and durable queues are future work.
+- `messages.list` remains GET `/messages?conversationId=...`; adds `latest?: boolean`. When true, the mock returns the latest `limit` records in chronological order and the actual calculated offset. Current UI requests latest 100; older-history paging is disclosed as unconnected. Without latest, standard offset behaviour is unchanged.
+- Optional `Message.product` and `Message.order` are immutable-at-send display snapshots (exact types below), not live price/payment lookup sources. Simulator generates them from the active vendor's current catalogue/order records at send time. Product quantities and prices are never invented. Voice bubbles show inbound transcript and original language; no vendor voice recording is offered and sample `audioUrl` is null.
+- `Approval.holdingReplySentAt: ISODate | null` records whether a non-factual holding response has been sent. `holdingReplyDueAt` is five minutes after creation. Seed cards are already one minute old. Mock scheduler checks once per second: only pending, due, open, AI-active chats send a single holding reply; decided cards send nothing. Human mode defers until hand-back/expiry. Browser throttling/session disposal means this is not reliable backend scheduling. A holding send is **not approval**, so the pending card and Needs you badge stay present.
+- `Fact.sourceRevision?: number` enables catalogue-staleness protection. Non-reject approval decisions return CONFLICT if a referenced product revision changed; reject remains allowed. Send/Edit create exactly one vendor message; reject creates none. Repeated decisions return CONFLICT. Edited vendor replies are explicit human decisions, not automatically approved AI assertions. `decide` still posts to `/approvals/:id/decision` with action and optional editedReply.
+- `Customer` adds `notes`, `tags`, `flagged`. New `customers.update({id,notes,tags,flagged})` maps to PATCH `/customers/:id` with `{notes,tags,flagged}` and returns `Customer`. Notes ≤2,000 chars; ≤10 tags, each trimmed 1–30 chars (deduplicated); flagged boolean. Only those three fields can change. Spam/scam flag is private metadata—not channel blocking/reporting or automatic AI pause. Past orders are looked up by customer ID, never customer name.
+- Deep links must be HTTPS on the selected channel's allowed host (or `mailto:` for Email); unsafe/unrelated links fall back to the relevant channel inbox/email app. Sample records have null thread URLs; the UI explicitly says the fallback is not an exact chat link. The app never invents a recipient phone number or social handle.
+- In-app notifications are derived from current ready-to-pay conversations and pending approvals. Only these two types are enabled by default; read IDs/preferences are UI state across inbox tabs, not persisted notifications or browser push. No API notification endpoints are implied.
+- Developer-only `simulateIncoming` adds optional scenario: greeting/product/ready_to_pay/approval/voice/order. It defaults to greeting for existing callers, emits customer + delayed eligible AI/approval events, respects enabled AUTO intents and checks takeover at send time. Ready-to-pay creates an unverified-facts approval because there are no verified bank instructions. Unsupported intent/bulk decisions never silently send an AI promise. Mock timers and listeners are disposed on session end.
+- Resource refetches retain successful content during realtime refresh (rather than unmounting forms on every event), discard stale request results, and expose safe retry errors. Query changes still show loading. This prevents unsent replies and edited customer details from disappearing mid-interaction.
+
 ## Exact exported entities and interfaces
 
 <!-- generated-contract:start -->
@@ -145,7 +161,11 @@ export interface Product extends Entity {
   archived: boolean;
   revision: number;
 }
+export type LeadStage = 'new' | 'interested' | 'ready_to_pay' | 'paid' | 'cold';
 export interface Customer extends Entity {
+  notes: string;
+  tags: string[];
+  flagged: boolean;
   name: string;
   email: string | null;
   phone: string | null;
@@ -154,6 +174,9 @@ export interface Customer extends Entity {
   createdAt: ISODate;
 }
 export interface Conversation extends Entity {
+  stage: LeadStage;
+  threadUrl: string | null;
+  suggestedReplies: string[];
   customerId: ID;
   customerName: string;
   channel: Channel;
@@ -167,6 +190,8 @@ export interface Message extends Entity {
   conversationId: ID;
   sender: 'customer' | 'ai' | 'vendor';
   kind: 'text' | 'voice';
+  product?: Pick<Product, 'id' | 'name' | 'priceKobo' | 'stock' | 'revision'>;
+  order?: Pick<Order, 'id' | 'items' | 'totalKobo' | 'paymentStatus' | 'status'>;
   text: string;
   voice: { durationSeconds: number; transcript: string; audioUrl: string | null } | null;
   status: 'received' | 'sent' | 'pending_approval' | 'blocked';
@@ -185,6 +210,7 @@ export interface Fact {
   label: string;
   value: string;
   sourceId: ID;
+  sourceRevision?: number;
 }
 export interface Approval extends Entity {
   conversationId: ID;
@@ -197,6 +223,7 @@ export interface Approval extends Entity {
   status: 'pending' | 'sent' | 'edited' | 'rejected';
   createdAt: ISODate;
   holdingReplyDueAt: ISODate;
+  holdingReplySentAt: ISODate | null;
 }
 export type OrderStatus =
   'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
@@ -352,14 +379,19 @@ export interface CatalogueData extends CatalogueMutations {
 }
 export interface ConversationsData {
   list(
-    input?: ListInput & { channel?: ChannelAccount['channel']; status?: Conversation['status'] },
+    input?: ListInput & {
+      channel?: ChannelAccount['channel'];
+      status?: Conversation['status'];
+      stage?: Conversation['stage'];
+      needsMe?: boolean;
+    },
   ): Promise<Result<Page<Conversation>>>;
   get(id: ID): Promise<Result<Conversation>>;
   markRead(id: ID): Promise<Result<Conversation>>;
   setHumanMode(input: { id: ID; until: string | null }): Promise<Result<Conversation>>;
 }
 export interface MessagesData {
-  list(input: ListInput & { conversationId: ID }): Promise<Result<Page<Message>>>;
+  list(input: ListInput & { conversationId: ID; latest?: boolean }): Promise<Result<Page<Message>>>;
   send(input: { conversationId: ID; text: string }): Promise<Result<Message>>;
 }
 export interface ApprovalsData {
@@ -384,6 +416,12 @@ export interface ReceiptsData {
 export interface CustomersData {
   list(input?: ListInput): Promise<Result<Page<Customer>>>;
   get(id: ID): Promise<Result<Customer>>;
+  update(input: {
+    id: ID;
+    notes: string;
+    tags: string[];
+    flagged: boolean;
+  }): Promise<Result<Customer>>;
 }
 export interface ChannelsData {
   list(): Promise<Result<ChannelAccount[]>>;
@@ -423,7 +461,10 @@ export interface RealtimeData {
 }
 /** Only mock adapters implement developer simulation; never part of the backend API. */
 export interface MockControls {
-  simulateIncoming(input: { conversationId: ID }): Promise<Result<Message>>;
+  simulateIncoming(input: {
+    conversationId: ID;
+    scenario?: 'greeting' | 'product' | 'ready_to_pay' | 'approval' | 'voice' | 'order';
+  }): Promise<Result<Message>>;
   failNext(area: DataEvent['area']): Promise<Result<null>>;
 }
 export interface DataClient {

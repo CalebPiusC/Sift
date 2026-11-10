@@ -300,6 +300,11 @@ it('API adapter maps every contract operation and preserves typed error envelope
     [() => c.billing.get(), 'billing', 'GET'],
   ];
   cases.push([
+    () => c.customers.update({ id: 'c', notes: 'Note', tags: ['VIP'], flagged: true }),
+    'customers/c',
+    'PATCH',
+  ]);
+  cases.push([
     () =>
       c.catalogue.update({ id: 'p', expectedRevision: 1, product: fakeExtract('Accessories', 0) }),
     'catalogue/p',

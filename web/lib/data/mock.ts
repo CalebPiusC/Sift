@@ -1,3 +1,5 @@
+import { inboxSimulator } from './inbox-simulator';
+import { humanMode } from './inbox-logic';
 import { catalogueMock } from './catalogue-mock';
 import type { DataClient } from './contract';
 import type {
@@ -98,6 +100,52 @@ export function createMockClient(
     emit('insights', vendorId);
     return ok(message);
   };
+  const later = (work: () => void, ms: number) => {
+    const timer = setTimeout(() => {
+      timers.delete(timer);
+      if (!disposed) work();
+    }, ms);
+    timers.add(timer);
+  };
+  const simulate = inboxSimulator({
+    state,
+    vendorId,
+    id,
+    emit,
+    addMessage,
+    later,
+    replyDelayMs: options.replyDelayMs ?? 1200,
+  });
+  function tick() {
+    for (const c of state.conversations) {
+      if (c.humanModeUntil && Date.parse(c.humanModeUntil) <= Date.now()) {
+        c.humanModeUntil = null;
+        emit('conversations', c.id);
+      }
+    }
+    for (const a of state.approvals) {
+      const c = state.conversations.find((c) => c.id === a.conversationId);
+      if (
+        a.status === 'pending' &&
+        !a.holdingReplySentAt &&
+        Date.parse(a.holdingReplyDueAt) <= Date.now() &&
+        c?.status === 'open' &&
+        !humanMode(c)
+      ) {
+        const r = addMessage(
+          c.id,
+          'Thanks for your patience. Our team will respond shortly.',
+          'ai',
+        );
+        if (r.ok) {
+          a.holdingReplySentAt = r.data.createdAt;
+          emit('approvals', a.id);
+        }
+      }
+    }
+    later(tick, 1000);
+  }
+  later(tick, 1000);
   const client: DataClient = {
     mode: 'mock',
     vendorId,
@@ -111,6 +159,11 @@ export function createMockClient(
                 (c) =>
                   (!input?.channel || c.channel === input.channel) &&
                   (!input?.status || c.status === input.status) &&
+                  (!input?.stage || c.stage === input.stage) &&
+                  (!input?.needsMe ||
+                    state.approvals.some(
+                      (a) => a.conversationId === c.id && a.status === 'pending',
+                    )) &&
                   matches(`${c.customerName} ${c.lastMessage}`, input),
               )
               .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
@@ -142,16 +195,17 @@ export function createMockClient(
     },
     messages: {
       list: (input) =>
-        run('messages', () =>
-          state.conversations.some((c) => c.id === input.conversationId)
-            ? page(
-                state.messages
-                  .filter((m) => m.conversationId === input.conversationId)
-                  .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-                input,
-              )
-            : fail('NOT_FOUND', 'Conversation not found.'),
-        ),
+        run('messages', () => {
+          if (!state.conversations.some((c) => c.id === input.conversationId))
+            return fail('NOT_FOUND', 'Conversation not found.');
+          const rows = state.messages
+            .filter((m) => m.conversationId === input.conversationId)
+            .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+          return page(rows, {
+            ...input,
+            offset: input.latest ? Math.max(0, rows.length - (input.limit ?? 50)) : input.offset,
+          });
+        }),
       send: (input) =>
         run('messages', () => addMessage(input.conversationId, input.text, 'vendor')),
     },
@@ -178,6 +232,18 @@ export function createMockClient(
           const text = input.action === 'edit' ? input.editedReply?.trim() : a.proposedReply;
           if (input.action !== 'reject' && (!text || text.length > 4000))
             return fail('VALIDATION', 'Provide a reply of 1 to 4,000 characters.');
+          if (
+            input.action !== 'reject' &&
+            a.facts.some(
+              (f) =>
+                f.sourceRevision !== undefined &&
+                state.products.find((p) => p.id === f.sourceId)?.revision !== f.sourceRevision,
+            )
+          )
+            return fail(
+              'CONFLICT',
+              'Catalogue facts changed. Reject this card and request a fresh proposal.',
+            );
           if (input.action !== 'reject') {
             const message = addMessage(a.conversationId, text!, 'vendor');
             if (!message.ok) return message;
@@ -186,6 +252,7 @@ export function createMockClient(
           a.status =
             input.action === 'send' ? 'sent' : input.action === 'edit' ? 'edited' : 'rejected';
           emit('approvals', a.id);
+          emit('conversations', a.conversationId);
           emit('insights', vendorId);
           return ok(a);
         }),
@@ -237,6 +304,10 @@ export function createMockClient(
           if (o.paymentStatus === 'unpaid') {
             o.paymentStatus = 'paid';
             o.paymentSource = 'vendor';
+            for (const c of state.conversations.filter((c) => c.customerId === o.customerId)) {
+              c.stage = 'paid';
+              emit('conversations', c.id);
+            }
             emit('orders', o.id);
             emit('insights', vendorId);
           }
@@ -278,6 +349,28 @@ export function createMockClient(
           ),
         ),
       get: (key) => run('customers', () => find(state.customers, key)),
+      update: (input) =>
+        run('customers', () => {
+          const c = state.customers.find((c) => c.id === input.id);
+          if (!c) return fail('NOT_FOUND', 'Customer not found.');
+          if (
+            typeof input.notes !== 'string' ||
+            input.notes.length > 2000 ||
+            !Array.isArray(input.tags) ||
+            input.tags.length > 10 ||
+            input.tags.some((t) => typeof t !== 'string' || !t.trim() || t.length > 30) ||
+            typeof input.flagged !== 'boolean'
+          )
+            return fail(
+              'VALIDATION',
+              'Use notes up to 2,000 characters and at most ten tags of 1–30 characters.',
+            );
+          c.notes = input.notes.trim();
+          c.tags = [...new Set(input.tags.map((t) => t.trim()))];
+          c.flagged = input.flagged;
+          emit('customers', c.id);
+          return ok(c);
+        }),
     },
     channels: { list: () => run('channels', () => ok(state.channels)) },
     settings: {
@@ -393,32 +486,7 @@ export function createMockClient(
       },
     },
     developer: {
-      simulateIncoming: (input) =>
-        run('messages', () => {
-          const incoming = addMessage(
-            input.conversationId,
-            'Hello! Good afternoon, please.',
-            'customer',
-          );
-          if (!incoming.ok) return incoming;
-          const timer = setTimeout(() => {
-            timers.delete(timer);
-            const c = state.conversations.find((c) => c.id === input.conversationId);
-            if (
-              !disposed &&
-              c?.status === 'open' &&
-              state.settings.autoIntents.includes('greeting') &&
-              (!c.humanModeUntil || Date.parse(c.humanModeUntil) <= Date.now())
-            )
-              addMessage(
-                input.conversationId,
-                `Hello! Welcome to ${state.settings.businessName}. How can we help you today?`,
-                'ai',
-              );
-          }, options.replyDelayMs ?? 1200);
-          timers.add(timer);
-          return incoming;
-        }),
+      simulateIncoming: (input) => run('messages', () => simulate(input)),
       failNext: async (area) => {
         failures.add(area);
         return ok(null);

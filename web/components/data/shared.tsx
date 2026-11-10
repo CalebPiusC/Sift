@@ -3,13 +3,7 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import type { DataError, Resource, Result } from '../../lib/data';
 import { Button } from '../ui/button';
-export const naira = (kobo: number) =>
-  new Intl.NumberFormat('en-NG', {
-    style: 'currency',
-    currency: 'NGN',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(kobo / 100);
+export { naira } from '../../lib/data/money';
 export const panel =
   'rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900';
 export function ResourceView<T>({

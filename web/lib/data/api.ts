@@ -152,6 +152,12 @@ export function createApiClient(options: {
     customers: {
       list: (i) => request(`customers${query(i)}`),
       get: (id) => request(`customers/${key(id)}`),
+      update: (i) =>
+        request(
+          `customers/${key(i.id)}`,
+          { notes: i.notes, tags: i.tags, flagged: i.flagged },
+          'PATCH',
+        ),
     },
     channels: { list: () => request('channels') },
     settings: { get: () => request('settings'), update: (i) => request('settings', i, 'PATCH') },

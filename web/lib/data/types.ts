@@ -31,7 +31,11 @@ export interface Product extends Entity {
   archived: boolean;
   revision: number;
 }
+export type LeadStage = 'new' | 'interested' | 'ready_to_pay' | 'paid' | 'cold';
 export interface Customer extends Entity {
+  notes: string;
+  tags: string[];
+  flagged: boolean;
   name: string;
   email: string | null;
   phone: string | null;
@@ -40,6 +44,9 @@ export interface Customer extends Entity {
   createdAt: ISODate;
 }
 export interface Conversation extends Entity {
+  stage: LeadStage;
+  threadUrl: string | null;
+  suggestedReplies: string[];
   customerId: ID;
   customerName: string;
   channel: Channel;
@@ -53,6 +60,8 @@ export interface Message extends Entity {
   conversationId: ID;
   sender: 'customer' | 'ai' | 'vendor';
   kind: 'text' | 'voice';
+  product?: Pick<Product, 'id' | 'name' | 'priceKobo' | 'stock' | 'revision'>;
+  order?: Pick<Order, 'id' | 'items' | 'totalKobo' | 'paymentStatus' | 'status'>;
   text: string;
   voice: { durationSeconds: number; transcript: string; audioUrl: string | null } | null;
   status: 'received' | 'sent' | 'pending_approval' | 'blocked';
@@ -71,6 +80,7 @@ export interface Fact {
   label: string;
   value: string;
   sourceId: ID;
+  sourceRevision?: number;
 }
 export interface Approval extends Entity {
   conversationId: ID;
@@ -83,6 +93,7 @@ export interface Approval extends Entity {
   status: 'pending' | 'sent' | 'edited' | 'rejected';
   createdAt: ISODate;
   holdingReplyDueAt: ISODate;
+  holdingReplySentAt: ISODate | null;
 }
 export type OrderStatus =
   'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';

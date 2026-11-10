@@ -18,7 +18,8 @@ it('renders sample data on every destination and simulates live customer + AI me
   );
   expect(screen.getByTestId('sample-label')).toHaveTextContent('Sample data');
   await screen.findByText('40 conversations');
-  expect(await screen.findByText(/Sample transcript:/)).toBeInTheDocument();
+  await user.click(screen.getAllByTestId('conversation-row')[0]);
+  expect(await screen.findByText(/Transcript:/)).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Simulate incoming message' }));
   await within(screen.getByLabelText('Chat messages')).findByText('Hello! Good afternoon, please.');
   await waitFor(

@@ -1,6 +1,6 @@
 # Selvora
 
-A mobile-first workspace for Nigerian online vendors. **Current work: F2 catalogue screens, on the F1 frontend data layer.** Backend work is paused while the frontend is completed.
+A mobile-first workspace for Nigerian online vendors. **Current work: F3 mobile-first inbox, on the F1 data layer and F2 catalogue.** Backend work is paused while the frontend is completed.
 
 Replaces the previous LeadBot prototype. Includes Next.js/TypeScript/Tailwind with a shadcn-style Radix button, FastAPI, Supabase auth, PostgreSQL tenant isolation, four-screen onboarding, responsive navigation, dark mode, and an installable PWA.
 
@@ -48,9 +48,37 @@ Use `DATA_MODE=mock`, open **Catalogue**, then **Add products**.
 
 The catalogue has search/category/stock filters, four stock badges, product detail/edit with photos, variant stock, a low-stock threshold, and archive/restore with confirmation. Typed quick edits propose first: try **black sneakers finished**, **set black sneakers stock to 8**, or **raise adire price to 30k** (the last requires picking one of two matches). Confirming is mandatory; price floors and revision conflicts are enforced. Archived products disappear from active searches without touching order/receipt history.
 
-Automated interaction tests cover ten-photo creation and a typed stock update in a 390px component container. A real Chromium mobile-layout check was attempted but blocked by missing sandbox system library `libnspr4.so`; actual browser/device layout validation remains outstanding.
+Automated interaction tests cover ten-photo creation and a typed stock update in a 390px component container. The F2 browser check was initially blocked by missing `libnspr4.so`. F3 resolves that test-harness blocker and exercises the inbox in real Chromium; the F2 ten-item flow retains its component-level acceptance coverage.
 
 Mock changes/photos live only in browser-session memory. API mode has the exact typed target operations but **no new backend endpoints, real image extraction, Storage upload or persistence**. The backend remains paused.
+
+## F3 inbox: simulate a complete vendor workflow
+
+Run `npm run dev` with `DATA_MODE=mock` and open **Inbox** (the default destination).
+
+- **Inbox** lists 40 Nigerian customer chats across five channels, with last message/time, unread counts, lead stages, AI/human mode and Needs you badges. Combine channel, stage, Needs me and text filters; Reset filters clears them. The mock simulator emits updates to all views.
+- Open **Chidinma Okafor**: original-language Pidgin voice transcript (sample audio unavailable), indigo AI bubbles, white vendor replies, catalogue product and order snapshot cards, and dated messages. Phone conversations occupy the available screen, with a separate message scroll and visible composer. Tap **Back to inbox** to return.
+- Approvals appear both inside their chat and under **Needs you**. Review customer message, product/price/stock/floor facts, reason and proposed reply. **Send**, **Edit → Send edited reply**, or **Reject** are explicit decisions, protected against repeat decisions and changed product revisions.
+- Each pending card shows a five-minute holding-reply countdown (seed cards start one minute into it). At its due time the mock sends one generic holding reply; it never grants a discount or claims payment. It remains pending for your decision. Holding replies defer in human mode and are cancelled if the card is decided first. Background browser throttling may delay timers; this is not a durable scheduler.
+- **Take Over** pauses AI only in that chat for 30 minutes (explicitly shown). **Hand Back** resumes it sooner; expiry also resumes it. Scheduled mock AI replies recheck takeover at send time. The original-channel button accepts trusted channel links. Sample records have no real customer thread URLs, so it opens the channel inbox/email app with an explicit notice, not a fictional exact customer thread.
+- Tap an **AI suggested quick reply** to put safe, non-factual text in the composer; it does **not** send. Send reply is always explicit. Drafts survive realtime updates and switching chats while this inbox is mounted.
+- **Customer details** is a focus-managed mobile drawer with past orders, editable private notes/tags and a possible spam/scam flag. Save is explicit. The flag is private metadata, not blocking/reporting; take over separately to pause AI.
+- **Notifications** defaults to Ready to pay and Needs you only. This is an in-app view of current actionable items, not push notifications/history. Read/preferences persist across inbox tabs while mounted, not across refreshes. Ready to pay is **not** Paid; only the existing explicit vendor/verified payment workflow can confirm payment.
+
+Use **Sample chat scenario** plus the flask button (labelled **Simulate incoming message**) for greeting, product, ready-to-pay, approval, Pidgin voice or order scenarios. Wait around 1.2 seconds for the mock response. Try takeover → greeting (AI stays silent) → hand back → greeting (AI responds). Ready-to-pay requests raise approval because the sample has no verified bank instructions. No real channel messages, AI provider calls, audio recording, payment processing or persistence were added.
+
+```sh
+npm run test:all
+npm run build
+# With the mock app running on port 3000:
+npm run test:mobile
+# Or target another running local/preview URL:
+SELVORA_TEST_URL=http://localhost:3001 npm run test:mobile
+```
+
+`test:mobile` runs real headless Chromium at **390 × 844 with touch enabled**. It checks chat simulation, rich bubbles, Send/Edit/Reject, AI silence in takeover, vendor reply, hand-back/resumed AI, customer drawer, notification defaults, no horizontal overflow and no browser exceptions. Additional layout/composer checks cover 320px/360px phones and 1280px dark-mode desktop. Browser libraries are test-only, provided through npm (Linux x64 CI); no system Chromium install is required. Optional `SELVORA_SCREENSHOT_DIR=/tmp/selvora-shots` saves a review screenshot outside Git. The earlier F2 sandbox-browser-library blocker has been resolved for this test harness; the F2 ten-item path still has its separate component acceptance test.
+
+The current thread shows the latest 100 messages; full older-history pagination is not connected. All mock changes reset on refresh. API mode retains honest missing-endpoint/realtime errors—no sample fallback. See `docs/api-contract.md` for the updated backend targets.
 
 ## Phase 1 auth foundation: real signup → onboarding → workspace (API mode)
 

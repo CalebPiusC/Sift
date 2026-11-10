@@ -138,6 +138,9 @@ export function createSeed(vendorId = SAMPLE_VENDOR): Seed {
     ...base,
     id: `customer-${i + 1}`,
     name,
+    notes: '',
+    tags: i % 4 === 0 ? ['Returning customer'] : [],
+    flagged: false,
     email: `customer${i + 1}@example.test`,
     phone: null,
     city: (['Lagos', 'Abuja', 'Ibadan'] as const)[i % 3],
@@ -149,6 +152,13 @@ export function createSeed(vendorId = SAMPLE_VENDOR): Seed {
     id: `conversation-${i + 1}`,
     customerId: c.id,
     customerName: c.name,
+    stage: (['new', 'interested', 'ready_to_pay', 'paid', 'cold'] as const)[i % 5],
+    threadUrl: null,
+    suggestedReplies: [
+      'Hello! How can I help?',
+      'Let me check that for you.',
+      'Thank you for your patience.',
+    ],
     channel: channelNames[i % 5],
     status: i % 9 === 8 ? 'resolved' : 'open',
     unreadCount: i < 12 ? 1 : 0,
@@ -275,7 +285,20 @@ export function createSeed(vendorId = SAMPLE_VENDOR): Seed {
     conversationId: conversations[i].id,
     messageId: `message-approval-${i + 1}`,
     customerMessage: requests[i],
+    holdingReplySentAt: null,
     facts: [
+      {
+        label: 'Product',
+        value: products[0].name,
+        sourceId: products[0].id,
+        sourceRevision: products[0].revision,
+      },
+      {
+        label: 'Stock',
+        value: String(products[0].stock),
+        sourceId: products[0].id,
+        sourceRevision: products[0].revision,
+      },
       { label: 'List price', value: '₦25,000', sourceId: products[0].id },
       { label: 'Lowest price', value: '₦22,500', sourceId: products[0].id },
     ],
@@ -303,6 +326,53 @@ export function createSeed(vendorId = SAMPLE_VENDOR): Seed {
     const c = conversations.find((c) => c.id === a.conversationId)!;
     c.lastMessage = a.customerMessage;
     c.updatedAt = a.createdAt;
+  }
+  for (const [i, c] of conversations.entries()) {
+    const historical = orders.find(
+      (o) => o.customerId === c.customerId && o.paymentStatus === 'paid',
+    );
+    if (c.stage === 'paid' && !historical) c.stage = 'interested';
+    const p = products[0];
+    messages.push({
+      ...base,
+      id: `shared-product-${i}`,
+      conversationId: c.id,
+      sender: 'ai',
+      kind: 'text',
+      text: 'Here is the item from our catalogue.',
+      voice: null,
+      status: 'sent',
+      language: 'en',
+      createdAt: at(i * 7 + 0.5),
+      product: {
+        id: p.id,
+        name: p.name,
+        priceKobo: p.priceKobo,
+        stock: p.stock,
+        revision: p.revision,
+      },
+    });
+    const order = orders.find((o) => o.customerId === c.customerId);
+    if (order)
+      messages.push({
+        ...base,
+        id: `shared-order-${i}`,
+        conversationId: c.id,
+        sender: 'ai',
+        kind: 'text',
+        text: 'Your order summary.',
+        voice: null,
+        status: 'sent',
+        language: 'en',
+        createdAt: order.createdAt,
+        order: {
+          id: order.id,
+          items: structuredClone(order.items),
+          totalKobo: order.totalKobo,
+          paymentStatus: order.paymentStatus,
+          status: order.status,
+        },
+      });
   }
   return {
     products,

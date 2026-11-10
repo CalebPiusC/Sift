@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { Resource, Result } from './types';
 import { useDataClient } from '../../components/data/provider';
 export function useResource<T>(
@@ -8,9 +8,13 @@ export function useResource<T>(
   const { revision } = useDataClient();
   const [attempt, retry] = useState(0);
   const [state, setState] = useState<Resource<T>>({ status: 'loading', data: null, error: null });
+  const previousLoad = useRef(load);
   useEffect(() => {
     let active = true;
-    setState({ status: 'loading', data: null, error: null });
+    if (previousLoad.current !== load) {
+      setState({ status: 'loading', data: null, error: null });
+      previousLoad.current = load;
+    }
     void load()
       .then((result) => {
         if (active)

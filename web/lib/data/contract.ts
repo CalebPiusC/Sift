@@ -31,14 +31,19 @@ export interface CatalogueData extends CatalogueMutations {
 }
 export interface ConversationsData {
   list(
-    input?: ListInput & { channel?: ChannelAccount['channel']; status?: Conversation['status'] },
+    input?: ListInput & {
+      channel?: ChannelAccount['channel'];
+      status?: Conversation['status'];
+      stage?: Conversation['stage'];
+      needsMe?: boolean;
+    },
   ): Promise<Result<Page<Conversation>>>;
   get(id: ID): Promise<Result<Conversation>>;
   markRead(id: ID): Promise<Result<Conversation>>;
   setHumanMode(input: { id: ID; until: string | null }): Promise<Result<Conversation>>;
 }
 export interface MessagesData {
-  list(input: ListInput & { conversationId: ID }): Promise<Result<Page<Message>>>;
+  list(input: ListInput & { conversationId: ID; latest?: boolean }): Promise<Result<Page<Message>>>;
   send(input: { conversationId: ID; text: string }): Promise<Result<Message>>;
 }
 export interface ApprovalsData {
@@ -63,6 +68,12 @@ export interface ReceiptsData {
 export interface CustomersData {
   list(input?: ListInput): Promise<Result<Page<Customer>>>;
   get(id: ID): Promise<Result<Customer>>;
+  update(input: {
+    id: ID;
+    notes: string;
+    tags: string[];
+    flagged: boolean;
+  }): Promise<Result<Customer>>;
 }
 export interface ChannelsData {
   list(): Promise<Result<ChannelAccount[]>>;
@@ -102,7 +113,10 @@ export interface RealtimeData {
 }
 /** Only mock adapters implement developer simulation; never part of the backend API. */
 export interface MockControls {
-  simulateIncoming(input: { conversationId: ID }): Promise<Result<Message>>;
+  simulateIncoming(input: {
+    conversationId: ID;
+    scenario?: 'greeting' | 'product' | 'ready_to_pay' | 'approval' | 'voice' | 'order';
+  }): Promise<Result<Message>>;
   failNext(area: DataEvent['area']): Promise<Result<null>>;
 }
 export interface DataClient {

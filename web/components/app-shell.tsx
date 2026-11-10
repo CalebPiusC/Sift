@@ -150,7 +150,9 @@ export function AppShell({
             {error}
           </p>
         )}
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div
+          className={`${dataConnected && tab === 'Inbox' ? 'hidden' : ''} mb-8 flex flex-wrap items-center justify-between gap-4`}
+        >
           <div>
             <p className="mb-2 text-xs font-medium text-slate-400">YOUR SPACE TO GROW</p>
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">

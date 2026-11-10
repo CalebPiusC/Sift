@@ -1,270 +1,303 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
-import { Mic, Send, Sparkles, FlaskConical } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import { useDataClient } from './provider';
 import { useResource } from '../../lib/data/use-resource';
 import { ResourceView, panel, useAction } from './shared';
-import { Button } from '../ui/button';
-import type { Channel } from '../../lib/data';
+import type { Channel, LeadStage } from '../../lib/data';
+import { humanMode, stages, channelLabels } from '../../lib/data/inbox-logic';
+import { ChannelIcon } from '../inbox/channel-icon';
+import { ApprovalCard } from '../inbox/approval-card';
+import { MessageThread } from '../inbox/thread';
+import type { NotificationPreferences } from '../inbox/notifications';
+import { Notifications } from '../inbox/notifications';
+import { messageTime } from '../inbox/message-bubble';
 export function InboxPanel() {
   const { client } = useDataClient();
   const [channel, setChannel] = useState<Channel | ''>('');
+  const [stage, setStage] = useState<LeadStage | ''>('');
+  const [needsMe, setNeedsMe] = useState(false);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState('');
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [tab, setTab] = useState<'Inbox' | 'Needs you' | 'Notifications'>('Inbox');
+  const action = useAction();
+  const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>({
+    ready: true,
+    needs: true,
+    read: new Set(),
+  });
   const conversations = useResource(
     useCallback(
-      () => client.conversations.list({ channel: channel || undefined, search }),
-      [client, channel, search],
+      () =>
+        client.conversations.list({
+          channel: channel || undefined,
+          stage: stage || undefined,
+          needsMe,
+          search,
+          limit: 100,
+        }),
+      [client, channel, stage, needsMe, search],
     ),
   );
+  const all = useResource(useCallback(() => client.conversations.list({ limit: 100 }), [client]));
   const approvals = useResource(
-    useCallback(() => client.approvals.list({ status: 'pending' }), [client]),
+    useCallback(() => client.approvals.list({ status: 'pending', limit: 100 }), [client]),
   );
-  const firstId = conversations.status === 'success' ? (conversations.data.items[0]?.id ?? '') : '';
-  useEffect(() => {
-    if (!selected && firstId) setSelected(firstId);
-  }, [selected, firstId]);
-  const activeId =
-    selected || (conversations.status === 'success' ? (conversations.data.items[0]?.id ?? '') : '');
-  const action = useAction();
+  function open(id: string) {
+    setSelected(id);
+    setTab('Inbox');
+    void action.run(() => client.conversations.markRead(id));
+  }
+  const pending = approvals.status === 'success' ? approvals.data.items : [];
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="min-w-0 space-y-4">
+      <header className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-xl font-semibold">Your inbox</h2>
-          <p className="mt-1 text-xs text-slate-500">Every channel. One conversation at a time.</p>
+          <p className="mt-1 text-xs text-slate-500">
+            Every channel. Your voice. Nothing important missed.
+          </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {(['', 'whatsapp', 'instagram', 'facebook', 'tiktok', 'email'] as const).map((c) => (
-            <button
-              key={c}
-              onClick={() => setChannel(c)}
-              aria-pressed={channel === c}
-              className={`min-h-11 rounded-full px-3 text-xs capitalize ${channel === c ? 'bg-primary text-white' : 'border border-slate-200 dark:border-slate-700'}`}
-            >
-              {c || 'All channels'}
-            </button>
-          ))}
-        </div>
+        <span className="rounded-full bg-emerald-50 px-3 py-2 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+          {client.mode === 'mock' ? '● Sample live updates' : 'API data mode'}
+        </span>
+      </header>
+      <div role="tablist" aria-label="Inbox views" className="flex gap-2 overflow-x-auto">
+        {(['Inbox', 'Needs you', 'Notifications'] as const).map((t) => (
+          <button
+            key={t}
+            role="tab"
+            tabIndex={tab === t ? 0 : -1}
+            onKeyDown={(e) => {
+              const tabs = ['Inbox', 'Needs you', 'Notifications'] as const;
+              let i = tabs.indexOf(t);
+              if (e.key === 'ArrowRight') i = (i + 1) % 3;
+              else if (e.key === 'ArrowLeft') i = (i + 2) % 3;
+              else if (e.key === 'Home') i = 0;
+              else if (e.key === 'End') i = 2;
+              else return;
+              e.preventDefault();
+              setTab(tabs[i]);
+              e.currentTarget.parentElement
+                ?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+                [i]?.focus();
+            }}
+            aria-selected={tab === t}
+            aria-controls="inbox-view"
+            onClick={() => setTab(t)}
+            className={`min-h-12 shrink-0 rounded-full px-4 text-xs font-semibold ${tab === t ? 'bg-primary text-white' : 'border border-slate-200 dark:border-slate-700'}`}
+          >
+            {t}
+            {t === 'Needs you' && pending.length > 0 ? ` (${pending.length})` : ''}
+          </button>
+        ))}
       </div>
       {action.error && (
         <p role="alert" className="text-xs text-danger">
           {action.error.message}
         </p>
       )}
-      <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
-        <section className={panel}>
-          <label className="text-xs font-medium">
-            Find a conversation
-            <input
-              className="my-3"
-              placeholder="Search customers or messages"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </label>
-          <ResourceView resource={conversations}>
+      <div id="inbox-view" role="tabpanel" aria-label={tab}>
+        {tab === 'Needs you' ? (
+          <ResourceView resource={approvals}>
             {(page) => (
-              <>
-                <p className="mb-3 text-xs text-slate-400">{page.total} conversations</p>
-                <div className="max-h-[520px] space-y-1 overflow-y-auto">
-                  {page.items.length === 0 && (
-                    <p className="py-8 text-sm text-slate-500">No conversations match.</p>
-                  )}
-                  {page.items.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => {
-                        setSelected(c.id);
-                        void action.run(() => client.conversations.markRead(c.id));
-                      }}
-                      aria-pressed={activeId === c.id}
-                      className={`w-full rounded-xl p-3 text-left ${activeId === c.id ? 'bg-indigo-50 dark:bg-indigo-950' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                    >
-                      <span className="flex justify-between gap-2 text-sm font-semibold">
-                        {c.customerName}
-                        {c.unreadCount > 0 && (
-                          <span className="rounded-full bg-primary px-1.5 text-[10px] text-white">
-                            {c.unreadCount}
-                          </span>
-                        )}
-                      </span>
-                      <span className="mt-1 block text-[10px] capitalize text-primary dark:text-indigo-300">
-                        {c.channel} · {c.status}
-                      </span>
-                      <span className="mt-1 block truncate text-xs text-slate-500">
-                        {c.lastMessage}
-                      </span>
-                    </button>
+              <section className={panel}>
+                <h2 className="mb-2 text-lg font-semibold">Your decisions, not every reply</h2>
+                <p className="mb-5 text-xs leading-6 text-slate-500">
+                  Routine verified replies stay automatic. These requests need your judgement.
+                </p>
+                {!page.items.length && (
+                  <p className="py-8 text-sm text-slate-500">You’re all caught up.</p>
+                )}
+                <div className="grid gap-4 xl:grid-cols-2">
+                  {page.items.map((a) => (
+                    <ApprovalCard key={a.id} approval={a} onOpen={() => open(a.conversationId)} />
                   ))}
                 </div>
-              </>
+              </section>
             )}
           </ResourceView>
-        </section>
-        {activeId ? (
-          <MessageThread conversationId={activeId} />
-        ) : (
-          <p className={panel}>Select a conversation to read its messages.</p>
-        )}
-      </div>
-      <section className={panel}>
-        <h2 className="mb-4 text-base font-semibold">Needs your say</h2>
-        <ResourceView resource={approvals}>
-          {(page) =>
-            page.items.length === 0 ? (
-              <p className="text-sm text-slate-500">You’re all caught up.</p>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {page.items.map((a) => (
-                  <div key={a.id} className="bubble-pending rounded-xl p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-warning">
-                      {a.reason.replaceAll('_', ' ')}
-                    </p>
-                    <p className="mt-3 text-sm">“{a.customerMessage}”</p>
-                    <ul className="my-3 text-xs text-slate-500">
-                      {a.facts.map((f) => (
-                        <li key={f.label}>
-                          {f.label}: {f.value}
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="text-xs leading-6 text-slate-500">Proposed: {a.proposedReply}</p>
-                    <p className="mt-3 text-[10px] text-slate-400">
-                      Waiting for vendor approval · {Math.round(a.confidence * 100)}% confidence
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )
-          }
-        </ResourceView>
-      </section>
-    </div>
-  );
-}
-function MessageThread({ conversationId }: { conversationId: string }) {
-  const { client } = useDataClient();
-  const [text, setText] = useState('');
-  const action = useAction();
-  const messages = useResource(
-    useCallback(() => client.messages.list({ conversationId }), [client, conversationId]),
-  );
-  const conversation = useResource(
-    useCallback(() => client.conversations.get(conversationId), [client, conversationId]),
-  );
-  return (
-    <section className={`${panel} flex min-h-[560px] flex-col`}>
-      <ResourceView resource={conversation}>
-        {(c) => (
-          <header className="mb-5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
-            <div>
-              <h3 className="text-sm font-semibold">{c.customerName}</h3>
-              <p className="mt-1 text-xs capitalize text-slate-400">
-                {c.channel} ·{' '}
-                {c.humanModeUntil && Date.parse(c.humanModeUntil) > Date.now()
-                  ? 'Human mode'
-                  : 'AI assistant'}
-              </p>
-            </div>
-            {client.developer && (
-              <Button
-                variant="outline"
-                disabled={action.busy}
-                className="px-3 text-xs"
-                onClick={() =>
-                  void action.run(() => client.developer!.simulateIncoming({ conversationId }))
-                }
-              >
-                <FlaskConical size={15} />
-                Simulate incoming message
-              </Button>
+        ) : tab === 'Notifications' ? (
+          <ResourceView resource={all}>
+            {(p) => (
+              <ResourceView resource={approvals}>
+                {(a) => (
+                  <Notifications
+                    preferences={notificationPreferences}
+                    setPreferences={setNotificationPreferences}
+                    conversations={p.items}
+                    approvals={a.items}
+                    onOpen={open}
+                  />
+                )}
+              </ResourceView>
             )}
-          </header>
-        )}
-      </ResourceView>
-      <div
-        aria-live="polite"
-        aria-label="Chat messages"
-        className="max-h-[420px] flex-1 space-y-4 overflow-y-auto pb-5"
-      >
-        <ResourceView resource={messages}>
-          {(page) => (
-            <>
-              {page.items.length === 0 && (
-                <p className="text-sm text-slate-400">No messages yet.</p>
-              )}
-              {page.items.map((m) => (
-                <div
-                  key={m.id}
-                  className={`flex ${m.sender === 'customer' ? 'justify-start' : 'justify-end'}`}
-                >
-                  <div
-                    className={`max-w-[90%] rounded-2xl px-4 py-3 text-sm leading-6 ${m.sender === 'customer' ? 'bubble-customer' : m.sender === 'ai' ? 'bubble-ai' : 'bubble-vendor border border-slate-200 dark:border-slate-700'}`}
+          </ResourceView>
+        ) : (
+          <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(260px,330px)_minmax(0,1fr)]">
+            <section
+              className={`${panel} min-w-0 ${selected ? 'hidden lg:block' : ''}`}
+              aria-label="Conversation list"
+            >
+              <label className="block text-xs font-medium">
+                Find a conversation
+                <input
+                  className="my-3"
+                  placeholder="Search customers or messages"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="min-w-0 text-xs">
+                  Channel
+                  <select
+                    className="mt-1 w-full"
+                    value={channel}
+                    onChange={(e) => setChannel(e.target.value as typeof channel)}
                   >
-                    {m.sender === 'ai' && (
-                      <span className="mb-1 flex items-center gap-1 text-[10px] font-bold">
-                        <Sparkles size={10} />
-                        AI
-                      </span>
-                    )}
-                    {m.kind === 'voice' && m.voice ? (
-                      <>
-                        <p className="flex items-center gap-2 font-medium">
-                          <Mic size={16} />
-                          Voice note · {m.voice.durationSeconds}s
+                    <option value="">All channels</option>
+                    {(Object.keys(channelLabels) as Channel[]).map((c) => (
+                      <option key={c} value={c}>
+                        {channelLabels[c]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="min-w-0 text-xs">
+                  Lead stage
+                  <select
+                    className="mt-1 w-full"
+                    value={stage}
+                    onChange={(e) => setStage(e.target.value as typeof stage)}
+                  >
+                    <option value="">All stages</option>
+                    {(Object.keys(stages) as LeadStage[]).map((s) => (
+                      <option key={s} value={s}>
+                        {stages[s]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <label className="my-3 flex min-h-12 items-center gap-2 text-xs font-semibold">
+                <input
+                  type="checkbox"
+                  className="!w-5"
+                  checked={needsMe}
+                  onChange={(e) => setNeedsMe(e.target.checked)}
+                />
+                Needs me only
+              </label>
+              <ResourceView resource={conversations}>
+                {(page) => (
+                  <>
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <p className="text-xs text-slate-500">{page.total} conversations</p>
+                      {(search || channel || stage || needsMe) && (
+                        <button
+                          className="min-h-11 text-xs text-primary dark:text-indigo-300"
+                          onClick={() => {
+                            setSearch('');
+                            setChannel('');
+                            setStage('');
+                            setNeedsMe(false);
+                          }}
+                        >
+                          Reset filters
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-[68dvh] space-y-2 overflow-y-auto">
+                      {!page.items.length && (
+                        <p className="py-8 text-sm text-slate-500">
+                          No conversations match. Try a different filter.
                         </p>
-                        <p className="mt-2 text-xs">Sample transcript: {m.voice.transcript}</p>
-                        <p className="mt-1 text-[10px] text-slate-400">
-                          Audio unavailable in sample data
-                        </p>
-                      </>
-                    ) : (
-                      m.text
-                    )}
-                    <p className="mt-1 text-right text-[10px] opacity-50">
-                      {new Date(m.createdAt).toLocaleTimeString('en-NG', {
-                        hour: '2-digit',
-                        minute: '2-digit',
+                      )}
+                      {page.items.map((c) => {
+                        const needs = pending.some((a) => a.conversationId === c.id);
+                        return (
+                          <button
+                            data-testid="conversation-row"
+                            aria-label={`Open chat with ${c.customerName}`}
+                            key={c.id}
+                            onClick={() => open(c.id)}
+                            aria-pressed={selected === c.id}
+                            className={`flex min-h-24 w-full min-w-0 gap-3 rounded-xl border p-3 text-left ${selected === c.id ? 'border-indigo-200 bg-indigo-50 dark:border-indigo-800 dark:bg-indigo-950' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                          >
+                            <ChannelIcon channel={c.channel} />
+                            <span className="min-w-0 flex-1">
+                              <span className="flex items-start justify-between gap-2">
+                                <span className="truncate text-sm font-semibold">
+                                  {c.customerName}
+                                </span>
+                                <time
+                                  dateTime={c.updatedAt}
+                                  className="shrink-0 text-[10px] text-slate-500"
+                                >
+                                  {new Date(c.updatedAt).toDateString() ===
+                                  new Date().toDateString()
+                                    ? messageTime(c.updatedAt)
+                                    : new Date(c.updatedAt).toLocaleDateString('en-NG', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                      })}
+                                </time>
+                              </span>
+                              <span className="my-1 block truncate text-xs text-slate-500">
+                                {c.lastMessage}
+                              </span>
+                              <span className="flex flex-wrap items-center gap-1 text-[9px] font-semibold">
+                                <span className="rounded-full bg-slate-100 px-2 py-1 dark:bg-slate-800">
+                                  {stages[c.stage]}
+                                </span>
+                                <span
+                                  className={`rounded-full px-2 py-1 ${humanMode(c) ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300'}`}
+                                >
+                                  {humanMode(c) ? 'Human · AI paused' : 'AI active'}
+                                </span>
+                                {needs && (
+                                  <span className="rounded-full bg-amber-100 px-2 py-1 text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                                    Needs you
+                                  </span>
+                                )}
+                                {c.unreadCount > 0 && (
+                                  <span
+                                    aria-label={`${c.unreadCount} unread`}
+                                    className="rounded-full bg-primary px-2 py-1 text-white"
+                                  >
+                                    {c.unreadCount}
+                                  </span>
+                                )}
+                              </span>
+                            </span>
+                          </button>
+                        );
                       })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-        </ResourceView>
+                    </div>
+                  </>
+                )}
+              </ResourceView>
+            </section>
+            {selected ? (
+              <MessageThread
+                key={selected}
+                conversationId={selected}
+                draft={drafts[selected] ?? ''}
+                onDraftChange={(text) => setDrafts((d) => ({ ...d, [selected]: text }))}
+                onBack={() => setSelected('')}
+              />
+            ) : (
+              <section className={`${panel} hidden place-content-center text-center lg:grid`}>
+                <h3 className="font-semibold">A little clarity for every conversation.</h3>
+                <p className="mt-2 text-sm text-slate-500">
+                  Choose a chat to see messages, decisions and customer details.
+                </p>
+              </section>
+            )}
+          </div>
+        )}
       </div>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void action
-            .run(() => client.messages.send({ conversationId, text }))
-            .then((r) => {
-              if (r.ok) setText('');
-            });
-        }}
-        className="flex items-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800"
-      >
-        <label className="flex-1 text-[10px] text-slate-400">
-          Reply as vendor
-          <input
-            placeholder="Type your reply…"
-            className="mt-1"
-            value={text}
-            maxLength={4000}
-            onChange={(e) => setText(e.target.value)}
-          />
-        </label>
-        <Button aria-label="Send message" disabled={!text.trim() || action.busy}>
-          <Send size={17} />
-        </Button>
-      </form>
-      {action.error && (
-        <p role="alert" className="mt-2 text-xs text-danger">
-          {action.error.message}
-        </p>
-      )}
-    </section>
+    </div>
   );
 }
