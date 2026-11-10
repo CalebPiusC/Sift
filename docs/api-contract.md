@@ -1,6 +1,10 @@
-# Selvora frontend data contract — F1–F4
+# Selvora current frontend data contract — F0–F7
 
-**Status:** frontend contract and in-memory adapter implemented. Backend endpoints below are a target, **not a claim that they exist**. F1–F4 change no FastAPI routes or database migrations.
+**Status:** exact current frontend declarations and legacy mock/adapter semantics. Business HTTP
+endpoints are NOT implemented. B0 now supplies reconciled schema/security; the authoritative
+[backend roadmap](backend-roadmap.md) supersedes the older HTTP table below for endpoint coverage,
+auth/roles, signed cursor pagination, errors and Idempotency-Key rules. Current frontend offsets/
+array DTOs are retained until B1 updates adapter and backend together. No new UI features in B0.
 
 ## Selecting the implementation
 
@@ -21,7 +25,7 @@ The frontend can be completed with the mock adapter. API mode retains Supabase a
 - `Result` success: `{ok:true,data:T}`. Failure: `{ok:false,error:{code,message,retryable}}`. Errors are safe for display and never expose provider bodies, credentials, raw customer payloads or phone numbers in logs. Standard errors: `VALIDATION`, `NOT_FOUND`, `CONFLICT`, `FORBIDDEN`, `UNAVAILABLE`, `NOT_IMPLEMENTED`. Only transient `UNAVAILABLE` failures should offer automatic retry. Mutations retry only when idempotent.
 - `useResource` wraps reads in `Resource<T>` (`loading`, `success`, `error`) and exposes manual `retry()`. It ignores stale/unmounted completions and invalidates on realtime events. UI mutation helper `useAction` exposes `busy`, `error` and async `run`. The adapters themselves never invent a loading result: loading belongs to the hook while a promise is pending.
 
-## Function → HTTP mapping (future backend)
+## Legacy frontend-adapter HTTP mapping (incomplete; backend roadmap is authoritative)
 
 All paths are relative to `/api/v1`. Every request has `Authorization: Bearer <Supabase access token>` and `X-Vendor-Id`; the server **must** verify tenant membership. Browser calls are same-origin; future deployment must proxy this prefix to FastAPI. Responses use the `Result<T>` envelope. The current API adapter handles offline/non-JSON/missing endpoints without returning samples.
 

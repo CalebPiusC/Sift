@@ -1,63 +1,112 @@
-// Uses your project's actual auth.uid(), roles and deployed policies, not the local shim.
+// Rollback-only hosted B0 validation. Never bootstrap Supabase auth or print a connection URL.
 import pg from 'pg';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { isolationChecks } from '../tests/isolation-checks.mjs';
-if (!process.env.SUPABASE_TEST_DATABASE_URL)
-  throw new Error(
-    'Set SUPABASE_TEST_DATABASE_URL to a direct/session database connection (postgres role).',
-  );
-const client = new pg.Client({
-  connectionString: process.env.SUPABASE_TEST_DATABASE_URL,
-  application_name: 'selvora-rls-rollback-test',
-});
-let connected = false;
-try {
-  await client.connect();
-  connected = true;
-  await client.query('begin');
-  await client.query("set local statement_timeout='30s';set local lock_timeout='5s'");
-  const [A, B, USER, OTHER_USER] = Array.from({ length: 4 }, () => randomUUID());
-  let seed = await readFile('tests/seed.sql', 'utf8');
-  for (const [old, value] of Object.entries({
-    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa': A,
-    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb': B,
-    '11111111-1111-4111-8111-111111111111': USER,
-    '22222222-2222-4222-8222-222222222222': OTHER_USER,
-    'tola@example.test': `${USER}@example.test`,
-    'amina@example.test': `${OTHER_USER}@example.test`,
-    'local-fixture-': `rls-${randomUUID()}-`,
-  }))
-    seed = seed.replaceAll(old, value);
-  await client.query(seed);
-  const db = {
-    query: async (sql, params) => {
-      await client.query('savepoint isolation_statement');
-      try {
-        const result = await client.query(sql, params);
-        await client.query('release savepoint isolation_statement');
-        return result;
-      } catch (error) {
-        await client.query('rollback to savepoint isolation_statement');
-        await client.query('release savepoint isolation_statement');
-        throw error;
-      }
-    },
-  };
-  await isolationChecks(db, { A, B, USER, OTHER_USER });
-  console.log(
-    'PASS: both tenant directions, all 13 tables, cross-tenant writes/membership and anon denial.',
-  );
-} catch (error) {
-  // Avoid printing database error detail, connection strings, SQL or parameters.
+import { b0Fixture, insert } from '../tests/b0-fixtures.mjs';
+import { matrixCheck } from '../tests/b0-matrix-checks.mjs';
+import { recovering, migrationBody } from '../tests/helpers/native-database.mjs';
+if (!process.env.SUPABASE_TEST_DATABASE_URL) {
   console.error(
-    `FAIL: Supabase RLS check (${error.code || 'assertion'}). Check deployed migrations and database privileges.`,
+    'Set SUPABASE_TEST_DATABASE_URL securely to a direct/session postgres connection. No credentials are read from files.',
   );
   process.exitCode = 1;
-} finally {
+} else {
+  const c = new pg.Client({
+    connectionString: process.env.SUPABASE_TEST_DATABASE_URL,
+    application_name: 'selvora-b0-rollback-check',
+    connectionTimeoutMillis: 15000,
+  });
+  let connected = false;
   try {
-    if (connected) await client.query('rollback');
+    await c.connect();
+    connected = true;
+    await c.query('begin');
+    await c.query("set local statement_timeout='30s';set local lock_timeout='5s'");
+    const files = (await readdir('supabase/migrations')).filter((f) => f.endsWith('.sql')).sort();
+    const exists = (
+      await c.query(
+        "select to_regclass('public.vendors') vendor,to_regclass('public.domain_events') events",
+      )
+    ).rows[0];
+    const invariant = (await c.query("select to_regprocedure('public.b0_stable_identity()') f"))
+      .rows[0].f;
+    if (exists.events && !invariant)
+      throw Object.assign(new Error('Partial B0 schema'), { code: 'PARTIAL_B0' });
+    if (!exists.events)
+      for (const f of exists.vendor ? files.slice(2) : files)
+        await c.query(migrationBody(await readFile(`supabase/migrations/${f}`, 'utf8')));
+    const matrix = JSON.parse(await readFile('docs/backend/role-matrix.json', 'utf8'));
+    const db = recovering(c);
+    const own = await b0Fixture(db, matrix),
+      other = await b0Fixture(db, matrix);
+    let cells = 0;
+    for (const table of Object.keys(matrix))
+      for (const role of ['owner', 'manager', 'agent', 'service'])
+        for (const op of ['R', 'I', 'U', 'D']) {
+          await c.query('savepoint matrix_cell');
+          try {
+            await matrixCheck(db, matrix, own, other, table, role, op);
+            cells++;
+          } finally {
+            await c.query('rollback to savepoint matrix_cell');
+            await c.query('release savepoint matrix_cell');
+          }
+        }
+    // Both tenant directions are exercised, not only one fixture owner.
+    for (const table of Object.keys(matrix))
+      for (const role of ['owner', 'manager', 'agent', 'service']) {
+        await c.query('savepoint reverse_check');
+        try {
+          await matrixCheck(db, matrix, other, own, table, role, 'R');
+        } finally {
+          await c.query('rollback to savepoint reverse_check');
+          await c.query('release savepoint reverse_check');
+        }
+      }
+    for (const table of Object.keys(matrix)) {
+      await c.query('set local role anon');
+      await db.query(`select * from public.${table}`).then(
+        () => {
+          throw Object.assign(new Error('Anonymous table access'), { code: 'ANON_ACCESS' });
+        },
+        (e) => {
+          if (e.code !== '42501') throw e;
+        },
+      );
+      await c.query('reset role');
+    }
+    const bad = await db.query(
+      "select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname=any($1) and (not c.relrowsecurity or not c.relforcerowsecurity)",
+      [Object.keys(matrix)],
+    );
+    if (bad.rows.length) throw Object.assign(new Error('RLS missing'), { code: 'RLS_MISSING' });
+    for (const table of Object.keys(matrix))
+      for (const role of ['anon', 'service_role']) {
+        const result = await db.query(
+          "select has_table_privilege($1,$2,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE') allowed",
+          [role, `public.${table}`],
+        );
+        if (result.rows[0].allowed)
+          throw Object.assign(new Error('Unexpected table grant'), { code: 'UNSAFE_GRANT' });
+      }
+    const worker = await db.query(
+      "select rolbypassrls,rolsuper,rolcanlogin,rolinherit from pg_roles where rolname='selvora_service'",
+    );
+    if (worker.rows.length !== 1 || Object.values(worker.rows[0]).some(Boolean))
+      throw Object.assign(new Error('Unsafe worker role'), { code: 'UNSAFE_WORKER' });
+    console.log(
+      `PASS: hosted actual auth/RLS, ${cells} permission cells, reverse tenant reads and anonymous denial. All temporary schema/fixtures rolled back; no persistent migration was applied.`,
+    );
+  } catch (e) {
+    console.error(
+      `FAIL: hosted B0 verification (${e.code || 'assertion'}). No database detail, SQL or credentials logged.`,
+    );
+    process.exitCode = 1;
   } finally {
-    await client.end();
+    try {
+      if (connected) await c.query('rollback');
+    } finally {
+      await c.end();
+    }
   }
 }

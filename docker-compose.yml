@@ -22,6 +22,8 @@ services:
       - ./tests/bootstrap.sql:/docker-entrypoint-initdb.d/001-auth.sql:ro
       - ./supabase/migrations/202611100001_foundation.sql:/docker-entrypoint-initdb.d/002-foundation.sql:ro
       - ./supabase/migrations/202611100002_receipt_privileges.sql:/docker-entrypoint-initdb.d/003-receipt-privileges.sql:ro
+      - ./supabase/migrations/202611100003_backend_reconciliation.sql:/docker-entrypoint-initdb.d/004-backend-reconciliation.sql:ro
+      - ./supabase/migrations/202611100004_reconciliation_invariants.sql:/docker-entrypoint-initdb.d/005-reconciliation-invariants.sql:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U selvora']
       interval: 5s
