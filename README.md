@@ -140,3 +140,10 @@ connectivity or a user-run command may be needed. Never report local tests as a 
 Next sequence: **B1 API substrate/read slice → B2 persistent catalogue/customers/stock → B3 one
 verified messaging provider and safe AI → B4 payments/receipts → B5 durable extras/billing/analytics.**
 See the authoritative backend roadmap for each endpoint's status and rules.
+
+## Gmail message pipeline (B2)
+
+An opt-in Gmail outbox/ingress worker and inbox API are now implemented locally.
+See [setup, tested behavior and remaining acceptance](docs/backend/gmail-pipeline.md).
+Live Gmail/hosted realtime acceptance is **pending**; API mode never falls back to samples.
+Run `PATH="$PWD/.venv/bin:$PATH" npm run test:pipeline` for Python and native PostgreSQL/Redis tests.

@@ -1,11 +1,28 @@
 import type { DataClient } from './contract';
-import type { Result } from './types';
+import type { Result, DataEvent } from './types';
+import { authConfigured, supabase } from '../supabase';
 export function createApiClient(options: {
   vendorId: string;
   getToken: () => Promise<string | null>;
   fetcher?: typeof fetch;
 }): DataClient {
-  const request = async <T>(path: string, input?: unknown, method = 'GET'): Promise<Result<T>> => {
+  const listeners = new Set<(event: DataEvent) => void>();
+  const subscriptions = new Set<() => void>();
+  const notify = () =>
+    listeners.forEach((fn) =>
+      fn({
+        area: 'messages',
+        vendorId: options.vendorId,
+        entityId: options.vendorId,
+        type: 'updated',
+      }),
+    );
+  const request = async <T>(
+    path: string,
+    input?: unknown,
+    method = 'GET',
+    idempotencyKey?: string,
+  ): Promise<Result<T>> => {
     if (!options.vendorId)
       return {
         ok: false,
@@ -27,6 +44,7 @@ export function createApiClient(options: {
         headers: {
           Authorization: `Bearer ${token}`,
           'X-Vendor-Id': options.vendorId,
+          ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
           ...(input === undefined ? {} : { 'Content-Type': 'application/json' }),
         },
         body: input === undefined ? undefined : JSON.stringify(input),
@@ -71,6 +89,7 @@ export function createApiClient(options: {
         };
       if (typeof result?.ok !== 'boolean' || (result?.ok ? !('data' in result) : true))
         throw new Error('Invalid envelope');
+      if (method !== 'GET') notify();
       return result as Result<T>;
     } catch {
       return {
@@ -127,7 +146,14 @@ export function createApiClient(options: {
     },
     messages: {
       list: (i) => request(`messages${query(i)}`),
-      send: (i) => request('messages', i, 'POST'),
+      send: (i) =>
+        request(
+          'messages',
+          { conversationId: i.conversationId, text: i.text },
+          'POST',
+          i.idempotencyKey ?? crypto.randomUUID(),
+        ),
+      retry: (id) => request(`messages/${key(id)}/retry`, {}, 'POST'),
     },
     approvals: {
       list: (i) => request(`approvals${query(i)}`),
@@ -206,16 +232,49 @@ export function createApiClient(options: {
       selectOffer: (i) => request('billing/selection', i, 'PATCH'),
     },
     realtime: {
-      subscribe: async () => ({
-        ok: false,
-        error: {
-          code: 'NOT_IMPLEMENTED',
-          message: 'Realtime API transport is not connected yet.',
-          retryable: false,
-        },
-      }),
+      subscribe: async (listener) => {
+        listeners.add(listener);
+        if (!options.vendorId || !authConfigured())
+          return {
+            ok: false,
+            error: {
+              code: 'NOT_IMPLEMENTED',
+              message: 'Configure Supabase realtime for live inbox updates.',
+              retryable: false,
+            },
+          };
+        const db = supabase();
+        const token = await options.getToken();
+        if (!token)
+          return {
+            ok: false,
+            error: { code: 'FORBIDDEN', message: 'Sign in for live updates.', retryable: false },
+          };
+        await db.realtime.setAuth(token);
+        const channel = db.channel(`inbox:${options.vendorId}:${crypto.randomUUID()}`);
+        for (const table of ['messages', 'conversations', 'channel_accounts', 'customers']) {
+          channel.on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table, filter: `vendor_id=eq.${options.vendorId}` },
+            () => notify(),
+          );
+        }
+        channel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') notify();
+        });
+        const unsubscribe = () => {
+          listeners.delete(listener);
+          void db.removeChannel(channel);
+          subscriptions.delete(unsubscribe);
+        };
+        subscriptions.add(unsubscribe);
+        return { ok: true, data: unsubscribe };
+      },
     },
     developer: null,
-    dispose: async () => {},
+    dispose: async () => {
+      subscriptions.forEach((stop) => stop());
+      listeners.clear();
+    },
   };
 }

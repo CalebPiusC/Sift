@@ -32,6 +32,7 @@ export function MessageThread({
   const scroll = useRef<HTMLDivElement>(null);
   const nearBottom = useRef(true);
   const [newMessages, setNewMessages] = useState(false);
+  const sendIntent = useRef<{ text: string; key: string } | null>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
   const messages = useResource(
     useCallback(
@@ -226,6 +227,17 @@ export function MessageThread({
                     </div>
                   )}
                   <MessageBubble message={m} sample={client.mode === 'mock'} />
+                  {m.status === 'failed' && client.messages.retry && (
+                    <Button
+                      variant="outline"
+                      disabled={action.busy}
+                      onClick={() => void action.run(() => client.messages.retry!(m.id))}
+                    >
+                      {m.deliveryErrorCode === 'DELIVERY_UNCERTAIN'
+                        ? 'Check send status'
+                        : 'Retry reply'}
+                    </Button>
+                  )}
                 </Fragment>
               ))}
             </>
@@ -285,11 +297,15 @@ export function MessageThread({
         onSubmit={(e) => {
           e.preventDefault();
           if (!text.trim() || action.busy) return;
+          if (!sendIntent.current || sendIntent.current.text !== `${conversationId}:${text}`)
+            sendIntent.current = { text: `${conversationId}:${text}`, key: crypto.randomUUID() };
+          const idempotencyKey = sendIntent.current.key;
           void action
-            .run(() => client.messages.send({ conversationId, text }))
+            .run(() => client.messages.send({ conversationId, text, idempotencyKey }))
             .then((r) => {
               if (r.ok) {
                 setText('');
+                sendIntent.current = null;
                 nearBottom.current = true;
               }
             });

@@ -67,7 +67,17 @@ export interface Message extends Entity {
   order?: Pick<Order, 'id' | 'items' | 'totalKobo' | 'paymentStatus' | 'status'>;
   text: string;
   voice: { durationSeconds: number; transcript: string; audioUrl: string | null } | null;
-  status: 'received' | 'sent' | 'pending_approval' | 'blocked';
+  status:
+    | 'received'
+    | 'queued'
+    | 'sending'
+    | 'sent'
+    | 'delivered'
+    | 'read'
+    | 'failed'
+    | 'pending_approval'
+    | 'blocked';
+  deliveryErrorCode?: string | null;
   language: 'en' | 'pcm';
   createdAt: ISODate;
 }
@@ -212,11 +222,14 @@ export interface Insights {
   byChannel: { channel: Channel; conversations: number }[];
 }
 export interface ListInput {
+  cursor?: string;
   search?: string;
   offset?: number;
   limit?: number;
 }
 export interface Page<T> {
+  nextCursor?: string | null;
+  hasMore?: boolean;
   items: T[];
   total: number;
   offset: number;

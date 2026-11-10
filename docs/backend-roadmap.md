@@ -1,8 +1,11 @@
 # Backend roadmap — authoritative B0 reconciliation
 
-**B0 changes schema, SQL security and implementation specifications only. No business HTTP
-endpoints have been implemented.** F0's `/health`, `/v1/me`, `/v1/vendors` are the only current
-FastAPI routes. Their F0 response shapes remain unchanged (not yet the future unified envelope). Hosted verification is pending connection/access; local tests are not hosted proof.
+**B0 is the schema/security baseline; B2 now adds an opt-in Gmail message pipeline.**
+See [B2 implementation and deployment status](backend/gmail-pipeline.md) for the implemented
+routes, tests and remaining live acceptance. Other B1/domain HTTP endpoints remain unimplemented.
+The generated endpoint inventory below is the B0 planning inventory, not a current deployment
+claim. F0 response shapes remain unchanged. Hosted verification and live Gmail acceptance are pending;
+local provider simulations are not hosted proof.
 
 Sources: [exact schema delta](backend/schema-delta.md), [function-to-storage gaps](backend/contract-gaps.md),
 [enforced role matrix](backend/role-matrix.md), [events and idempotency](backend/events-and-idempotency.md).
@@ -86,8 +89,8 @@ means the F0 route exists, **local-only** means it must not become a production 
 |---|---|---|---|---|---|---|
 | CatalogueData.list | GET `/v1/catalogue` | owner manager agent | none | cursor | products,product_variants,product_photos | **planned**.  |
 | CatalogueData.get | GET `/v1/catalogue/{id}` | owner manager agent | none | none | products,product_variants,product_photos | **planned**.  |
-| ConversationsData.list | GET `/v1/conversations` | owner manager agent | none | cursor | conversations,conversation_reads | **planned**.  |
-| ConversationsData.get | GET `/v1/conversations/{id}` | owner manager agent | none | none | conversations,conversation_reads | **planned**.  |
+| ConversationsData.list | GET `/v1/conversations` | owner manager agent | none | cursor | conversations,conversation_reads | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
+| ConversationsData.get | GET `/v1/conversations/{id}` | owner manager agent | none | none | conversations,conversation_reads | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
 | OrdersData.list | GET `/v1/orders` | owner manager agent | none | cursor | orders,order_items,order_timeline | **planned**.  |
 | OrdersData.get | GET `/v1/orders/{id}` | owner manager agent | none | none | orders,order_items,order_timeline | **planned**.  |
 | ReceiptsData.list | GET `/v1/receipts` | owner manager agent | none | cursor | receipts | **planned**.  |
@@ -100,16 +103,16 @@ means the F0 route exists, **local-only** means it must not become a production 
 | CatalogueData.archive | PATCH `/v1/catalogue/{id}/archive` | owner manager | required | none | products | **planned**. expectedRevision required; no historical deletion. |
 | CatalogueData.proposeText | POST `/v1/catalogue/text-proposals` | owner manager | required | none | typed_proposals | **planned**. Proposal only, no stock change. |
 | CatalogueData.confirmText | POST `/v1/catalogue/text-proposals/{proposalId}/confirm` | owner manager | required | none | typed_proposals,products,product_variants,stock_movements | **planned**. Lock proposal and inventory; confirm only once; conflict stale facts. |
-| ConversationsData.markRead | POST `/v1/conversations/{id}/read` | owner manager agent | required | none | conversation_reads | **planned**. Only own membership marker; unreadCount derived since last_read_at. |
-| ConversationsData.setHumanMode | PATCH `/v1/conversations/{id}/human-mode` | owner manager agent | required | none | conversations,domain_events | **planned**. Scoped service transaction; future worker rechecks at send time. Agents limited to assigned/unassigned chats by API authorization. |
-| MessagesData.send | POST `/v1/messages` | owner manager agent | required | none | messages,message_deliveries,jobs | **planned**. Queue transaction; does not claim delivery. Agent assigned/unassigned scope. Check channel and takeover policy before send. |
+| ConversationsData.markRead | POST `/v1/conversations/{id}/read` | owner manager agent | required | none | conversation_reads | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
+| ConversationsData.setHumanMode | PATCH `/v1/conversations/{id}/human-mode` | owner manager agent | required | none | conversations,domain_events | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
+| MessagesData.send | POST `/v1/messages` | owner manager agent | required | none | messages,message_deliveries,jobs | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
 | ApprovalsData.decide | POST `/v1/approvals/{id}/decision` | owner manager agent | required | none | approvals,messages,message_deliveries,jobs | **planned**. Lock pending decision; reread facts/revisions; agent assigned/unassigned scope; no bulk bypass. |
 | OrdersData.setStatus | PATCH `/v1/orders/{id}/status` | owner manager agent | required | none | orders,order_timeline,messages,jobs | **planned**. expectedRevision; no generic transition into paid; agent assigned/unassigned conversation scope. |
 | OrdersData.confirmPayment | POST `/v1/orders/{id}/payment` | owner manager | required | none | orders,payments,stock_movements,domain_events | **planned**. Vendor source only; expectedRevision; bank acknowledgement validated; no screenshot path; transactional ledger/stock. |
 | ReceiptsData.issue | POST `/v1/receipts` | owner manager | required | none | receipts,receipt_shares | **planned**. Vendor lock and per-order uniqueness; guarded SQL RPC; freeze snapshot; no edit/delete. |
 | CustomersData.update | PATCH `/v1/customers/{id}` | owner manager agent | required | none | customers | **planned**. Allowlisted notes/tags/flagged; metadata flag does not block provider. |
-| ChannelsData.begin | POST `/v1/channels/connections` | owner manager | required | none | channel_attempts,channel_accounts | **planned**. Expire/invalidate older pending attempt atomically; TikTok NOT_IMPLEMENTED until access confirmed. |
-| ChannelsData.complete | POST `/v1/channels/connections/{attemptId}/complete` | owner manager | required | none | channel_attempts,channel_tokens,channel_accounts | **planned**. Server-verified OAuth result/state only, no simulate flag; use callback verifier. |
+| ChannelsData.begin | POST `/v1/channels/connections` | owner manager | required | none | channel_attempts,channel_accounts | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
+| ChannelsData.complete | POST `/v1/channels/connections/{attemptId}/complete` | owner manager | required | none | channel_attempts,channel_tokens,channel_accounts | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
 | ChannelsData.newHelperCode | POST `/v1/channels/whatsapp/helper/codes` | owner manager | required | none | helper_links | **planned**. Generate code once; store HMAC only; encrypted replay response; 10min and rate limits. |
 | ChannelsData.confirmHelper | POST `/v1/channels/whatsapp/helper/codes/{id}/confirm` | none | required | none | helper_links | **planned**. Frontend mock-only confirmation. Production browser route returns NOT_IMPLEMENTED; provider receipt must verify via separate signed webhook. |
 | SettingsData.update | PATCH `/v1/settings` | owner manager; agent own preferences only | required | none | vendors,business_settings,business_hours,delivery_fees,member_preferences | **planned**. Field authorization: owner business identity/type/tone/negotiation; owner+manager reply lanes/hours/fees; everyone own preferences. Split transaction permissions; never blanket service authorization. |
@@ -121,9 +124,9 @@ means the F0 route exists, **local-only** means it must not become a production 
 | ExtrasData.followup | PATCH `/v1/extras/followups/{id}` | owner manager agent | required | none | followups | **planned**. Cancel only in production; simulate_send NOT_IMPLEMENTED; real due sends are jobs. |
 | ExtrasData.moderate | PATCH `/v1/extras/flags/{id}` | owner manager agent | required | none | moderation_flags,blocked_identities,jobs | **planned**. Agent assigned/unassigned related chat; block intent not provider-confirmed until job completes. |
 | ExtrasData.notifyRestock | POST `/v1/extras/restock/{id}` | none | required | none | restock_requests,jobs | **planned**. Mock-only simulator at present; production browser route NOT_IMPLEMENTED, real alert delivery through consent-checked job. |
-| MessagesData.list | GET `/v1/messages` | owner manager agent | none | cursor-bidirectional | messages | **planned**. conversationId required. latest=true is initial newest page presented chronologically; before/after traverse all history, no 100-message ceiling. |
+| MessagesData.list | GET `/v1/messages` | owner manager agent | none | cursor-bidirectional | messages | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
 | ApprovalsData.list | GET `/v1/approvals` | owner manager agent | none | cursor | approvals | **planned**.  |
-| ChannelsData.list | GET `/v1/channels` | owner manager agent | none | cursor | channel_accounts | **planned**.  |
+| ChannelsData.list | GET `/v1/channels` | owner manager agent | none | cursor | channel_accounts | **implemented-local**. B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance. |
 | ChannelsData.helper | GET `/v1/channels/whatsapp/helper` | owner manager | none | none | helper_links | **planned**. Sensitive helper hashes/tokens are never serialized. |
 | SettingsData.get | GET `/v1/settings` | owner manager agent | none | none | vendors,business_settings,business_hours,delivery_fees,member_preferences | **planned**.  |
 | InsightsData.get | GET `/v1/insights` | owner manager | none | date-range | domain_events,orders,payments,stock_movements | **planned**.  |
@@ -151,6 +154,7 @@ means the F0 route exists, **local-only** means it must not become a production 
 | Future.webhook | POST `/v1/webhooks/{provider}` | verified provider signature | required | none | webhook_events,jobs | **planned**. Resolve vendor from verified account/reference, never arbitrary X-Vendor-Id. Dedup provider event; fast durable ACK. Provider exception to header idempotency. |
 | Future.worker.claim | INTERNAL `—` | service | none | cursor-due | jobs | **planned**. No public route. Per-vendor transaction, SKIP LOCKED lease, retries and dead-letter state. |
 | Future.oauth.callback | GET `/v1/channels/oauth/{provider}/callback` | verified expiring OAuth state | none | none | channel_attempts,channel_tokens | **planned**. No implicit trusted query param; resolve attempt/state before tenant transaction. |
+| MessagesData.retry | POST `/v1/messages/{id}/retry` | owner manager agent (thread scoped) | required | none | messages,jobs,message_deliveries | **implemented-local**. State-conditional retry; ambiguous sends reconcile only. Live Gmail acceptance pending. |
 
 <!-- endpoints:end -->
 

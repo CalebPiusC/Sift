@@ -45,7 +45,12 @@ export interface ConversationsData {
 }
 export interface MessagesData {
   list(input: ListInput & { conversationId: ID; latest?: boolean }): Promise<Result<Page<Message>>>;
-  send(input: { conversationId: ID; text: string }): Promise<Result<Message>>;
+  retry?(id: ID): Promise<Result<{ id: ID }>>;
+  send(input: {
+    conversationId: ID;
+    text: string;
+    idempotencyKey?: string;
+  }): Promise<Result<Message>>;
 }
 export interface ApprovalsData {
   list(input?: ListInput & { status?: Approval['status'] }): Promise<Result<Page<Approval>>>;

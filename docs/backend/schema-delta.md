@@ -34,15 +34,20 @@ Added indexes (including constraint-backed and FK lookup indexes):
 
 Added columns:
 
-
+- `source_customer_id` uuid; nullable
+- `target_customer_id` uuid; nullable
 
 New/changed constraints:
 
 - `audit_log_vendor_id_actor_id_fkey`: `FOREIGN KEY (vendor_id, actor_id) REFERENCES vendor_members(vendor_id, user_id)`
+- `audit_log_vendor_id_source_customer_id_fkey`: `FOREIGN KEY (vendor_id, source_customer_id) REFERENCES customers(vendor_id, id)`
+- `audit_log_vendor_id_target_customer_id_fkey`: `FOREIGN KEY (vendor_id, target_customer_id) REFERENCES customers(vendor_id, id)`
 
 Added indexes (including constraint-backed and FK lookup indexes):
 
 - `audit_actor_fk`: `CREATE INDEX audit_actor_fk ON public.audit_log USING btree (vendor_id, actor_id)`
+- `audit_source_fk`: `CREATE INDEX audit_source_fk ON public.audit_log USING btree (vendor_id, source_customer_id)`
+- `audit_target_fk`: `CREATE INDEX audit_target_fk ON public.audit_log USING btree (vendor_id, target_customer_id)`
 
 ## billing_accounts — NEW table
 
@@ -304,17 +309,23 @@ Added columns:
 
 - `own_account` boolean; NOT NULL; default `true`
 - `updated_at` timestamp with time zone; NOT NULL; default `now()`
+- `provider` text; nullable
+- `mailbox_hash` text; nullable
+- `gmail_history_id` numeric; nullable
+- `watch_expires_at` timestamp with time zone; nullable
 
 New/changed constraints:
 
+- `channel_accounts_mailbox_hash_check`: `CHECK ((mailbox_hash ~ '^[0-9a-f]{64}$'::text))`
 - `channel_accounts_own_account_check`: `CHECK (own_account)`
 - `channel_accounts_own_account_not_null`: `NOT NULL own_account`
+- `channel_accounts_provider_check`: `CHECK ((provider = 'gmail'::text))`
 - `channel_accounts_status_check`: `CHECK ((status = ANY (ARRAY['connected'::text, 'disconnected'::text, 'expired'::text, 'error'::text])))`
 - `channel_accounts_updated_at_not_null`: `NOT NULL updated_at`
 
 Added indexes (including constraint-backed and FK lookup indexes):
 
-
+- `gmail_mailbox_owner`: `CREATE UNIQUE INDEX gmail_mailbox_owner ON public.channel_accounts USING btree (provider, mailbox_hash) WHERE ((provider = 'gmail'::text) AND (mailbox_hash IS NOT NULL))`
 
 ## channel_attempts — NEW table
 
@@ -327,6 +338,9 @@ Added columns:
 - `status` text; NOT NULL; default `'pending'::text`
 - `expires_at` timestamp with time zone; NOT NULL
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
+- `oauth_context_ciphertext` bytea; nullable
+- `oauth_key_version` text; nullable
+- `initiating_member_id` uuid; nullable
 
 New/changed constraints:
 
@@ -343,6 +357,7 @@ New/changed constraints:
 - `channel_attempts_vendor_id_channel_account_id_fkey`: `FOREIGN KEY (vendor_id, channel_account_id) REFERENCES channel_accounts(vendor_id, id)`
 - `channel_attempts_vendor_id_fkey`: `FOREIGN KEY (vendor_id) REFERENCES vendors(id)`
 - `channel_attempts_vendor_id_id_key`: `UNIQUE (vendor_id, id)`
+- `channel_attempts_vendor_id_initiating_member_id_fkey`: `FOREIGN KEY (vendor_id, initiating_member_id) REFERENCES vendor_members(vendor_id, id)`
 - `channel_attempts_vendor_id_not_null`: `NOT NULL vendor_id`
 
 Added indexes (including constraint-backed and FK lookup indexes):
@@ -351,6 +366,7 @@ Added indexes (including constraint-backed and FK lookup indexes):
 - `channel_attempts_pkey`: `CREATE UNIQUE INDEX channel_attempts_pkey ON public.channel_attempts USING btree (id)`
 - `channel_attempts_vendor_id_id_key`: `CREATE UNIQUE INDEX channel_attempts_vendor_id_id_key ON public.channel_attempts USING btree (vendor_id, id)`
 - `current_channel_attempt`: `CREATE UNIQUE INDEX current_channel_attempt ON public.channel_attempts USING btree (vendor_id, channel_account_id) WHERE (status = 'pending'::text)`
+- `gmail_attempt_member_fk`: `CREATE INDEX gmail_attempt_member_fk ON public.channel_attempts USING btree (vendor_id, initiating_member_id)`
 
 ## channel_tokens — NEW table
 
@@ -431,6 +447,7 @@ Added columns:
 - `last_message_id` uuid; nullable
 - `updated_at` timestamp with time zone; NOT NULL; default `now()`
 - `revision` bigint; NOT NULL; default `1`
+- `provider_thread_id` text; nullable
 
 New/changed constraints:
 
@@ -450,6 +467,7 @@ Added indexes (including constraint-backed and FK lookup indexes):
 
 - `b0_fk_conversations_vendor_id_id_last_message_id_fkey_16509`: `CREATE INDEX b0_fk_conversations_vendor_id_id_last_message_id_fkey_16509 ON public.conversations USING btree (vendor_id, id, last_message_id)`
 - `conversations_vendor_id_customer_id_id_key`: `CREATE UNIQUE INDEX conversations_vendor_id_customer_id_id_key ON public.conversations USING btree (vendor_id, customer_id, id)`
+- `gmail_thread_identity`: `CREATE UNIQUE INDEX gmail_thread_identity ON public.conversations USING btree (vendor_id, channel_account_id, provider_thread_id) WHERE (provider_thread_id IS NOT NULL)`
 - `inbox_assignee_cursor`: `CREATE INDEX inbox_assignee_cursor ON public.conversations USING btree (vendor_id, assigned_member_id, updated_at DESC, id DESC)`
 - `inbox_channel_cursor`: `CREATE INDEX inbox_channel_cursor ON public.conversations USING btree (vendor_id, channel_account_id, updated_at DESC, id DESC)`
 - `inbox_cursor`: `CREATE INDEX inbox_cursor ON public.conversations USING btree (vendor_id, updated_at DESC, id DESC)`
@@ -506,10 +524,12 @@ Added columns:
 - `flagged` boolean; NOT NULL; default `false`
 - `city` text; nullable
 - `updated_at` timestamp with time zone; NOT NULL; default `now()`
+- `merged_into_id` uuid; nullable
 
 New/changed constraints:
 
 - `customer_city`: `CHECK (((city IS NULL) OR (city = ANY (ARRAY['Lagos'::text, 'Abuja'::text, 'Ibadan'::text]))))`
+- `customer_no_self_merge`: `CHECK (((merged_into_id IS NULL) OR (merged_into_id <> id)))`
 - `customer_tag_bounds`: `CHECK (valid_customer_tags(tags))`
 - `customers_flagged_not_null`: `NOT NULL flagged`
 - `customers_notes_check`: `CHECK ((length(notes) <= 2000))`
@@ -517,9 +537,11 @@ New/changed constraints:
 - `customers_tags_check`: `CHECK ((cardinality(tags) <= 10))`
 - `customers_tags_not_null`: `NOT NULL tags`
 - `customers_updated_at_not_null`: `NOT NULL updated_at`
+- `customers_vendor_id_merged_into_id_fkey`: `FOREIGN KEY (vendor_id, merged_into_id) REFERENCES customers(vendor_id, id)`
 
 Added indexes (including constraint-backed and FK lookup indexes):
 
+- `customer_merge_fk`: `CREATE INDEX customer_merge_fk ON public.customers USING btree (vendor_id, merged_into_id)`
 - `customers_cursor`: `CREATE INDEX customers_cursor ON public.customers USING btree (vendor_id, created_at DESC, id DESC)`
 
 ## delivery_fees — NEW table
@@ -677,6 +699,7 @@ Added columns:
 - `opt_out_at` timestamp with time zone; nullable
 - `dedupe_key` text; NOT NULL
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
+- `message_id` uuid; nullable
 
 New/changed constraints:
 
@@ -700,12 +723,14 @@ New/changed constraints:
 - `followups_vendor_id_dedupe_key_key`: `UNIQUE (vendor_id, dedupe_key)`
 - `followups_vendor_id_fkey`: `FOREIGN KEY (vendor_id) REFERENCES vendors(id)`
 - `followups_vendor_id_id_key`: `UNIQUE (vendor_id, id)`
+- `followups_vendor_id_message_id_fkey`: `FOREIGN KEY (vendor_id, message_id) REFERENCES messages(vendor_id, id)`
 - `followups_vendor_id_not_null`: `NOT NULL vendor_id`
 
 Added indexes (including constraint-backed and FK lookup indexes):
 
 - `b0_fk_followups_vendor_id_conversation_id_fkey_17372`: `CREATE INDEX b0_fk_followups_vendor_id_conversation_id_fkey_17372 ON public.followups USING btree (vendor_id, conversation_id)`
 - `b0_fk_followups_vendor_id_customer_id_conversation_id_fkey_1737`: `CREATE INDEX b0_fk_followups_vendor_id_customer_id_conversation_id_fkey_1737 ON public.followups USING btree (vendor_id, customer_id, conversation_id)`
+- `followup_message_fk`: `CREATE INDEX followup_message_fk ON public.followups USING btree (vendor_id, message_id)`
 - `followups_due`: `CREATE INDEX followups_due ON public.followups USING btree (vendor_id, scheduled_at, id) WHERE (status = 'scheduled'::text)`
 - `followups_pkey`: `CREATE UNIQUE INDEX followups_pkey ON public.followups USING btree (id)`
 - `followups_vendor_id_dedupe_key_key`: `CREATE UNIQUE INDEX followups_vendor_id_dedupe_key_key ON public.followups USING btree (vendor_id, dedupe_key)`
@@ -857,6 +882,10 @@ Added columns:
 - `last_error_code` text; nullable
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
 - `lease_token` uuid; nullable
+- `channel_account_id` uuid; nullable
+- `approval_id` uuid; nullable
+- `followup_id` uuid; nullable
+- `reservation_id` uuid; nullable
 
 New/changed constraints:
 
@@ -866,7 +895,7 @@ New/changed constraints:
 - `jobs_created_at_not_null`: `NOT NULL created_at`
 - `jobs_dedupe_key_not_null`: `NOT NULL dedupe_key`
 - `jobs_id_not_null`: `NOT NULL id`
-- `jobs_kind_check`: `CHECK ((kind = ANY (ARRAY['ingest'::text, 'send'::text, 'holding_reply'::text, 'followup'::text, 'restock'::text, 'payment'::text, 'receipt'::text, 'usage'::text, 'invitation_email'::text, 'channel_refresh'::text, 'cleanup'::text])))`
+- `jobs_kind_check`: `CHECK ((kind = ANY (ARRAY['ingest'::text, 'send'::text, 'holding_reply'::text, 'followup'::text, 'restock'::text, 'payment'::text, 'receipt'::text, 'usage'::text, 'invitation_email'::text, 'channel_refresh'::text, 'cleanup'::text, 'gmail_sync'::text, 'gmail_watch'::text, 'reservation_expiry'::text, 'takeover_timeout'::text])))`
 - `jobs_kind_not_null`: `NOT NULL kind`
 - `jobs_max_attempts_check`: `CHECK ((max_attempts > 0))`
 - `jobs_max_attempts_not_null`: `NOT NULL max_attempts`
@@ -874,13 +903,17 @@ New/changed constraints:
 - `jobs_run_at_not_null`: `NOT NULL run_at`
 - `jobs_status_check`: `CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'failed'::text, 'dead'::text])))`
 - `jobs_status_not_null`: `NOT NULL status`
+- `jobs_vendor_id_approval_id_fkey`: `FOREIGN KEY (vendor_id, approval_id) REFERENCES approvals(vendor_id, id)`
+- `jobs_vendor_id_channel_account_id_fkey`: `FOREIGN KEY (vendor_id, channel_account_id) REFERENCES channel_accounts(vendor_id, id)`
 - `jobs_vendor_id_conversation_id_fkey`: `FOREIGN KEY (vendor_id, conversation_id) REFERENCES conversations(vendor_id, id)`
 - `jobs_vendor_id_fkey`: `FOREIGN KEY (vendor_id) REFERENCES vendors(id)`
+- `jobs_vendor_id_followup_id_fkey`: `FOREIGN KEY (vendor_id, followup_id) REFERENCES followups(vendor_id, id)`
 - `jobs_vendor_id_id_key`: `UNIQUE (vendor_id, id)`
 - `jobs_vendor_id_kind_dedupe_key_key`: `UNIQUE (vendor_id, kind, dedupe_key)`
 - `jobs_vendor_id_message_id_fkey`: `FOREIGN KEY (vendor_id, message_id) REFERENCES messages(vendor_id, id)`
 - `jobs_vendor_id_not_null`: `NOT NULL vendor_id`
 - `jobs_vendor_id_order_id_fkey`: `FOREIGN KEY (vendor_id, order_id) REFERENCES orders(vendor_id, id)`
+- `jobs_vendor_id_reservation_id_fkey`: `FOREIGN KEY (vendor_id, reservation_id) REFERENCES stock_reservations(vendor_id, id)`
 - `jobs_vendor_id_webhook_event_id_fkey`: `FOREIGN KEY (vendor_id, webhook_event_id) REFERENCES webhook_events(vendor_id, id)`
 - `safe_job_error`: `CHECK (((last_error_code IS NULL) OR (last_error_code ~ '^[A-Z0-9_]{1,64}$'::text)))`
 
@@ -890,6 +923,10 @@ Added indexes (including constraint-backed and FK lookup indexes):
 - `b0_fk_jobs_vendor_id_message_id_fkey_18056`: `CREATE INDEX b0_fk_jobs_vendor_id_message_id_fkey_18056 ON public.jobs USING btree (vendor_id, message_id)`
 - `b0_fk_jobs_vendor_id_order_id_fkey_18056`: `CREATE INDEX b0_fk_jobs_vendor_id_order_id_fkey_18056 ON public.jobs USING btree (vendor_id, order_id)`
 - `b0_fk_jobs_vendor_id_webhook_event_id_fkey_18056`: `CREATE INDEX b0_fk_jobs_vendor_id_webhook_event_id_fkey_18056 ON public.jobs USING btree (vendor_id, webhook_event_id)`
+- `job_account_fk`: `CREATE INDEX job_account_fk ON public.jobs USING btree (vendor_id, channel_account_id)`
+- `job_approval_fk`: `CREATE INDEX job_approval_fk ON public.jobs USING btree (vendor_id, approval_id)`
+- `job_followup_fk`: `CREATE INDEX job_followup_fk ON public.jobs USING btree (vendor_id, followup_id)`
+- `job_reservation_fk`: `CREATE INDEX job_reservation_fk ON public.jobs USING btree (vendor_id, reservation_id)`
 - `jobs_due`: `CREATE INDEX jobs_due ON public.jobs USING btree (vendor_id, run_at, id) WHERE (status = ANY (ARRAY['queued'::text, 'failed'::text]))`
 - `jobs_leases`: `CREATE INDEX jobs_leases ON public.jobs USING btree (vendor_id, locked_until, id) WHERE (status = 'running'::text)`
 - `jobs_pkey`: `CREATE UNIQUE INDEX jobs_pkey ON public.jobs USING btree (id)`
@@ -995,9 +1032,16 @@ Added columns:
 - `order_snapshot` jsonb; nullable
 - `revision` bigint; NOT NULL; default `1`
 - `updated_at` timestamp with time zone; NOT NULL; default `now()`
+- `provider_message_id` text; nullable
+- `rfc_message_id` text; nullable
+- `email_subject` text; nullable
+- `reply_to_message_id` uuid; nullable
+- `delivery_error_code` text; nullable
+- `provider_account_id` uuid; nullable
 
 New/changed constraints:
 
+- `messages_delivery_error_code_check`: `CHECK ((delivery_error_code ~ '^[A-Z0-9_]{1,64}$'::text))`
 - `messages_kind_check`: `CHECK ((kind = ANY (ARRAY['text'::text, 'voice'::text])))`
 - `messages_kind_not_null`: `NOT NULL kind`
 - `messages_revision_check`: `CHECK ((revision > 0))`
@@ -1005,6 +1049,8 @@ New/changed constraints:
 - `messages_status_check`: `CHECK ((status = ANY (ARRAY['received'::text, 'draft'::text, 'pending_approval'::text, 'blocked'::text, 'queued'::text, 'sending'::text, 'sent'::text, 'delivered'::text, 'read'::text, 'failed'::text])))`
 - `messages_thread_identity`: `UNIQUE (vendor_id, conversation_id, id)`
 - `messages_updated_at_not_null`: `NOT NULL updated_at`
+- `messages_vendor_id_provider_account_id_fkey`: `FOREIGN KEY (vendor_id, provider_account_id) REFERENCES channel_accounts(vendor_id, id)`
+- `messages_vendor_id_reply_to_message_id_fkey`: `FOREIGN KEY (vendor_id, reply_to_message_id) REFERENCES messages(vendor_id, id)`
 - `messages_voice_duration_seconds_check`: `CHECK ((voice_duration_seconds > 0))`
 - `order_snapshot_shape`: `CHECK (((order_snapshot IS NULL) OR (jsonb_typeof(order_snapshot) = 'object'::text)))`
 - `product_snapshot_shape`: `CHECK (((product_snapshot IS NULL) OR (jsonb_typeof(product_snapshot) = 'object'::text)))`
@@ -1012,6 +1058,9 @@ New/changed constraints:
 
 Added indexes (including constraint-backed and FK lookup indexes):
 
+- `gmail_message_dedupe`: `CREATE UNIQUE INDEX gmail_message_dedupe ON public.messages USING btree (vendor_id, provider_account_id, provider_message_id) WHERE (provider_message_id IS NOT NULL)`
+- `message_provider_account_fk`: `CREATE INDEX message_provider_account_fk ON public.messages USING btree (vendor_id, provider_account_id)`
+- `message_reply_fk`: `CREATE INDEX message_reply_fk ON public.messages USING btree (vendor_id, reply_to_message_id)`
 - `messages_thread_identity`: `CREATE UNIQUE INDEX messages_thread_identity ON public.messages USING btree (vendor_id, conversation_id, id)`
 - `thread_cursor`: `CREATE INDEX thread_cursor ON public.messages USING btree (vendor_id, conversation_id, created_at DESC, id DESC)`
 

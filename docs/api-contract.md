@@ -220,7 +220,17 @@ export interface Message extends Entity {
   order?: Pick<Order, 'id' | 'items' | 'totalKobo' | 'paymentStatus' | 'status'>;
   text: string;
   voice: { durationSeconds: number; transcript: string; audioUrl: string | null } | null;
-  status: 'received' | 'sent' | 'pending_approval' | 'blocked';
+  status:
+    | 'received'
+    | 'queued'
+    | 'sending'
+    | 'sent'
+    | 'delivered'
+    | 'read'
+    | 'failed'
+    | 'pending_approval'
+    | 'blocked';
+  deliveryErrorCode?: string | null;
   language: 'en' | 'pcm';
   createdAt: ISODate;
 }
@@ -365,11 +375,14 @@ export interface Insights {
   byChannel: { channel: Channel; conversations: number }[];
 }
 export interface ListInput {
+  cursor?: string;
   search?: string;
   offset?: number;
   limit?: number;
 }
 export interface Page<T> {
+  nextCursor?: string | null;
+  hasMore?: boolean;
   items: T[];
   total: number;
   offset: number;
@@ -460,7 +473,12 @@ export interface ConversationsData {
 }
 export interface MessagesData {
   list(input: ListInput & { conversationId: ID; latest?: boolean }): Promise<Result<Page<Message>>>;
-  send(input: { conversationId: ID; text: string }): Promise<Result<Message>>;
+  retry?(id: ID): Promise<Result<{ id: ID }>>;
+  send(input: {
+    conversationId: ID;
+    text: string;
+    idempotencyKey?: string;
+  }): Promise<Result<Message>>;
 }
 export interface ApprovalsData {
   list(input?: ListInput & { status?: Approval['status'] }): Promise<Result<Page<Approval>>>;
@@ -668,6 +686,7 @@ export interface HelperLink {
   helperNumber: string | null;
 }
 export interface ChannelAttempt {
+  authorizationUrl?: string;
   id: ID;
   channel: Channel;
   expiresAt: ISODate;

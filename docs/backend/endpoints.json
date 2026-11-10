@@ -29,8 +29,8 @@
     "tables": "conversations,conversation_reads",
     "pagination": "cursor",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
   },
   {
     "function": "ConversationsData.get",
@@ -40,8 +40,8 @@
     "tables": "conversations,conversation_reads",
     "pagination": "none",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
   },
   {
     "function": "OrdersData.list",
@@ -183,8 +183,8 @@
     "tables": "conversation_reads",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Only own membership marker; unreadCount derived since last_read_at."
+    "status": "implemented-local",
+    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
   },
   {
     "function": "ConversationsData.setHumanMode",
@@ -194,8 +194,8 @@
     "tables": "conversations,domain_events",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Scoped service transaction; future worker rechecks at send time. Agents limited to assigned/unassigned chats by API authorization."
+    "status": "implemented-local",
+    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
   },
   {
     "function": "MessagesData.send",
@@ -205,8 +205,8 @@
     "tables": "messages,message_deliveries,jobs",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Queue transaction; does not claim delivery. Agent assigned/unassigned scope. Check channel and takeover policy before send."
+    "status": "implemented-local",
+    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
   },
   {
     "function": "ApprovalsData.decide",
@@ -271,8 +271,8 @@
     "tables": "channel_attempts,channel_accounts",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Expire/invalidate older pending attempt atomically; TikTok NOT_IMPLEMENTED until access confirmed."
+    "status": "implemented-local",
+    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
   },
   {
     "function": "ChannelsData.complete",
@@ -282,8 +282,8 @@
     "tables": "channel_attempts,channel_tokens,channel_accounts",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Server-verified OAuth result/state only, no simulate flag; use callback verifier."
+    "status": "implemented-local",
+    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
   },
   {
     "function": "ChannelsData.newHelperCode",
@@ -414,8 +414,8 @@
     "tables": "messages",
     "pagination": "cursor-bidirectional",
     "idempotency": "none",
-    "status": "planned",
-    "notes": "conversationId required. latest=true is initial newest page presented chronologically; before/after traverse all history, no 100-message ceiling."
+    "status": "implemented-local",
+    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
   },
   {
     "function": "ApprovalsData.list",
@@ -436,8 +436,8 @@
     "tables": "channel_accounts",
     "pagination": "cursor",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
   },
   {
     "function": "ChannelsData.helper",
@@ -735,5 +735,16 @@
     "idempotency": "none",
     "status": "planned",
     "notes": "No implicit trusted query param; resolve attempt/state before tenant transaction."
+  },
+  {
+    "function": "MessagesData.retry",
+    "method": "POST",
+    "path": "/messages/{id}/retry",
+    "roles": "owner manager agent (thread scoped)",
+    "tables": "messages,jobs,message_deliveries",
+    "pagination": "none",
+    "idempotency": "required",
+    "status": "implemented-local",
+    "notes": "State-conditional retry; ambiguous sends reconcile only. Live Gmail acceptance pending."
   }
 ]

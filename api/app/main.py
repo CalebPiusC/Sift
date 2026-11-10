@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -10,13 +11,23 @@ from pydantic import BaseModel, Field
 from .auth import Identity, bearer, current_user
 from .config import Settings, get_settings
 
-app = FastAPI(title="Selvora API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(application):
+    yield
+    runtime = getattr(application.state, "pipeline", None)
+    if runtime:
+        await runtime.queue.close()
+        await runtime.db.close()
+
+
+app = FastAPI(title="Selvora API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().web_origins,
     allow_credentials=True,
-    allow_methods=["GET"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Vendor-Id", "Idempotency-Key"],
 )
 
 
@@ -64,3 +75,95 @@ async def vendors(
         return [Vendor.model_validate(row) for row in response.json()]
     except (httpx.HTTPError, ValueError, TypeError):
         raise HTTPException(503, "Workspace service is unavailable") from None
+
+
+# Business pipeline is opt-in; the F0 identity/health routes remain compatible.
+from fastapi.responses import JSONResponse
+
+from .pipeline.api import router as pipeline_router
+
+app.include_router(pipeline_router)
+
+
+@app.middleware("http")
+async def safe_pipeline_errors(request, call_next):
+    """Do not let asyncpg/provider exceptions reach access/error logs with private values."""
+    try:
+        return await call_next(request)
+    except Exception as error:  # noqa: BLE001 -- final privacy boundary, never log private exception values
+        code = getattr(error, "sqlstate", "")
+        status, label = (
+            (409, "CONFLICT")
+            if code == "23505"
+            else (422, "VALIDATION")
+            if code in ("23514", "23503") or isinstance(error, ValueError)
+            else (503, "UNAVAILABLE")
+        )
+        return JSONResponse(
+            status_code=status,
+            content={
+                "ok": False,
+                "error": {
+                    "code": label,
+                    "message": "The operation could not be completed safely. Please retry or review the input.",
+                    "retryable": status == 503,
+                },
+            },
+        )
+
+
+@app.exception_handler(HTTPException)
+async def safe_http_error(request, error):
+    if request.url.path in ("/v1/me", "/v1/vendors"):
+        return JSONResponse(status_code=error.status_code, content={"detail": error.detail})
+    code = (
+        "FORBIDDEN"
+        if error.status_code in (401, 403)
+        else "NOT_FOUND"
+        if error.status_code == 404
+        else "CONFLICT"
+        if error.status_code == 409
+        else "NOT_IMPLEMENTED"
+        if error.status_code == 501
+        else "UNAVAILABLE"
+        if error.status_code >= 500
+        else "VALIDATION"
+    )
+    return JSONResponse(
+        status_code=error.status_code,
+        content={
+            "ok": False,
+            "error": {
+                "code": code,
+                "message": str(error.detail),
+                "retryable": code == "UNAVAILABLE",
+            },
+        },
+    )
+
+
+@app.get("/health/ready")
+async def readiness(settings: Annotated[Settings, Depends(get_settings)]):
+    import asyncpg
+    from redis.asyncio import Redis
+
+    checks = {"database": False, "redis": False}
+    try:
+        connection = await asyncpg.connect(settings.database_url, timeout=3)
+        try:
+            checks["database"] = await connection.fetchval("SELECT 1") == 1
+        finally:
+            await connection.close()
+    except Exception:  # noqa: BLE001 -- readiness reports failure without leaking connection details
+        checks["database"] = False
+    redis = Redis.from_url(settings.redis_url, socket_connect_timeout=2, socket_timeout=2)
+    try:
+        checks["redis"] = bool(await redis.ping())
+    except Exception:  # noqa: BLE001 -- readiness reports failure without leaking connection details
+        checks["redis"] = False
+    finally:
+        await redis.aclose()
+    return JSONResponse(
+        status_code=200 if all(checks.values()) else 503,
+        content={"status": "ready" if all(checks.values()) else "not_ready", "checks": checks},
+    )

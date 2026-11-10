@@ -76,6 +76,16 @@ export function ChannelsSettings() {
                   : 'Complete the provider authorisation flow. Never give your password to Selvora.'}
               </p>
               <div className="flex flex-wrap gap-2">
+                {attempt.authorizationUrl?.startsWith('https://accounts.google.com/') && (
+                  <a
+                    className="inline-flex min-h-12 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-white"
+                    href={attempt.authorizationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Continue with Google
+                  </a>
+                )}
                 <Button
                   disabled={action.busy}
                   onClick={() =>
@@ -100,6 +110,20 @@ export function ChannelsSettings() {
             </>
           )}
         </section>
+      )}
+      {client.mode === 'api' && (
+        <Button
+          disabled={action.busy}
+          onClick={() =>
+            void action
+              .run(() => client.channels.begin({ channel: 'email' }))
+              .then((r) => {
+                if (r.ok) setAttempt(r.data);
+              })
+          }
+        >
+          Connect Gmail
+        </Button>
       )}
       <ResourceView resource={rows}>
         {(channels) => (

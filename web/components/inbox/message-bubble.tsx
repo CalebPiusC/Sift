@@ -106,6 +106,18 @@ export function MessageBubble({
             </p>
           </article>
         )}
+        {m.status === 'failed' && (
+          <p role="status" className="mt-2 text-xs font-semibold text-danger">
+            {m.deliveryErrorCode === 'DELIVERY_UNCERTAIN'
+              ? 'Sending could not be confirmed. Check Gmail Sent; retry only reconciles and will not send a duplicate.'
+              : 'Reply failed. Review the channel connection and retry.'}
+          </p>
+        )}
+        {!sample && m.status === 'sent' && (
+          <p className="text-[10px] text-slate-500">
+            Accepted by Gmail · recipient delivery is not confirmed
+          </p>
+        )}
         <p className="mt-1 text-right text-[10px] text-slate-600 dark:text-slate-300">
           <time dateTime={m.createdAt}>{messageTime(m.createdAt)}</time>
           {m.sender !== 'customer' &&

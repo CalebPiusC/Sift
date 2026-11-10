@@ -20,6 +20,7 @@ export interface HelperLink {
   helperNumber: string | null;
 }
 export interface ChannelAttempt {
+  authorizationUrl?: string;
   id: ID;
   channel: Channel;
   expiresAt: ISODate;
