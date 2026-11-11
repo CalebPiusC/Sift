@@ -11,7 +11,7 @@ try {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('dialog', (d) => d.accept());
-  await mkdir('/tmp/sift-f6', { recursive: true });
+  await mkdir('/tmp/selvora-f6', { recursive: true });
   const fits = async (label) =>
     assert.ok(
       await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
@@ -31,7 +31,7 @@ try {
   ])
     await page.getByRole('region', { name, exact: true }).waitFor();
   await fits('insights');
-  await page.screenshot({ path: '/tmp/sift-f6/insights.png', fullPage: true });
+  await page.screenshot({ path: '/tmp/selvora-f6/insights.png', fullPage: true });
   await page.getByLabel('From', { exact: true }).fill('2000-01-01');
   await page.getByLabel('To', { exact: true }).fill('2000-01-02');
   await page
@@ -57,7 +57,7 @@ try {
         .length === 2,
   );
   await fits('followups');
-  await page.screenshot({ path: '/tmp/sift-f6/followups.png', fullPage: true });
+  await page.screenshot({ path: '/tmp/selvora-f6/followups.png', fullPage: true });
   await page.getByRole('button', { name: 'Spam & scam', exact: true }).click();
   await page
     .getByRole('article', { name: 'Flag flag-1', exact: true })
@@ -81,7 +81,7 @@ try {
   await page.getByRole('button', { name: 'Simulate restock alert', exact: true }).first().click();
   await page.getByText('Chidinma Okafor · notified', { exact: true }).waitFor();
   await fits('restock');
-  await page.screenshot({ path: '/tmp/sift-f6/restock.png', fullPage: true });
+  await page.screenshot({ path: '/tmp/selvora-f6/restock.png', fullPage: true });
   await page.getByRole('button', { name: 'Customers', exact: true }).click();
   await page.getByLabel('Search customers', { exact: true }).fill('Chidinma');
   await page.getByRole('button', { name: /Chidinma Okafor/ }).click();
@@ -92,7 +92,7 @@ try {
   await page.getByRole('button', { name: 'Save customer memory', exact: true }).click();
   await page.getByText('Customer memory saved.', { exact: true }).waitFor();
   await fits('customer detail');
-  await page.screenshot({ path: '/tmp/sift-f6/customer.png', fullPage: true });
+  await page.screenshot({ path: '/tmp/selvora-f6/customer.png', fullPage: true });
   await page.getByRole('button', { name: 'Back to customers', exact: true }).click();
   await page.getByLabel('Search customers', { exact: true }).fill('Deliver after 5pm');
   await page.getByRole('button', { name: /Chidinma Okafor/ }).click();
@@ -108,7 +108,7 @@ try {
     .getByRole('region', { name: 'Language summary', exact: true })
     .last()
     .scrollIntoViewIfNeeded();
-  await page.screenshot({ path: '/tmp/sift-f6/language.png', fullPage: true });
+  await page.screenshot({ path: '/tmp/selvora-f6/language.png', fullPage: true });
   assert.deepEqual(errors, []);
   await page.setViewportSize({ width: 320, height: 740 });
   await fits('language summary narrow phone');
@@ -127,7 +127,7 @@ try {
   await page.getByLabel('To', { exact: true }).fill('2030-01-01');
   await page.getByRole('region', { name: 'Leads by channel', exact: true }).waitFor();
   await fits('dark insights');
-  await page.screenshot({ path: '/tmp/sift-f6/insights-dark.png', fullPage: true });
+  await page.screenshot({ path: '/tmp/selvora-f6/insights-dark.png', fullPage: true });
   console.log(
     'PASS: F6 390×844 touch workflows and 320px width: seven charts/date states, followups, moderation, restock, customer search/history/notes, original + English summaries; no browser exceptions.',
   );

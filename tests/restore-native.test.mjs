@@ -10,7 +10,7 @@ import { b0Fixture } from './b0-fixtures.mjs';
 
 test('cold physical backup restores full schema, receipts and encrypted records into isolated cluster', async () => {
   const bin = await import(`@embedded-postgres/linux-${process.arch}`);
-  const root = await mkdtemp(path.join(tmpdir(), 'sift-restore-'));
+  const root = await mkdtemp(path.join(tmpdir(), 'selvora-restore-'));
   const source = path.join(root, 'source'),
     backup = path.join(root, 'backup'),
     restored = path.join(root, 'restored');

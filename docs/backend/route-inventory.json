@@ -1,0 +1,548 @@
+[
+  {
+    "method": "GET",
+    "path": "/v1/billing",
+    "file": "api/app/billing/api.py",
+    "handler": "billing",
+    "line": 18
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/billing/selection",
+    "file": "api/app/billing/api.py",
+    "handler": "select",
+    "line": 67
+  },
+  {
+    "method": "POST",
+    "path": "/v1/billing/checkout",
+    "file": "api/app/billing/api.py",
+    "handler": "checkout",
+    "line": 82
+  },
+  {
+    "method": "GET",
+    "path": "/v1/insights",
+    "file": "api/app/billing/insights.py",
+    "handler": "insights",
+    "line": 15
+  },
+  {
+    "method": "GET",
+    "path": "/v1/orders",
+    "file": "api/app/commerce/api.py",
+    "handler": "list_orders",
+    "line": 91
+  },
+  {
+    "method": "GET",
+    "path": "/v1/orders/{oid}",
+    "file": "api/app/commerce/api.py",
+    "handler": "get_order",
+    "line": 126
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/orders/{oid}/status",
+    "file": "api/app/commerce/api.py",
+    "handler": "set_status",
+    "line": 141
+  },
+  {
+    "method": "POST",
+    "path": "/v1/orders/{oid}/payment-confirmation",
+    "file": "api/app/commerce/api.py",
+    "handler": "payment_challenge",
+    "line": 156
+  },
+  {
+    "method": "POST",
+    "path": "/v1/orders/{oid}/payment",
+    "file": "api/app/commerce/api.py",
+    "handler": "bank_payment",
+    "line": 183
+  },
+  {
+    "method": "POST",
+    "path": "/v1/orders/{oid}/cancellation-actions",
+    "file": "api/app/commerce/api.py",
+    "handler": "cancellation",
+    "line": 221
+  },
+  {
+    "method": "POST",
+    "path": "/v1/orders/{oid}/checkout",
+    "file": "api/app/commerce/api.py",
+    "handler": "checkout",
+    "line": 251
+  },
+  {
+    "method": "POST",
+    "path": "/v1/webhooks/paystack",
+    "file": "api/app/commerce/api.py",
+    "handler": "webhook",
+    "line": 281
+  },
+  {
+    "method": "GET",
+    "path": "/v1/receipts",
+    "file": "api/app/commerce/api.py",
+    "handler": "list_receipts",
+    "line": 356
+  },
+  {
+    "method": "GET",
+    "path": "/v1/receipts/{rid}",
+    "file": "api/app/commerce/api.py",
+    "handler": "get_receipt",
+    "line": 383
+  },
+  {
+    "method": "POST",
+    "path": "/v1/receipts",
+    "file": "api/app/commerce/api.py",
+    "handler": "issue",
+    "line": 399
+  },
+  {
+    "method": "POST",
+    "path": "/v1/receipts/{rid}/share",
+    "file": "api/app/commerce/api.py",
+    "handler": "share_receipt",
+    "line": 407
+  },
+  {
+    "method": "POST",
+    "path": "/v1/receipts/{rid}/revoke",
+    "file": "api/app/commerce/api.py",
+    "handler": "revoke",
+    "line": 417
+  },
+  {
+    "method": "POST",
+    "path": "/v1/public/receipts",
+    "file": "api/app/commerce/api.py",
+    "handler": "public_receipt",
+    "line": 439
+  },
+  {
+    "method": "GET",
+    "path": "/v1/customers",
+    "file": "api/app/extras/api.py",
+    "handler": "customers",
+    "line": 61
+  },
+  {
+    "method": "GET",
+    "path": "/v1/customers/{cid}",
+    "file": "api/app/extras/api.py",
+    "handler": "get_customer",
+    "line": 85
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/customers/{cid}",
+    "file": "api/app/extras/api.py",
+    "handler": "notes",
+    "line": 97
+  },
+  {
+    "method": "POST",
+    "path": "/v1/customers/{cid}/opt-out",
+    "file": "api/app/extras/api.py",
+    "handler": "optout",
+    "line": 114
+  },
+  {
+    "method": "GET",
+    "path": "/v1/extras",
+    "file": "api/app/extras/api.py",
+    "handler": "extras",
+    "line": 165
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/extras/followups/settings",
+    "file": "api/app/extras/api.py",
+    "handler": "configure",
+    "line": 196
+  },
+  {
+    "method": "POST",
+    "path": "/v1/extras/followups",
+    "file": "api/app/extras/api.py",
+    "handler": "schedule",
+    "line": 223
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/extras/followups/{fid}",
+    "file": "api/app/extras/api.py",
+    "handler": "cancel",
+    "line": 242
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/extras/flags/{fid}",
+    "file": "api/app/extras/api.py",
+    "handler": "moderate",
+    "line": 259
+  },
+  {
+    "method": "POST",
+    "path": "/v1/extras/restock",
+    "file": "api/app/extras/api.py",
+    "handler": "subscribe",
+    "line": 308
+  },
+  {
+    "method": "POST",
+    "path": "/v1/extras/restock/{rid}",
+    "file": "api/app/extras/api.py",
+    "handler": "notify_restock",
+    "line": 368
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/conversations/{cid}/stage",
+    "file": "api/app/extras/api.py",
+    "handler": "stage",
+    "line": 390
+  },
+  {
+    "method": "GET",
+    "path": "/v1/notifications",
+    "file": "api/app/extras/api.py",
+    "handler": "notifications",
+    "line": 402
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/notifications/{nid}",
+    "file": "api/app/extras/api.py",
+    "handler": "read_notification",
+    "line": 427
+  },
+  {
+    "method": "GET",
+    "path": "/v1/team",
+    "file": "api/app/extras/api.py",
+    "handler": "team",
+    "line": 440
+  },
+  {
+    "method": "POST",
+    "path": "/v1/team/invitations",
+    "file": "api/app/extras/api.py",
+    "handler": "invite",
+    "line": 458
+  },
+  {
+    "method": "POST",
+    "path": "/v1/team/invitations/accept",
+    "file": "api/app/extras/api.py",
+    "handler": "accept",
+    "line": 521
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/team/{mid}/role",
+    "file": "api/app/extras/api.py",
+    "handler": "role",
+    "line": 581
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/conversations/{cid}/assignment",
+    "file": "api/app/extras/api.py",
+    "handler": "assign",
+    "line": 608
+  },
+  {
+    "method": "GET",
+    "path": "/v1/team/audit",
+    "file": "api/app/extras/api.py",
+    "handler": "audit_log",
+    "line": 626
+  },
+  {
+    "method": "GET",
+    "path": "/v1/business/export",
+    "file": "api/app/extras/api.py",
+    "handler": "export_business",
+    "line": 655
+  },
+  {
+    "method": "POST",
+    "path": "/v1/business/deletion",
+    "file": "api/app/extras/api.py",
+    "handler": "delete_business",
+    "line": 699
+  },
+  {
+    "method": "GET",
+    "path": "/health",
+    "file": "api/app/main.py",
+    "handler": "health",
+    "line": 47
+  },
+  {
+    "method": "GET",
+    "path": "/v1/me",
+    "file": "api/app/main.py",
+    "handler": "me",
+    "line": 53
+  },
+  {
+    "method": "GET",
+    "path": "/v1/vendors",
+    "file": "api/app/main.py",
+    "handler": "vendors",
+    "line": 58
+  },
+  {
+    "method": "GET",
+    "path": "/health/ready",
+    "file": "api/app/main.py",
+    "handler": "readiness",
+    "line": 157
+  },
+  {
+    "method": "GET",
+    "path": "/v1/health/ready",
+    "file": "api/app/operations/api.py",
+    "handler": "readiness",
+    "line": 23
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/operations/ai-pause",
+    "file": "api/app/operations/api.py",
+    "handler": "global_pause",
+    "line": 35
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/operations/vendor/ai-pause",
+    "file": "api/app/operations/api.py",
+    "handler": "vendor_pause",
+    "line": 47
+  },
+  {
+    "method": "POST",
+    "path": "/v1/feedback",
+    "file": "api/app/operations/api.py",
+    "handler": "feedback",
+    "line": 61
+  },
+  {
+    "method": "GET",
+    "path": "/v1/operations/vendor",
+    "file": "api/app/operations/api.py",
+    "handler": "dashboard",
+    "line": 68
+  },
+  {
+    "method": "GET",
+    "path": "/v1/operations/backlog",
+    "file": "api/app/operations/api.py",
+    "handler": "backlog",
+    "line": 107
+  },
+  {
+    "method": "GET",
+    "path": "/v1/conversations",
+    "file": "api/app/pipeline/api.py",
+    "handler": "conversations",
+    "line": 129
+  },
+  {
+    "method": "GET",
+    "path": "/v1/conversations/{cid}",
+    "file": "api/app/pipeline/api.py",
+    "handler": "get_conversation",
+    "line": 174
+  },
+  {
+    "method": "GET",
+    "path": "/v1/messages",
+    "file": "api/app/pipeline/api.py",
+    "handler": "messages",
+    "line": 182
+  },
+  {
+    "method": "POST",
+    "path": "/v1/messages",
+    "file": "api/app/pipeline/api.py",
+    "handler": "send",
+    "line": 220
+  },
+  {
+    "method": "POST",
+    "path": "/v1/messages/{mid}/retry",
+    "file": "api/app/pipeline/api.py",
+    "handler": "retry",
+    "line": 301
+  },
+  {
+    "method": "POST",
+    "path": "/v1/conversations/{cid}/read",
+    "file": "api/app/pipeline/api.py",
+    "handler": "mark_read",
+    "line": 322
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/conversations/{cid}/human-mode",
+    "file": "api/app/pipeline/api.py",
+    "handler": "takeover",
+    "line": 339
+  },
+  {
+    "method": "GET",
+    "path": "/v1/channels",
+    "file": "api/app/pipeline/api.py",
+    "handler": "channels",
+    "line": 354
+  },
+  {
+    "method": "POST",
+    "path": "/v1/channels/connections",
+    "file": "api/app/pipeline/api.py",
+    "handler": "connect",
+    "line": 389
+  },
+  {
+    "method": "GET",
+    "path": "/v1/channels/oauth/gmail/callback",
+    "file": "api/app/pipeline/api.py",
+    "handler": "callback",
+    "line": 404
+  },
+  {
+    "method": "POST",
+    "path": "/v1/channels/connections/{attempt}/complete",
+    "file": "api/app/pipeline/api.py",
+    "handler": "connection_status",
+    "line": 414
+  },
+  {
+    "method": "POST",
+    "path": "/v1/webhooks/gmail",
+    "file": "api/app/pipeline/api.py",
+    "handler": "gmail_push",
+    "line": 435
+  },
+  {
+    "method": "GET",
+    "path": "/v1/jobs/dead",
+    "file": "api/app/pipeline/api.py",
+    "handler": "dead_jobs",
+    "line": 492
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/customers/{source}/merge",
+    "file": "api/app/pipeline/api.py",
+    "handler": "merge",
+    "line": 509
+  },
+  {
+    "method": "GET",
+    "path": "/v1/approvals",
+    "file": "api/app/replies/api.py",
+    "handler": "approvals",
+    "line": 38
+  },
+  {
+    "method": "POST",
+    "path": "/v1/approvals/{aid}/decision",
+    "file": "api/app/replies/api.py",
+    "handler": "decision",
+    "line": 65
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/settings/reply-engine",
+    "file": "api/app/replies/api.py",
+    "handler": "settings",
+    "line": 163
+  },
+  {
+    "method": "GET",
+    "path": "/v1/settings/reply-engine",
+    "file": "api/app/replies/api.py",
+    "handler": "get_settings",
+    "line": 185
+  },
+  {
+    "method": "GET",
+    "path": "/v1/webhooks/whatsapp",
+    "file": "api/app/whatsapp/api.py",
+    "handler": "verify",
+    "line": 20
+  },
+  {
+    "method": "POST",
+    "path": "/v1/webhooks/whatsapp",
+    "file": "api/app/whatsapp/api.py",
+    "handler": "webhook",
+    "line": 35
+  },
+  {
+    "method": "POST",
+    "path": "/v1/channels/whatsapp/signup/{attempt}/complete",
+    "file": "api/app/whatsapp/api.py",
+    "handler": "complete",
+    "line": 70
+  },
+  {
+    "method": "GET",
+    "path": "/v1/channels/whatsapp/helper",
+    "file": "api/app/whatsapp/api.py",
+    "handler": "helper",
+    "line": 104
+  },
+  {
+    "method": "POST",
+    "path": "/v1/channels/whatsapp/helper/codes",
+    "file": "api/app/whatsapp/api.py",
+    "handler": "new_code",
+    "line": 111
+  },
+  {
+    "method": "POST",
+    "path": "/v1/catalogue/text-proposals",
+    "file": "api/app/whatsapp/api.py",
+    "handler": "proposal",
+    "line": 148
+  },
+  {
+    "method": "POST",
+    "path": "/v1/catalogue/text-proposals/{pid}/confirm",
+    "file": "api/app/whatsapp/api.py",
+    "handler": "confirm_instruction",
+    "line": 158
+  },
+  {
+    "method": "GET",
+    "path": "/v1/messages/{mid}/media",
+    "file": "api/app/whatsapp/api.py",
+    "handler": "private_media",
+    "line": 166
+  },
+  {
+    "method": "POST",
+    "path": "/v1/channels/whatsapp/templates/send",
+    "file": "api/app/whatsapp/api.py",
+    "handler": "template_send",
+    "line": 203
+  },
+  {
+    "method": "GET",
+    "path": "/v1/channels/whatsapp/{account}/templates",
+    "file": "api/app/whatsapp/api.py",
+    "handler": "approved_templates",
+    "line": 243
+  }
+]

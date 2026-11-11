@@ -1,5 +1,7 @@
 # B7 — backend slice (not acceptance-complete)
 
+> Current status authority: [status matrix](../status-matrix.md). This phase/design guide is technical context, not independent release sign-off.
+
 This phase adds migration 009 and real tenant-scoped endpoints. It is **not** a
 claim that all eight B7 features meet acceptance. Existing Extras, Team and
 Notifications frontend screens still need API-mode integration and end-to-end
@@ -36,9 +38,8 @@ acceptance. Do not demo a simulation as a real provider delivery.
 Apply all migrations in order. Configure `EMAIL_API_KEY`, `EMAIL_FROM` and an
 HTTPS `PUBLIC_WEB_URL` for Resend invitations; configure `GEMINI_API_KEY` for
 translation. Do not commit credentials. Providers have not been exercised live
-from this environment. `/invitations/accept` frontend landing page is not shipped
-in this slice; the API is `POST /v1/team/invitations/accept` with `{token}` and a
-verified-email bearer session. Do not enable invitation UI until this page exists.
+from this environment. `/invitations/accept` frontend landing page was added in B9 (live acceptance unproven); the API is `POST /v1/team/invitations/accept` with `{token}` and a
+verified-email bearer session. Verify live email/session acceptance before enabling commercial invitations.
 
 ## Reproducible backend demo
 
@@ -55,7 +56,7 @@ unsafe-input contracts.
   invitation verified-email/replay/live delivery tests, translation provider tests,
   deletion/retention execution and per-feature demos.
 - API contract manifest/OpenAPI reconciliation and real frontend wiring, including
-  invitation acceptance, history/read state and export/deletion controls.
+  history/read state and export/deletion controls; the acceptance page now exists.
 - Global suppression concurrency across linked threads/identities needs stress
   validation. A provider send already in flight cannot be recalled by STOP.
 - Export currently rejects >10,000 rows/table rather than silently truncating;

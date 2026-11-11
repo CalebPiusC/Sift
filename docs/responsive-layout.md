@@ -1,5 +1,7 @@
 # Responsive workspace
 
+> Current capability/release status: [status matrix](status-matrix.md). This guide documents sample/UI procedures, not live-provider acceptance.
+
 - Below768px: phone bottom navigation; list and chat are separate screens.
 - From768px: fixed left navigation with Selvora branding, labels and an accessible
   collapse/expand toggle. Collapsing keeps accessible names and icon tooltips.

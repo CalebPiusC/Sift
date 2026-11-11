@@ -1,5 +1,7 @@
 # B6 pre-implementation decision: TikTok messaging
 
+> Current status authority: [status matrix](../status-matrix.md). This phase/design guide is technical context, not independent release sign-off.
+
 Research date: 10 November 2026. This is a feasibility report, not evidence that
 Selvora or any vendor has TikTok approval. No B6 application code has been written.
 

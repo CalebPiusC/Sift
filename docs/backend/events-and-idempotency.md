@@ -1,5 +1,7 @@
 # B0 event and idempotency model
 
+> Current status authority: [status matrix](../status-matrix.md). This phase/design guide is technical context, not independent release sign-off.
+
 ## Events
 
 `domain_events` is append-only, vendor-scoped and immutable even to the bounded service role.
@@ -22,7 +24,7 @@ SQL triggers capture message receive/sent, approval creation/decision, initial a
 stage, takeover start/hand-back, order creation/payment/status, receipt issuance, stock movement,
 follow-up sent, restock notified and verified-payment ledger insertion in the same transaction.
 Channel-connected and identity-linked producers are reserved for later verified integration
-transactions. Time-based takeover expiry needs the future job worker to emit its end event;
+transactions. Time-based takeover expiry uses the worker introduced after B0;
 no database timer is pretended here. Snapshot state changes and message sends must not be confused:
 queued is not sent, screenshot is not order_paid, draft receipt is not receipt_issued.
 
@@ -77,5 +79,6 @@ not silently treated as the original event. Invalid/unresolved events never ente
 merchant/reference mapping, not a browser-supplied vendor ID or screenshot. Provider event IDs
 are not trustworthy until signature/account checks pass. Event/job application has its own dedupe.
 
-The B0 schema/constraints exist; provider adapters, idempotency middleware, queue polling, HMAC/KMS
-operations, cleanup jobs, durable send processing and event-consumer analytics are future work.
+Later B2–B9 phases supply provider adapters, application encryption/HMAC, durable workers and
+analytics. Universal idempotency and physical cleanup/erasure are NOT complete. The rules above
+are design requirements; inspect each handler and the status matrix for actual coverage.

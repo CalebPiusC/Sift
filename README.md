@@ -168,6 +168,15 @@ After contract/schema changes, regenerate with `npm run docs:contract` and
 `SUPABASE_TEST_DATABASE_URL` securely in the environment with
 `npm run test:db:supabase`; they do not deploy migrations or prove live providers.
 
+## Current status and completion sequence
+
+**Single status authority:** [docs/status-matrix.md](docs/status-matrix.md).
+See [original B1 endpoint gaps](docs/backend/b1-gap-audit.md),
+[actual HTTP route audit](docs/backend/route-audit.md) and
+[S0 validation](docs/s0-validation.md). Older phase narratives are context, not
+completion evidence. S1 catalogue/settings completion and S2 Gemini wording have
+not been implemented by S0. No live-provider/release approval is recorded.
+
 ## Guides
 
 - [Contributing](CONTRIBUTING.md) · [Two-person workflow](docs/working-with-two-people.md)

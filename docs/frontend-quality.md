@@ -1,5 +1,7 @@
 # F7 frontend quality notes
 
+> Current capability/release status: [status matrix](status-matrix.md). This guide documents sample/UI procedures, not live-provider acceptance.
+
 ## Delivery / low-data
 
 - Inbox is the initial screen. Catalogue, Orders, Insights and Settings use Next dynamic
