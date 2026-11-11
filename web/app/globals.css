@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+body {
+  @apply bg-canvas text-ink font-sans antialiased dark:bg-slate-950 dark:text-slate-100;
+}
+h1,
+h2,
+h3 {
+  @apply font-heading;
+}
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+input,
+textarea,
+select {
+  @apply min-h-12 w-full rounded-xl border border-slate-200 bg-white px-4 outline-none focus:ring-2 focus:ring-primary dark:border-slate-700 dark:bg-slate-900;
+}
+.bubble-customer {
+  @apply bg-slate-100 dark:bg-slate-800;
+}
+.bubble-ai {
+  @apply bg-indigo-50 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-100;
+}
+.bubble-vendor {
+  @apply bg-white dark:bg-slate-900;
+}
+.bubble-pending {
+  @apply border border-dashed border-gold;
+}
+button {
+  touch-action: manipulation;
+}
+::selection {
+  background: #c7d2fe;
+}
+
+textarea,
+select {
+  @apply py-3 text-base;
+}
+textarea {
+  @apply mt-2 resize-y;
+}
+
+/* F7: shared keyboard, motion and readable text tokens across every screen. */
+@layer base {
+  :focus-visible {
+    outline: 3px solid #4338ca;
+    outline-offset: 3px;
+  }
+  html.dark :focus-visible {
+    outline-color: #a5b4fc;
+  }
+  input[type='checkbox'],
+  input[type='radio'] {
+    width: 1.25rem;
+    min-height: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    accent-color: #4338ca;
+  }
+  input {
+    font-size: 16px;
+  }
+  svg {
+    flex-shrink: 0;
+  }
+}
+@layer utilities {
+  .text-slate-400,
+  .text-slate-500 {
+    color: #475569;
+  }
+  html.dark .text-slate-400,
+  html.dark .text-slate-500 {
+    color: #94a3b8;
+  }
+  .text-warning {
+    color: #92400e;
+  }
+  html.dark .text-warning {
+    color: #fbbf24;
+  }
+  .text-success {
+    color: #15803d;
+  }
+  html.dark .text-success {
+    color: #4ade80;
+  }
+  html.dark .text-danger {
+    color: #fca5a5;
+  }
+  html.dark .text-primary {
+    color: #a5b4fc;
+  }
+}
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: #4338ca;
+  color: white;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+html[data-low-data='true'] *,
+html[data-low-data='true'] *::before,
+html[data-low-data='true'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

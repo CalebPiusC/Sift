@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    command:
+      [
+        'postgres',
+        '-c',
+        'log_statement=none',
+        '-c',
+        'log_min_error_statement=panic',
+        '-c',
+        'log_parameter_max_length_on_error=0',
+      ]
+    environment:
+      POSTGRES_DB: selvora
+      POSTGRES_USER: selvora
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./tests/bootstrap.sql:/docker-entrypoint-initdb.d/001-auth.sql:ro
+      - ./supabase/migrations/202611100001_foundation.sql:/docker-entrypoint-initdb.d/002-foundation.sql:ro
+      - ./supabase/migrations/202611100002_receipt_privileges.sql:/docker-entrypoint-initdb.d/003-receipt-privileges.sql:ro
+      - ./supabase/migrations/202611100003_backend_reconciliation.sql:/docker-entrypoint-initdb.d/004-backend-reconciliation.sql:ro
+      - ./supabase/migrations/202611100004_reconciliation_invariants.sql:/docker-entrypoint-initdb.d/005-reconciliation-invariants.sql:ro
+      - ./supabase/migrations/202611100005_gmail_pipeline.sql:/docker-entrypoint-initdb.d/006-gmail-pipeline.sql:ro
+      - ./supabase/migrations/202611100006_reply_engine.sql:/docker-entrypoint-initdb.d/007-reply-engine.sql:ro
+      - ./supabase/migrations/202611100007_orders_payments.sql:/docker-entrypoint-initdb.d/008-orders-payments.sql:ro
+      - ./supabase/migrations/202611100008_whatsapp.sql:/docker-entrypoint-initdb.d/009-whatsapp.sql:ro
+      - ./supabase/migrations/202611100009_real_extras.sql:/docker-entrypoint-initdb.d/010-extras.sql:ro
+      - ./supabase/migrations/202611100010_insights_billing.sql:/docker-entrypoint-initdb.d/011-billing.sql:ro
+      - ./supabase/migrations/202611100011_go_live.sql:/docker-entrypoint-initdb.d/012-go-live.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U selvora']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '127.0.0.1:6379:6379'
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redisdata:/data
+volumes:
+  pgdata:
+  redisdata:

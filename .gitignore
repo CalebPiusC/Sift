@@ -1,4 +1,32 @@
+# Secrets belong in local environment files, never in Git.
 .env
+.env.*
+!.env.example
+
+# Local credential exports / private keys (templates must contain no credentials).
+secrets/
+.secrets/
+secrets.json
+credentials.json
+service-account*.json
+supabase-keys*.json
+api-keys*.json
+*.pem
+*.key
+
+node_modules/
+.next/
 __pycache__/
-venv/
-leads.csv
+.pytest_cache/
+.venv/
+*.pyc
+web/tsconfig.tsbuildinfo
+
+*.egg-info/
+.ruff_cache/
+
+# Backups and private acceptance evidence belong in encrypted external storage.
+backups/
+*.dump
+*.dump.partial
+private-evidence/

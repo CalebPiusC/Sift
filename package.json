@@ -1,0 +1,49 @@
+{
+  "name": "selvora",
+  "private": true,
+  "workspaces": [
+    "web"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w web",
+    "build": "npm run build -w web",
+    "test": "npm run test -w web",
+    "typecheck": "npm run typecheck -w web",
+    "test:db": "node --test tests/rls.test.mjs",
+    "test:pwa": "node --test tests/pwa.test.mjs",
+    "test:all": "npm test && npm run test:db && npm run test:db:native && npm run test:pwa && npm run test:security && npm run typecheck && npm run test:contract && npm run test:backend",
+    "format": "prettier --write web tests/*.mjs package.json docker-compose.yml",
+    "test:db:native": "node --test tests/native-postgres.test.mjs",
+    "test:db:supabase": "node scripts/test-supabase-rls.mjs",
+    "test:security": "node --test tests/browser-env.test.mjs",
+    "check:browser-env": "node scripts/check-browser-env.mjs",
+    "docs:contract": "node scripts/write-api-contract.mjs",
+    "test:contract": "node --test tests/contract-doc.test.mjs",
+    "test:mobile": "node tests/inbox-mobile.mjs",
+    "test:orders:mobile": "node tests/orders-mobile.mjs",
+    "test:settings:mobile": "node tests/settings-mobile.mjs",
+    "test:insights:mobile": "node tests/insights-mobile.mjs",
+    "test:demo:mobile": "node tests/frontend-demo.mjs",
+    "test:a11y": "node tests/frontend-a11y.mjs",
+    "test:performance": "node tests/frontend-performance.mjs",
+    "test:ui": "npm run test:demo:mobile && npm run test:mobile && npm run test:orders:mobile && npm run test:settings:mobile && npm run test:insights:mobile && npm run test:a11y && npm run test:performance",
+    "docs:backend": "node scripts/write-role-matrix.mjs && node scripts/write-backend-roadmap.mjs && node scripts/write-b0-schema-report.mjs",
+    "test:backend": "node --test tests/b0-reconciliation.test.mjs tests/b0-native.test.mjs tests/backend-doc.test.mjs",
+    "test:pipeline": "python -m pytest api/tests -q && node --test tests/b2-native.test.mjs",
+    "eval:replies": "python3 api/evals/run.py",
+    "test:replies": "python3 api/evals/run.py && python -m pytest api/tests -q && node --test tests/b2-native.test.mjs",
+    "test:commerce": "python -m pytest api/tests -q && node --test tests/b2-native.test.mjs",
+    "test:layout": "node tests/responsive-layout.mjs",
+    "test:whatsapp": "python -m pytest api/tests -q && node --test tests/b2-native.test.mjs",
+    "test:readiness": "python -m pytest api/tests -q && node --test tests/restore-native.test.mjs tests/b2-native.test.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
+    "@sparticuz/chromium": "^153.0.0",
+    "axe-core": "^4.14.0",
+    "embedded-postgres": "^18.6.0-beta.19",
+    "pg": "^8.23.1",
+    "playwright-core": "^1.65.0",
+    "prettier": "^3.9.10"
+  }
+}

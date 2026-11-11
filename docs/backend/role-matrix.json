@@ -1,0 +1,359 @@
+{
+  "vendors": {
+    "owner": "RU",
+    "manager": "R",
+    "agent": "R",
+    "service": "RU",
+    "note": "Tenant creation remains onboard_vendor RPC."
+  },
+  "vendor_members": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": "Membership writes require the future owner-authorized service transaction; no direct self-escalation."
+  },
+  "customers": {
+    "owner": "RIU",
+    "manager": "RIU",
+    "agent": "RIU",
+    "service": "RIU",
+    "note": ""
+  },
+  "conversations": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": "Operational truth is service-owned. Human APIs authorize takeover/assignment; read markers use conversation_reads."
+  },
+  "products": {
+    "owner": "RIU",
+    "manager": "RIU",
+    "agent": "R",
+    "service": "RIU",
+    "note": ""
+  },
+  "product_variants": {
+    "owner": "RIU",
+    "manager": "RIU",
+    "agent": "R",
+    "service": "RIU",
+    "note": ""
+  },
+  "orders": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": "Human writes go through role-authorized API/service transactions, not browser DML."
+  },
+  "order_items": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": "Human writes go through role-authorized API/service transactions, not browser DML."
+  },
+  "messages": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": "Human writes go through role-authorized API/service transactions, not browser DML."
+  },
+  "approvals": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": "Human writes go through role-authorized API/service transactions, not browser DML."
+  },
+  "channel_accounts": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": "Human writes go through role-authorized API/service transactions, not browser DML."
+  },
+  "receipts": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RI",
+    "note": "Immutable; human issuance only via guarded issue_receipt RPC."
+  },
+  "audit_log": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "",
+    "service": "RI",
+    "note": "Append-only safe metadata."
+  },
+  "business_settings": {
+    "owner": "RIU",
+    "manager": "RIU",
+    "agent": "R",
+    "service": "RIU",
+    "note": ""
+  },
+  "business_hours": {
+    "owner": "RIU",
+    "manager": "RIU",
+    "agent": "R",
+    "service": "RIU",
+    "note": ""
+  },
+  "delivery_fees": {
+    "owner": "RIU",
+    "manager": "RIU",
+    "agent": "R",
+    "service": "RIU",
+    "note": ""
+  },
+  "followup_settings": {
+    "owner": "RIU",
+    "manager": "RIU",
+    "agent": "R",
+    "service": "RIU",
+    "note": ""
+  },
+  "member_preferences": {
+    "owner": "RIU",
+    "manager": "RIU",
+    "agent": "RIU",
+    "service": "RIUD",
+    "note": "Human users access only their own membership preferences."
+  },
+  "conversation_reads": {
+    "owner": "RIU",
+    "manager": "RIU",
+    "agent": "RIU",
+    "service": "RIUD",
+    "note": "Human users access only their own read marker."
+  },
+  "product_photos": {
+    "owner": "RIUD",
+    "manager": "RIUD",
+    "agent": "R",
+    "service": "RIUD",
+    "note": ""
+  },
+  "catalogue_drafts": {
+    "owner": "RIUD",
+    "manager": "RIUD",
+    "agent": "R",
+    "service": "RIUD",
+    "note": ""
+  },
+  "typed_proposals": {
+    "owner": "RIUD",
+    "manager": "RIUD",
+    "agent": "R",
+    "service": "RIUD",
+    "note": ""
+  },
+  "team_invitations": {
+    "owner": "R",
+    "manager": "",
+    "agent": "",
+    "service": "RIU",
+    "note": "Owner-only API invitations; hashes never exposed to humans by table reads (no hash column here)."
+  },
+  "followups": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": ""
+  },
+  "moderation_flags": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": ""
+  },
+  "blocked_identities": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": ""
+  },
+  "restock_requests": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": ""
+  },
+  "customer_identities": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": ""
+  },
+  "notifications": {
+    "owner": "RU",
+    "manager": "RU",
+    "agent": "RU",
+    "service": "RIU",
+    "note": "Human users see/update only notifications addressed to their membership."
+  },
+  "billing_accounts": {
+    "owner": "R",
+    "manager": "",
+    "agent": "",
+    "service": "RIU",
+    "note": ""
+  },
+  "billing_offers": {
+    "owner": "R",
+    "manager": "",
+    "agent": "",
+    "service": "RIU",
+    "note": ""
+  },
+  "billing_selections": {
+    "owner": "R",
+    "manager": "",
+    "agent": "",
+    "service": "RIU",
+    "note": ""
+  },
+  "usage_meters": {
+    "owner": "R",
+    "manager": "",
+    "agent": "",
+    "service": "RIU",
+    "note": ""
+  },
+  "payments": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "",
+    "service": "RI",
+    "note": "Append-only; future trusted transaction writes facts, no arbitrary metadata."
+  },
+  "stock_movements": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "",
+    "service": "RI",
+    "note": "Append-only; future trusted transaction writes facts, no arbitrary metadata."
+  },
+  "usage_entries": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "",
+    "service": "RI",
+    "note": "Append-only; future trusted transaction writes facts, no arbitrary metadata."
+  },
+  "domain_events": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RI",
+    "note": "Append-only; future trusted transaction writes facts, no arbitrary metadata."
+  },
+  "stock_reservations": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": ""
+  },
+  "order_timeline": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": ""
+  },
+  "message_deliveries": {
+    "owner": "R",
+    "manager": "R",
+    "agent": "R",
+    "service": "RIU",
+    "note": ""
+  },
+  "channel_tokens": {
+    "owner": "",
+    "manager": "",
+    "agent": "",
+    "service": "RIUD",
+    "note": "Service-only; encrypted secrets / hashed codes, never browser SELECT."
+  },
+  "channel_attempts": {
+    "owner": "",
+    "manager": "",
+    "agent": "",
+    "service": "RIUD",
+    "note": "Service-only; encrypted secrets / hashed codes, never browser SELECT."
+  },
+  "helper_links": {
+    "owner": "",
+    "manager": "",
+    "agent": "",
+    "service": "RIUD",
+    "note": "Service-only; encrypted secrets / hashed codes, never browser SELECT."
+  },
+  "invitation_secrets": {
+    "owner": "",
+    "manager": "",
+    "agent": "",
+    "service": "RIUD",
+    "note": "Service-only; encrypted secrets / hashed codes, never browser SELECT."
+  },
+  "webhook_events": {
+    "owner": "",
+    "manager": "",
+    "agent": "",
+    "service": "RIUD",
+    "note": "Service-only; encrypted secrets / hashed codes, never browser SELECT."
+  },
+  "jobs": {
+    "owner": "",
+    "manager": "",
+    "agent": "",
+    "service": "RIUD",
+    "note": "Service-only; encrypted secrets / hashed codes, never browser SELECT."
+  },
+  "idempotency_keys": {
+    "owner": "",
+    "manager": "",
+    "agent": "",
+    "service": "RIUD",
+    "note": "Service-only; encrypted secrets / hashed codes, never browser SELECT."
+  },
+  "receipt_shares": {
+    "owner": "",
+    "manager": "",
+    "agent": "",
+    "service": "RIUD",
+    "note": "Service-only; encrypted secrets / hashed codes, never browser SELECT."
+  },
+  "billing_checkouts": {
+    "owner": "",
+    "manager": "",
+    "agent": "",
+    "service": "RIU",
+    "note": "Owner-authorized API only; selection/initialization never grants entitlements."
+  },
+  "billing_payments": {
+    "owner": "",
+    "manager": "",
+    "agent": "",
+    "service": "RI",
+    "note": "Append-only verified webhook payment evidence."
+  },
+  "ai_cost_entries": {
+    "owner": "",
+    "manager": "",
+    "agent": "",
+    "service": "RI",
+    "note": "Append-only per-vendor provider usage estimates; unknown costs remain null."
+  }
+}
