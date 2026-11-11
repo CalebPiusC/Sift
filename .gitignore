@@ -1,7 +1,19 @@
+# Secrets belong in local environment files, never in Git.
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
+
+# Local credential exports / private keys (templates must contain no credentials).
+secrets/
+.secrets/
+secrets.json
+credentials.json
+service-account*.json
+supabase-keys*.json
+api-keys*.json
+*.pem
+*.key
+
 node_modules/
 .next/
 __pycache__/
