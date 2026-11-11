@@ -87,6 +87,7 @@ export async function prepareProbe(db, fixture, table, role, op) {
       'offer_key',
       'external_account_id',
       'provider_event_id',
+      'provider_transaction',
     ])
       if (k in row) row[k] = randomUUID();
     for (const k of ['token_hash', 'key_hash', 'external_identity_hash', 'state_hash'])

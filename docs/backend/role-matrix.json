@@ -334,5 +334,26 @@
     "agent": "",
     "service": "RIUD",
     "note": "Service-only; encrypted secrets / hashed codes, never browser SELECT."
+  },
+  "billing_checkouts": {
+    "owner": "",
+    "manager": "",
+    "agent": "",
+    "service": "RIU",
+    "note": "Owner-authorized API only; selection/initialization never grants entitlements."
+  },
+  "billing_payments": {
+    "owner": "",
+    "manager": "",
+    "agent": "",
+    "service": "RI",
+    "note": "Append-only verified webhook payment evidence."
+  },
+  "ai_cost_entries": {
+    "owner": "",
+    "manager": "",
+    "agent": "",
+    "service": "RI",
+    "note": "Append-only per-vendor provider usage estimates; unknown costs remain null."
   }
 }

@@ -359,7 +359,7 @@
     "tables": "billing_selections,billing_offers",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
+    "status": "implemented",
     "notes": "Selection only. Never charge or grant entitlement."
   },
   {
@@ -469,7 +469,7 @@
     "tables": "domain_events,orders,payments,stock_movements",
     "pagination": "date-range",
     "idempotency": "none",
-    "status": "planned",
+    "status": "implemented",
     "notes": ""
   },
   {
@@ -502,7 +502,7 @@
     "tables": "billing_accounts,billing_offers,billing_selections,usage_meters,usage_entries",
     "pagination": "cursor-offers",
     "idempotency": "none",
-    "status": "planned",
+    "status": "implemented",
     "notes": ""
   },
   {
@@ -823,5 +823,16 @@
     "idempotency": "required",
     "status": "implemented-local",
     "notes": "Authenticated initiating member and expiring attempt; exchange Meta code, validate token app/scopes/number ownership, subscribe/register. Sandbox explicitly returns a fake connection. Live Meta acceptance pending."
+  },
+  {
+    "function": "BillingData.checkout",
+    "method": "POST",
+    "path": "/billing/checkout",
+    "roles": "owner",
+    "tables": "billing_checkouts,billing_offers",
+    "pagination": "none",
+    "idempotency": "required",
+    "status": "implemented",
+    "notes": "Durable pending checkout per offer; no entitlement grant before signed webhook and independent verification."
   }
 ]

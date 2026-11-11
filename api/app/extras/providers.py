@@ -69,6 +69,7 @@ async def translate(settings, text):
             for k in ("translation", "summary")
         ):
             raise ValueError()
+        data["usage"] = r.json().get("usageMetadata", {})
         return data
     except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
         raise ChannelError("TRANSLATION_FAILED") from None
@@ -85,6 +86,17 @@ async def translation(worker, job):
         text = row["voice_transcript"] or row["content"]
     data = await translate(worker.settings, text)
     async with worker.db.transaction(job["vendor_id"]) as (conn, _):
+        from app.billing.meter import cost
+
+        await cost(
+            conn,
+            job["vendor_id"],
+            "translation:" + str(row["id"]) + ":" + str(job["attempts"]),
+            worker.settings.gemini_audio_model,
+            "translation",
+            data.get("usage", {}),
+            worker.settings,
+        )
         # Display-only derived data; never replaces original or becomes product/payment evidence.
         await conn.execute(
             "UPDATE messages SET english_translation=$2,english_summary=$3 WHERE id=$1 AND content=$4",

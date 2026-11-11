@@ -273,6 +273,7 @@ export function createApiClient(options: {
       audit: () => request('team/audit'),
     },
     billing: {
+      checkout: (i) => request('billing/checkout', i, 'POST'),
       get: () => request('billing'),
       selectOffer: (i) => request('billing/selection', i, 'PATCH'),
     },

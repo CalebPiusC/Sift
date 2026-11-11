@@ -236,6 +236,19 @@ async def process(worker, job):
                     if event["transcript"]
                     else await cloud.transcribe(raw, mime)
                 )
+                if not event["transcript"]:
+                    from app.billing.meter import cost
+
+                    async with worker.db.transaction(vendor) as (cost_conn, _):
+                        await cost(
+                            cost_conn,
+                            vendor,
+                            "audio:" + str(event["id"]) + ":" + str(job["attempts"]),
+                            worker.settings.gemini_audio_model,
+                            "transcription",
+                            getattr(cloud, "last_usage", {}),
+                            worker.settings,
+                        )
             else:
                 text = (
                     message["image"].get("caption", "")[:1000]

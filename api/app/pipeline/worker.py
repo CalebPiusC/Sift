@@ -8,6 +8,8 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
+from app.billing import meter
+from app.billing import service as billing_service
 from app.channels.base import Outgoing
 from app.channels.gmail import ChannelError
 from app.commerce import messages as commerce_messages
@@ -48,6 +50,7 @@ class Worker:
             "holding_reply": self.holding_reply,
             "followup": lambda job: workflow.followup(self, job),
             "restock": lambda job: workflow.restock(self, job),
+            "billing_payment": lambda job: billing_service.payment(self, job),
             "translation": lambda job: providers.translation(self, job),
             "invitation_email": lambda job: providers.invitation(self, job),
         }
@@ -264,6 +267,14 @@ class Worker:
                 job["message_id"],
             )
             if not row or row["status"] in ("sent", "delivered", "read", "blocked"):
+                return
+            if row["sender"] == "ai" and not await meter.admit(
+                conn, vendor, row["conversation_id"]
+            ):
+                await conn.execute(
+                    "UPDATE messages SET status='blocked',delivery_error_code='AI_QUOTA_LIMIT' WHERE id=$1",
+                    row["id"],
+                )
                 return
             if not await safety.allowed(conn, vendor, row["conversation_id"]):
                 await conn.execute(

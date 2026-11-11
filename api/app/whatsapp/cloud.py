@@ -204,6 +204,7 @@ class Cloud:
                 },
             )
             response.raise_for_status()
+            self.last_usage = response.json().get("usageMetadata", {})
             data = json.loads(response.json()["candidates"][0]["content"]["parts"][0]["text"])
             if (
                 not isinstance(data["transcript"], str)

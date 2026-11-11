@@ -123,7 +123,7 @@ means the F0 route exists, **local-only** means it must not become a production 
 | TeamData.invite | POST `/v1/team/invitations` | owner | required | none | team_invitations,invitation_secrets,jobs | **planned**. Lowercase email; pending uniqueness; role manager/agent only; external email not implemented. |
 | TeamData.setRole | PATCH `/v1/team/{id}/role` | owner | required | none | vendor_members | **planned**. Protect owner; manager/agent only; target same vendor; lock membership. |
 | TeamData.assign | PATCH `/v1/conversations/{conversationId}/assignment` | owner manager | required | none | conversations | **planned**. Active same-vendor member or null only. |
-| BillingData.selectOffer | PATCH `/v1/billing/selection` | owner | required | none | billing_selections,billing_offers | **planned**. Selection only. Never charge or grant entitlement. |
+| BillingData.selectOffer | PATCH `/v1/billing/selection` | owner | required | none | billing_selections,billing_offers | **implemented**. Selection only. Never charge or grant entitlement. |
 | ExtrasData.configure | PATCH `/v1/extras/followups/settings` | owner manager | required | none | followup_settings,followups | **planned**. 24–720 hours; reschedule pending only; consent/opt-out required before future delivery. |
 | ExtrasData.followup | PATCH `/v1/extras/followups/{id}` | owner manager agent | required | none | followups | **planned**. Cancel only in production; simulate_send NOT_IMPLEMENTED; real due sends are jobs. |
 | ExtrasData.moderate | PATCH `/v1/extras/flags/{id}` | owner manager agent | required | none | moderation_flags,blocked_identities,jobs | **planned**. Agent assigned/unassigned related chat; block intent not provider-confirmed until job completes. |
@@ -133,10 +133,10 @@ means the F0 route exists, **local-only** means it must not become a production 
 | ChannelsData.list | GET `/v1/channels` | owner manager agent | none | cursor | channel_accounts | **implemented-local**. Connected accounts and unconnected WhatsApp card; helper account is excluded. |
 | ChannelsData.helper | GET `/v1/channels/whatsapp/helper` | owner manager | none | none | helper_links | **implemented-local**. Caller membership only. Four-digit pending code is encrypted in Redis; linked status established only by signed helper webhook. |
 | SettingsData.get | GET `/v1/settings` | owner manager agent | none | none | vendors,business_settings,business_hours,delivery_fees,member_preferences | **planned**.  |
-| InsightsData.get | GET `/v1/insights` | owner manager | none | date-range | domain_events,orders,payments,stock_movements | **planned**.  |
+| InsightsData.get | GET `/v1/insights` | owner manager | none | date-range | domain_events,orders,payments,stock_movements | **implemented**.  |
 | TeamData.list | GET `/v1/team` | owner manager agent | none | cursor | vendor_members,team_invitations | **planned**.  |
 | TeamData.audit | GET `/v1/team/audit` | owner manager | none | cursor | audit_log | **planned**.  |
-| BillingData.get | GET `/v1/billing` | owner | none | cursor-offers | billing_accounts,billing_offers,billing_selections,usage_meters,usage_entries | **planned**.  |
+| BillingData.get | GET `/v1/billing` | owner | none | cursor-offers | billing_accounts,billing_offers,billing_selections,usage_meters,usage_entries | **implemented**.  |
 | ExtrasData.get | GET `/v1/extras` | owner manager agent | none | independent-cursors | followup_settings,followups,moderation_flags,restock_requests | **planned**.  |
 | RealtimeData.subscribe | GET `/v1/events` | owner manager agent | none | event-cursor | domain_events | **planned**. SSE reconnect via Last-Event-ID; safe invalidation DTO, no raw messages/secret rows. Local listener/unsubscribe are not JSON routes. |
 | MockControls.simulateIncoming | LOCAL `—` | — | none | none | — | **local-only**. Local lifecycle / mock-only; never deploy a simulation endpoint. |
@@ -166,6 +166,7 @@ means the F0 route exists, **local-only** means it must not become a production 
 | ReceiptsData.share | POST `/v1/receipts/{id}/share` | owner manager | required | none | receipts,receipt_shares | **implemented-local**. B4 explicit state-conditional operation; provider ambiguity is not blindly replayed. |
 | ReceiptsData.revoke | POST `/v1/receipts/{id}/revoke` | owner manager | required | none | receipt_shares,audit_log | **implemented-local**. B4 explicit state-conditional operation; provider ambiguity is not blindly replayed. |
 | ChannelsData.completeWhatsApp | POST `/v1/channels/whatsapp/signup/{attempt}/complete` | owner manager | required | none | channel_accounts,channel_attempts,channel_tokens | **implemented-local**. Authenticated initiating member and expiring attempt; exchange Meta code, validate token app/scopes/number ownership, subscribe/register. Sandbox explicitly returns a fake connection. Live Meta acceptance pending. |
+| BillingData.checkout | POST `/v1/billing/checkout` | owner | required | none | billing_checkouts,billing_offers | **implemented**. Durable pending checkout per offer; no entitlement grant before signed webhook and independent verification. |
 
 <!-- endpoints:end -->
 

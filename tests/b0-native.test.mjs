@@ -4,7 +4,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { nativeDatabase, recovering, migrationBody } from './helpers/native-database.mjs';
 import { b0Fixture } from './b0-fixtures.mjs';
 import { matrixCheck } from './b0-matrix-checks.mjs';
-test('native PostgreSQL: populated upgrade and all 768 permission cells', async () => {
+test('native PostgreSQL: populated upgrade and all permission cells', async () => {
   const server = await nativeDatabase();
   const c = await server.pool.connect();
   try {
@@ -52,7 +52,7 @@ test('native PostgreSQL: populated upgrade and all 768 permission cells', async 
     } catch {
       throw new Error('Hosted runner failed on already-reconciled native cluster');
     }
-    assert.match(runner.stdout, /768 permission cells/);
+    assert.match(runner.stdout, new RegExp(`${Object.keys(matrix).length * 16} permission cells`));
     assert.equal((await c.query('select count(*)::int n from auth.users')).rows[0].n, beforeCount);
   } finally {
     c.release();
@@ -73,7 +73,7 @@ test('native PostgreSQL: blank full chain applies transactionally and rolls back
       assert.equal(
         (await c.query("select count(*)::int n from pg_tables where schemaname='public'")).rows[0]
           .n,
-        48,
+        Object.keys(JSON.parse(await readFile('docs/backend/role-matrix.json', 'utf8'))).length,
       );
       await c.query('rollback');
       assert.equal((await c.query("select to_regclass('public.domain_events') t")).rows[0].t, null);

@@ -52,6 +52,9 @@ Authoritative executable permissions: `role-matrix.json`; enforced by SQL polici
 | jobs | — | — | — | RIUD | Service-only; encrypted secrets / hashed codes, never browser SELECT. |
 | idempotency_keys | — | — | — | RIUD | Service-only; encrypted secrets / hashed codes, never browser SELECT. |
 | receipt_shares | — | — | — | RIUD | Service-only; encrypted secrets / hashed codes, never browser SELECT. |
+| billing_checkouts | — | — | — | RIU | Owner-authorized API only; selection/initialization never grants entitlements. |
+| billing_payments | — | — | — | RI | Append-only verified webhook payment evidence. |
+| ai_cost_entries | — | — | — | RI | Append-only per-vendor provider usage estimates; unknown costs remain null. |
 
 Human roles are active vendor_members resolved from auth.uid(), never editable JWT role claims. Member preferences/read markers/notifications are restricted to the caller’s own membership. A table write denied to a human may be performed by a future authorized API transaction under the scoped service role; that is not a direct browser grant. Endpoint authorization is a separate required layer, specified in backend-roadmap.md.
 

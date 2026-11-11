@@ -1,7 +1,8 @@
+from decimal import Decimal
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,6 +39,9 @@ class Settings(BaseSettings):
     gemini_api_key: SecretStr = SecretStr("")
     email_api_key: SecretStr = SecretStr("")
     email_from: str = ""
+    ai_input_usd_per_million: Decimal | None = Field(default=None, ge=0)
+    ai_output_usd_per_million: Decimal | None = Field(default=None, ge=0)
+    ai_pricing_version: str = "unconfigured"
     gemini_audio_model: str = "gemini-2.5-flash"
 
 

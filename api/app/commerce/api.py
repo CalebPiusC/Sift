@@ -303,8 +303,31 @@ async def webhook(request: Request, rt: RuntimeDep):
         raise HTTPException(400, "Invalid webhook") from None
     async with rt.db.transaction() as (conn, _):
         route = await conn.fetchrow("SELECT * FROM b4_payment_route($1)", reference)
+    billing_route = None
     if not route:
-        return ok({"accepted": True})
+        async with rt.db.transaction() as (conn, _):
+            billing_route = await conn.fetchrow("SELECT * FROM b8_billing_route($1)", reference)
+        if not billing_route:
+            plan = data.get("plan_object") or data.get("plan")
+            if isinstance(plan, dict):
+                plan = plan.get("plan_code")
+            customer = (data.get("customer") or {}).get("customer_code")
+            renewal = None
+            if isinstance(plan, str) and isinstance(customer, str):
+                async with rt.db.transaction() as (conn, _):
+                    renewal = await conn.fetchrow(
+                        "SELECT * FROM b8_renewal_route($1,$2)", customer, plan
+                    )
+            if not renewal:
+                return ok({"accepted": True})
+            async with rt.db.transaction(renewal["vendor_id"]) as (conn, _):
+                checkout_id = await conn.fetchval(
+                    "INSERT INTO billing_checkouts(vendor_id,offer_id,reference,amount_kobo,conversations,kind,interval_months,plan_code,email) SELECT vendor_id,offer_id,$2,amount_kobo,conversations,kind,interval_months,plan_code,email FROM billing_checkouts WHERE id=$1 ON CONFLICT(reference) DO UPDATE SET reference=excluded.reference RETURNING id",
+                    renewal["checkout_id"],
+                    reference,
+                )
+            billing_route = {"vendor_id": renewal["vendor_id"], "checkout_id": checkout_id}
+        route = billing_route
     vendor = route["vendor_id"]
     async with rt.db.transaction(vendor) as (conn, _):
         event = await conn.fetchval(
@@ -319,9 +342,10 @@ async def webhook(request: Request, rt: RuntimeDep):
             await enqueue(
                 conn,
                 vendor,
-                "payment",
+                "billing_payment" if billing_route else "payment",
                 event_id,
-                order_id=route["order_id"],
+                order_id=None if billing_route else route["order_id"],
+                billing_checkout_id=route["checkout_id"] if billing_route else None,
                 webhook_event_id=event,
             )
     await rt.queue.wake(vendor)

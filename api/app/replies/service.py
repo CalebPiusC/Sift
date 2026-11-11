@@ -130,6 +130,14 @@ async def process(conn, vendor, mid):
             "UPDATE messages SET lane='paused',lane_reason='human_takeover' WHERE id=$1", mid
         )
         return  # Never replay old human-handled enquiries on hand-back.
+    from app.billing.meter import admit
+
+    if not await admit(conn, vendor, c["id"]):
+        await conn.execute(
+            "UPDATE messages SET lane='paused',lane_reason='ai_quota_limit_vendor_reply_required' WHERE id=$1",
+            mid,
+        )
+        return
     from app.commerce.chat import handle as handle_order_chat
 
     if await handle_order_chat(conn, vendor, inbound):

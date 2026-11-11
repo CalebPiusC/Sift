@@ -13,8 +13,9 @@ export function BillingSettings() {
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">Billing that fits your business</h2>
       <p className="text-sm leading-6 text-slate-500">
-        Sample pricing, not a commercial offer. Paystack buttons are placeholders: no charge,
-        subscription change or bundle credit is made.
+        {client.mode === 'api'
+          ? 'Pay securely through Paystack. Limits and credits change only after a verified payment webhook. At the AI limit, customer messages remain in your inbox for a manual reply.'
+          : 'Sample pricing, not a commercial offer. Paystack buttons are placeholders: no charge, subscription change or bundle credit is made.'}
       </p>
       <ResourceView resource={billing}>
         {(b) => (
@@ -28,7 +29,9 @@ export function BillingSettings() {
                 </strong>
                 <p className="mt-2 text-xs">
                   Ends {new Date(b.trialEndsAt).toLocaleDateString('en-NG')}. No automatic payment
-                  is scheduled in this mock.
+                  {client.mode === 'api'
+                    ? 'is charged without an authorized checkout.'
+                    : 'is scheduled in this mock.'}
                 </p>
               </div>
             )}
@@ -41,12 +44,15 @@ export function BillingSettings() {
               <progress
                 className="h-4 w-full accent-primary"
                 aria-label="Conversation usage"
-                max={b.usage.limit}
+                max={Math.max(1, b.usage.limit)}
                 value={Math.min(b.usage.conversations, b.usage.limit)}
               />
               <p className="mt-3 text-xs text-slate-500">
-                Monthly price {naira(b.monthlyPriceKobo)} · Sample renewal date{' '}
-                {new Date(b.nextBillingAt).toLocaleDateString('en-NG')}
+                Monthly equivalent {naira(b.monthlyPriceKobo)} ·{' '}
+                {client.mode === 'api' ? 'Paid through' : 'Sample renewal date'}{' '}
+                {b.nextBillingAt
+                  ? new Date(b.nextBillingAt).toLocaleDateString('en-NG')
+                  : 'No paid subscription'}
               </p>
             </section>
             {message && (
@@ -63,7 +69,7 @@ export function BillingSettings() {
                   {
                     {
                       monthly: 'Monthly plans',
-                      yearly: 'Yearly · about two months free',
+                      yearly: 'Yearly plans',
                       volume: 'Volume tiers',
                       bundle: 'Pay-as-you-go bundles',
                     }[kind]
@@ -112,13 +118,37 @@ export function BillingSettings() {
                               .then((r) => {
                                 if (r.ok)
                                   setMessage(
-                                    `${offer.name} selected. Paystack checkout is a placeholder. No payment or entitlement change was made.`,
+                                    client.mode === 'api'
+                                      ? `${offer.name} selected. Continue to secure checkout to pay. Limits are unchanged until the verified webhook.`
+                                      : `${offer.name} selected. Paystack checkout is a placeholder. No payment or entitlement change was made.`,
                                   );
                               })
                           }
                         >
                           Paystack · select {offer.name}
                         </Button>
+                        {client.mode === 'api' && client.billing.checkout && (
+                          <Button
+                            disabled={action.busy}
+                            onClick={() => {
+                              const checkout = client.billing.checkout;
+                              if (!checkout) return;
+                              void action
+                                .run(() => checkout({ offerId: offer.id }))
+                                .then((r) => {
+                                  if (
+                                    r.ok &&
+                                    r.data.authorizationUrl.startsWith(
+                                      'https://checkout.paystack.com/',
+                                    )
+                                  )
+                                    window.location.assign(r.data.authorizationUrl);
+                                });
+                            }}
+                          >
+                            Continue to secure checkout
+                          </Button>
+                        )}
                       </article>
                     ))}
                 </div>

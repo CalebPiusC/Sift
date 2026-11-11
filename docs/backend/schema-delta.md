@@ -2,6 +2,44 @@
 
 Generated from actual F0 and B0 migration execution, not hand-counted. Run `npm run docs:backend`.
 
+## ai_cost_entries — NEW table
+
+Added columns:
+
+- `id` uuid; NOT NULL; default `gen_random_uuid()`
+- `vendor_id` uuid; NOT NULL
+- `dedupe_key` text; NOT NULL
+- `model` text; NOT NULL
+- `operation` text; NOT NULL
+- `input_tokens` integer; nullable
+- `output_tokens` integer; nullable
+- `cost_usd` numeric; nullable
+- `pricing_version` text; NOT NULL
+- `created_at` timestamp with time zone; NOT NULL; default `now()`
+
+New/changed constraints:
+
+- `ai_cost_entries_cost_usd_check`: `CHECK ((cost_usd >= (0)::numeric))`
+- `ai_cost_entries_created_at_not_null`: `NOT NULL created_at`
+- `ai_cost_entries_dedupe_key_not_null`: `NOT NULL dedupe_key`
+- `ai_cost_entries_id_not_null`: `NOT NULL id`
+- `ai_cost_entries_input_tokens_check`: `CHECK ((input_tokens >= 0))`
+- `ai_cost_entries_model_not_null`: `NOT NULL model`
+- `ai_cost_entries_operation_not_null`: `NOT NULL operation`
+- `ai_cost_entries_output_tokens_check`: `CHECK ((output_tokens >= 0))`
+- `ai_cost_entries_pkey`: `PRIMARY KEY (id)`
+- `ai_cost_entries_pricing_version_not_null`: `NOT NULL pricing_version`
+- `ai_cost_entries_vendor_id_dedupe_key_key`: `UNIQUE (vendor_id, dedupe_key)`
+- `ai_cost_entries_vendor_id_fkey`: `FOREIGN KEY (vendor_id) REFERENCES vendors(id)`
+- `ai_cost_entries_vendor_id_id_key`: `UNIQUE (vendor_id, id)`
+- `ai_cost_entries_vendor_id_not_null`: `NOT NULL vendor_id`
+
+Added indexes (including constraint-backed and FK lookup indexes):
+
+- `ai_cost_entries_pkey`: `CREATE UNIQUE INDEX ai_cost_entries_pkey ON public.ai_cost_entries USING btree (id)`
+- `ai_cost_entries_vendor_id_dedupe_key_key`: `CREATE UNIQUE INDEX ai_cost_entries_vendor_id_dedupe_key_key ON public.ai_cost_entries USING btree (vendor_id, dedupe_key)`
+- `ai_cost_entries_vendor_id_id_key`: `CREATE UNIQUE INDEX ai_cost_entries_vendor_id_id_key ON public.ai_cost_entries USING btree (vendor_id, id)`
+
 ## approvals — extended existing table
 
 Added columns:
@@ -71,12 +109,16 @@ Added columns:
 - `monthly_price_kobo` bigint; NOT NULL; default `0`
 - `bundle_balance` integer; NOT NULL; default `0`
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
+- `entitlement_limit` integer; NOT NULL; default `100`
+- `entitlement_ends_at` timestamp with time zone; nullable
 
 New/changed constraints:
 
 - `billing_accounts_bundle_balance_check`: `CHECK ((bundle_balance >= 0))`
 - `billing_accounts_bundle_balance_not_null`: `NOT NULL bundle_balance`
 - `billing_accounts_created_at_not_null`: `NOT NULL created_at`
+- `billing_accounts_entitlement_limit_check`: `CHECK ((entitlement_limit >= 0))`
+- `billing_accounts_entitlement_limit_not_null`: `NOT NULL entitlement_limit`
 - `billing_accounts_id_not_null`: `NOT NULL id`
 - `billing_accounts_monthly_price_kobo_check`: `CHECK ((monthly_price_kobo >= 0))`
 - `billing_accounts_monthly_price_kobo_not_null`: `NOT NULL monthly_price_kobo`
@@ -97,6 +139,56 @@ Added indexes (including constraint-backed and FK lookup indexes):
 - `billing_accounts_vendor_id_id_key`: `CREATE UNIQUE INDEX billing_accounts_vendor_id_id_key ON public.billing_accounts USING btree (vendor_id, id)`
 - `billing_accounts_vendor_id_key`: `CREATE UNIQUE INDEX billing_accounts_vendor_id_key ON public.billing_accounts USING btree (vendor_id)`
 
+## billing_checkouts — NEW table
+
+Added columns:
+
+- `id` uuid; NOT NULL; default `gen_random_uuid()`
+- `vendor_id` uuid; NOT NULL
+- `offer_id` uuid; NOT NULL
+- `reference` text; NOT NULL
+- `amount_kobo` bigint; NOT NULL
+- `conversations` integer; NOT NULL
+- `kind` text; NOT NULL
+- `interval_months` integer; NOT NULL
+- `plan_code` text; nullable
+- `email` text; NOT NULL
+- `status` text; NOT NULL; default `'pending'::text`
+- `authorization_url` text; nullable
+- `paid_at` timestamp with time zone; nullable
+- `provider_customer` text; nullable
+- `created_at` timestamp with time zone; NOT NULL; default `now()`
+
+New/changed constraints:
+
+- `billing_checkouts_amount_kobo_check`: `CHECK ((amount_kobo > 0))`
+- `billing_checkouts_amount_kobo_not_null`: `NOT NULL amount_kobo`
+- `billing_checkouts_conversations_check`: `CHECK ((conversations > 0))`
+- `billing_checkouts_conversations_not_null`: `NOT NULL conversations`
+- `billing_checkouts_created_at_not_null`: `NOT NULL created_at`
+- `billing_checkouts_email_not_null`: `NOT NULL email`
+- `billing_checkouts_id_not_null`: `NOT NULL id`
+- `billing_checkouts_interval_months_check`: `CHECK ((interval_months = ANY (ARRAY[1, 12])))`
+- `billing_checkouts_interval_months_not_null`: `NOT NULL interval_months`
+- `billing_checkouts_kind_check`: `CHECK ((kind = ANY (ARRAY['monthly'::text, 'yearly'::text, 'volume'::text, 'bundle'::text])))`
+- `billing_checkouts_kind_not_null`: `NOT NULL kind`
+- `billing_checkouts_offer_id_not_null`: `NOT NULL offer_id`
+- `billing_checkouts_pkey`: `PRIMARY KEY (id)`
+- `billing_checkouts_reference_key`: `UNIQUE (reference)`
+- `billing_checkouts_reference_not_null`: `NOT NULL reference`
+- `billing_checkouts_status_check`: `CHECK ((status = ANY (ARRAY['pending'::text, 'initializing'::text, 'ready'::text, 'uncertain'::text, 'paid'::text])))`
+- `billing_checkouts_status_not_null`: `NOT NULL status`
+- `billing_checkouts_vendor_id_fkey`: `FOREIGN KEY (vendor_id) REFERENCES vendors(id)`
+- `billing_checkouts_vendor_id_id_key`: `UNIQUE (vendor_id, id)`
+- `billing_checkouts_vendor_id_not_null`: `NOT NULL vendor_id`
+- `billing_checkouts_vendor_id_offer_id_fkey`: `FOREIGN KEY (vendor_id, offer_id) REFERENCES billing_offers(vendor_id, id)`
+
+Added indexes (including constraint-backed and FK lookup indexes):
+
+- `billing_checkouts_pkey`: `CREATE UNIQUE INDEX billing_checkouts_pkey ON public.billing_checkouts USING btree (id)`
+- `billing_checkouts_reference_key`: `CREATE UNIQUE INDEX billing_checkouts_reference_key ON public.billing_checkouts USING btree (reference)`
+- `billing_checkouts_vendor_id_id_key`: `CREATE UNIQUE INDEX billing_checkouts_vendor_id_id_key ON public.billing_checkouts USING btree (vendor_id, id)`
+
 ## billing_offers — NEW table
 
 Added columns:
@@ -111,6 +203,8 @@ Added columns:
 - `description` text; NOT NULL; default `''::text`
 - `active` boolean; NOT NULL; default `true`
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
+- `paystack_plan_code` text; nullable
+- `interval_months` integer; NOT NULL; default `1`
 
 New/changed constraints:
 
@@ -120,6 +214,8 @@ New/changed constraints:
 - `billing_offers_created_at_not_null`: `NOT NULL created_at`
 - `billing_offers_description_not_null`: `NOT NULL description`
 - `billing_offers_id_not_null`: `NOT NULL id`
+- `billing_offers_interval_months_check`: `CHECK ((interval_months = ANY (ARRAY[1, 12])))`
+- `billing_offers_interval_months_not_null`: `NOT NULL interval_months`
 - `billing_offers_kind_check`: `CHECK ((kind = ANY (ARRAY['monthly'::text, 'yearly'::text, 'volume'::text, 'bundle'::text])))`
 - `billing_offers_kind_not_null`: `NOT NULL kind`
 - `billing_offers_name_not_null`: `NOT NULL name`
@@ -138,6 +234,44 @@ Added indexes (including constraint-backed and FK lookup indexes):
 - `billing_offers_pkey`: `CREATE UNIQUE INDEX billing_offers_pkey ON public.billing_offers USING btree (id)`
 - `billing_offers_vendor_id_id_key`: `CREATE UNIQUE INDEX billing_offers_vendor_id_id_key ON public.billing_offers USING btree (vendor_id, id)`
 - `billing_offers_vendor_id_offer_key_key`: `CREATE UNIQUE INDEX billing_offers_vendor_id_offer_key_key ON public.billing_offers USING btree (vendor_id, offer_key)`
+
+## billing_payments — NEW table
+
+Added columns:
+
+- `id` uuid; NOT NULL; default `gen_random_uuid()`
+- `vendor_id` uuid; NOT NULL
+- `checkout_id` uuid; NOT NULL
+- `provider_transaction` text; NOT NULL
+- `reference` text; NOT NULL
+- `amount_kobo` bigint; NOT NULL
+- `paid_at` timestamp with time zone; NOT NULL
+- `created_at` timestamp with time zone; NOT NULL; default `now()`
+
+New/changed constraints:
+
+- `billing_payments_amount_kobo_check`: `CHECK ((amount_kobo > 0))`
+- `billing_payments_amount_kobo_not_null`: `NOT NULL amount_kobo`
+- `billing_payments_checkout_id_not_null`: `NOT NULL checkout_id`
+- `billing_payments_created_at_not_null`: `NOT NULL created_at`
+- `billing_payments_id_not_null`: `NOT NULL id`
+- `billing_payments_paid_at_not_null`: `NOT NULL paid_at`
+- `billing_payments_pkey`: `PRIMARY KEY (id)`
+- `billing_payments_provider_transaction_key`: `UNIQUE (provider_transaction)`
+- `billing_payments_provider_transaction_not_null`: `NOT NULL provider_transaction`
+- `billing_payments_reference_key`: `UNIQUE (reference)`
+- `billing_payments_reference_not_null`: `NOT NULL reference`
+- `billing_payments_vendor_id_checkout_id_fkey`: `FOREIGN KEY (vendor_id, checkout_id) REFERENCES billing_checkouts(vendor_id, id)`
+- `billing_payments_vendor_id_fkey`: `FOREIGN KEY (vendor_id) REFERENCES vendors(id)`
+- `billing_payments_vendor_id_id_key`: `UNIQUE (vendor_id, id)`
+- `billing_payments_vendor_id_not_null`: `NOT NULL vendor_id`
+
+Added indexes (including constraint-backed and FK lookup indexes):
+
+- `billing_payments_pkey`: `CREATE UNIQUE INDEX billing_payments_pkey ON public.billing_payments USING btree (id)`
+- `billing_payments_provider_transaction_key`: `CREATE UNIQUE INDEX billing_payments_provider_transaction_key ON public.billing_payments USING btree (provider_transaction)`
+- `billing_payments_reference_key`: `CREATE UNIQUE INDEX billing_payments_reference_key ON public.billing_payments USING btree (reference)`
+- `billing_payments_vendor_id_id_key`: `CREATE UNIQUE INDEX billing_payments_vendor_id_id_key ON public.billing_payments USING btree (vendor_id, id)`
 
 ## billing_selections — NEW table
 
@@ -619,6 +753,9 @@ Added columns:
 - `amount_kobo` bigint; nullable
 - `payment_source` text; nullable
 - `receipt_id` uuid; nullable
+- `sender` text; nullable
+- `channel` text; nullable
+- `line_items` jsonb; nullable
 
 New/changed constraints:
 
@@ -920,6 +1057,7 @@ Added columns:
 - `reservation_id` uuid; nullable
 - `invitation_id` uuid; nullable
 - `restock_request_id` uuid; nullable
+- `billing_checkout_id` uuid; nullable
 
 New/changed constraints:
 
@@ -929,7 +1067,7 @@ New/changed constraints:
 - `jobs_created_at_not_null`: `NOT NULL created_at`
 - `jobs_dedupe_key_not_null`: `NOT NULL dedupe_key`
 - `jobs_id_not_null`: `NOT NULL id`
-- `jobs_kind_check`: `CHECK ((kind = ANY (ARRAY['ingest'::text, 'send'::text, 'holding_reply'::text, 'followup'::text, 'restock'::text, 'payment'::text, 'receipt'::text, 'usage'::text, 'invitation_email'::text, 'channel_refresh'::text, 'cleanup'::text, 'gmail_sync'::text, 'gmail_watch'::text, 'reservation_expiry'::text, 'takeover_timeout'::text, 'reply'::text, 'checkout'::text, 'order_message'::text, 'refund'::text, 'translation'::text])))`
+- `jobs_kind_check`: `CHECK ((kind = ANY (ARRAY['ingest'::text, 'send'::text, 'holding_reply'::text, 'followup'::text, 'restock'::text, 'payment'::text, 'receipt'::text, 'usage'::text, 'invitation_email'::text, 'channel_refresh'::text, 'cleanup'::text, 'gmail_sync'::text, 'gmail_watch'::text, 'reservation_expiry'::text, 'takeover_timeout'::text, 'reply'::text, 'checkout'::text, 'order_message'::text, 'refund'::text, 'translation'::text, 'billing_payment'::text])))`
 - `jobs_kind_not_null`: `NOT NULL kind`
 - `jobs_max_attempts_check`: `CHECK ((max_attempts > 0))`
 - `jobs_max_attempts_not_null`: `NOT NULL max_attempts`
@@ -938,6 +1076,7 @@ New/changed constraints:
 - `jobs_status_check`: `CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'failed'::text, 'dead'::text])))`
 - `jobs_status_not_null`: `NOT NULL status`
 - `jobs_vendor_id_approval_id_fkey`: `FOREIGN KEY (vendor_id, approval_id) REFERENCES approvals(vendor_id, id)`
+- `jobs_vendor_id_billing_checkout_id_fkey`: `FOREIGN KEY (vendor_id, billing_checkout_id) REFERENCES billing_checkouts(vendor_id, id)`
 - `jobs_vendor_id_channel_account_id_fkey`: `FOREIGN KEY (vendor_id, channel_account_id) REFERENCES channel_accounts(vendor_id, id)`
 - `jobs_vendor_id_conversation_id_fkey`: `FOREIGN KEY (vendor_id, conversation_id) REFERENCES conversations(vendor_id, id)`
 - `jobs_vendor_id_fkey`: `FOREIGN KEY (vendor_id) REFERENCES vendors(id)`
@@ -961,6 +1100,7 @@ Added indexes (including constraint-backed and FK lookup indexes):
 - `b0_fk_jobs_vendor_id_webhook_event_id_fkey_18056`: `CREATE INDEX b0_fk_jobs_vendor_id_webhook_event_id_fkey_18056 ON public.jobs USING btree (vendor_id, webhook_event_id)`
 - `b7_job_invitation`: `CREATE INDEX b7_job_invitation ON public.jobs USING btree (vendor_id, invitation_id)`
 - `b7_job_restock`: `CREATE INDEX b7_job_restock ON public.jobs USING btree (vendor_id, restock_request_id)`
+- `billing_job_checkout`: `CREATE INDEX billing_job_checkout ON public.jobs USING btree (vendor_id, billing_checkout_id)`
 - `job_account_fk`: `CREATE INDEX job_account_fk ON public.jobs USING btree (vendor_id, channel_account_id)`
 - `job_approval_fk`: `CREATE INDEX job_approval_fk ON public.jobs USING btree (vendor_id, approval_id)`
 - `job_followup_fk`: `CREATE INDEX job_followup_fk ON public.jobs USING btree (vendor_id, followup_id)`

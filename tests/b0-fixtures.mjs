@@ -168,6 +168,28 @@ export async function b0Fixture(db, matrix) {
     conversations: 100,
   });
   await put('billing_selections', { offer_id: ids.billing_offers });
+  await put('billing_checkouts', {
+    offer_id: ids.billing_offers,
+    reference: randomUUID(),
+    amount_kobo: 10000,
+    conversations: 100,
+    kind: 'bundle',
+    interval_months: 1,
+    email: 'fixture@example.test',
+  });
+  await put('billing_payments', {
+    checkout_id: ids.billing_checkouts,
+    provider_transaction: randomUUID(),
+    reference: randomUUID(),
+    amount_kobo: 10000,
+    paid_at: new Date().toISOString(),
+  });
+  await put('ai_cost_entries', {
+    dedupe_key: randomUUID(),
+    model: 'fixture',
+    operation: 'test',
+    pricing_version: 'fixture',
+  });
   await put('usage_meters', {
     period_start: '2026-11-01',
     period_end: '2026-12-01',

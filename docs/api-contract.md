@@ -593,6 +593,9 @@ export interface TeamData {
   }): Promise<Result<TeamMember>>;
 }
 export interface BillingData {
+  checkout?(input: {
+    offerId: ID;
+  }): Promise<Result<{ checkoutId: ID; authorizationUrl: string; entitlementsChanged: boolean }>>;
   selectOffer(input: { offerId: ID }): Promise<Result<Billing>>;
   get(): Promise<Result<Billing>>;
 }

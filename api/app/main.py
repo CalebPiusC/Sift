@@ -188,3 +188,9 @@ app.include_router(whatsapp_router)
 from .extras.api import router as extras_router
 
 app.include_router(extras_router)
+
+from .billing.api import router as billing_router
+from .billing.insights import router as insights_router
+
+app.include_router(billing_router)
+app.include_router(insights_router)

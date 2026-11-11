@@ -62,7 +62,9 @@ export function InsightsPanel() {
       <div>
         <h2 className="text-xl font-semibold">Know what moves your business.</h2>
         <p className="mt-2 text-xs leading-6 text-slate-500">
-          Insights & extras · Africa/Lagos time. Sample history, not a forecast.
+          {client.mode === 'api'
+            ? 'Insights from recorded historical events · Africa/Lagos time. Revenue is gross, before refunds.'
+            : 'Insights & extras · Africa/Lagos time. Sample history, not a forecast.'}
         </p>
       </div>
       <nav aria-label="Insights and extras" className="flex flex-wrap gap-2">
@@ -149,7 +151,11 @@ export function InsightsPanel() {
                       />
                       <Bars
                         title="Conversion by stage"
-                        summary={`${d.stages.find((s) => s.label === 'paid')?.value ?? 0} of ${d.conversationCount} active leads are currently paid. This is a stage snapshot, not a historical funnel or transition rate.`}
+                        summary={
+                          client.mode === 'api'
+                            ? 'Historical cohort: stages ever reached by conversations first seen in the selected range. Later stages do not erase earlier stages.'
+                            : `${d.stages.find((s) => s.label === 'paid')?.value ?? 0} of ${d.conversationCount} active leads are currently paid. This is a stage snapshot, not a historical funnel or transition rate.`
+                        }
                         rows={d.stages}
                         format={(n) =>
                           `${n} (${Math.round((n / Math.max(1, d.conversationCount)) * 100)}%)`
@@ -178,12 +184,18 @@ export function InsightsPanel() {
                       <Bars
                         title="AI versus vendor"
                         summary={
-                          total
-                            ? `AI sent ${Math.round((d.handling[0].value / total) * 100)}% of ${total} sent replies. This is message share, not fully automated chats.`
-                            : 'No sent replies in this range.'
+                          client.mode === 'api'
+                            ? 'Distinct conversations handled by each responder. Shared conversations appear in both groups; these are not message-share percentages.'
+                            : total
+                              ? `AI sent ${Math.round((d.handling[0].value / total) * 100)}% of ${total} sent replies. This is message share, not fully automated chats.`
+                              : 'No sent replies in this range.'
                         }
                         rows={d.handling}
-                        format={(n) => `${n} (${Math.round((n / Math.max(1, total)) * 100)}%)`}
+                        format={(n) =>
+                          client.mode === 'api'
+                            ? `${n} conversations`
+                            : `${n} (${Math.round((n / Math.max(1, total)) * 100)}%)`
+                        }
                       />
                     </div>
                   </>
