@@ -28,6 +28,9 @@ services:
       - ./supabase/migrations/202611100006_reply_engine.sql:/docker-entrypoint-initdb.d/007-reply-engine.sql:ro
       - ./supabase/migrations/202611100007_orders_payments.sql:/docker-entrypoint-initdb.d/008-orders-payments.sql:ro
       - ./supabase/migrations/202611100008_whatsapp.sql:/docker-entrypoint-initdb.d/009-whatsapp.sql:ro
+      - ./supabase/migrations/202611100009_real_extras.sql:/docker-entrypoint-initdb.d/010-extras.sql:ro
+      - ./supabase/migrations/202611100010_insights_billing.sql:/docker-entrypoint-initdb.d/011-billing.sql:ro
+      - ./supabase/migrations/202611100011_go_live.sql:/docker-entrypoint-initdb.d/012-go-live.sql:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U selvora']
       interval: 5s

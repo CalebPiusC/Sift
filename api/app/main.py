@@ -90,11 +90,18 @@ async def safe_pipeline_errors(request, call_next):
     """Do not let asyncpg/provider exceptions reach access/error logs with private values."""
     try:
         response = await call_next(request)
+        if response.status_code >= 500:
+            from .operations.telemetry import event
+
+            event("request_failure")
         if request.url.path.startswith("/v1/"):
             response.headers["Cache-Control"] = "private, no-store"
             response.headers["Referrer-Policy"] = "no-referrer"
         return response
     except Exception as error:  # noqa: BLE001 -- final privacy boundary, never log private exception values
+        from .operations.telemetry import event
+
+        event("request_failure")
         code = getattr(error, "sqlstate", "")
         status, label = (
             (409, "CONFLICT")
@@ -194,3 +201,34 @@ from .billing.insights import router as insights_router
 
 app.include_router(billing_router)
 app.include_router(insights_router)
+
+from .operations.api import router as operations_router
+
+app.include_router(operations_router)
+
+
+@app.middleware("http")
+async def abuse_controls(request, call_next):
+    from .operations.middleware import guard
+
+    settings = app.dependency_overrides.get(get_settings, get_settings)()
+    return await guard(request, call_next, settings)
+
+
+from fastapi.exceptions import RequestValidationError
+
+
+@app.exception_handler(RequestValidationError)
+async def private_validation_error(request, error):
+    # FastAPI defaults include rejected input (which may contain tokens/customer PII).
+    return JSONResponse(
+        status_code=422,
+        content={
+            "ok": False,
+            "error": {
+                "code": "VALIDATION",
+                "message": "Invalid request fields.",
+                "retryable": False,
+            },
+        },
+    )

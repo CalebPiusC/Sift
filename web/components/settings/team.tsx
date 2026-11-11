@@ -34,7 +34,11 @@ export function TeamSettings() {
               if (r.ok) {
                 setName('');
                 setEmail('');
-                setSuccess(`Invitation saved for ${r.data.name}. No real email was sent.`);
+                setSuccess(
+                  client.mode === 'api'
+                    ? `Invitation queued for ${r.data.name}. Check delivery status; queued does not mean delivered.`
+                    : `Invitation saved for ${r.data.name}. No real email was sent.`,
+                );
               }
             });
         }}

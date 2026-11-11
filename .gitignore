@@ -24,3 +24,9 @@ web/tsconfig.tsbuildinfo
 
 *.egg-info/
 .ruff_cache/
+
+# Backups and private acceptance evidence belong in encrypted external storage.
+backups/
+*.dump
+*.dump.partial
+private-evidence/

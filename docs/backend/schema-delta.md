@@ -1960,9 +1960,11 @@ Added columns:
 
 - `deletion_requested_at` timestamp with time zone; nullable
 - `deletion_state` text; nullable
+- `ai_paused` boolean; NOT NULL; default `false`
 
 New/changed constraints:
 
+- `vendors_ai_paused_not_null`: `NOT NULL ai_paused`
 - `vendors_deletion_state_check`: `CHECK ((deletion_state = ANY (ARRAY['requested'::text, 'redacted_retention_pending'::text])))`
 
 Added indexes (including constraint-backed and FK lookup indexes):

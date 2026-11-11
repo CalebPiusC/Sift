@@ -1,3 +1,4 @@
+import { FriendTools } from '../components/data/friend-tools';
 import { DataProvider } from '../components/data/provider';
 import { parseDataMode } from '../lib/data/mode';
 import type { Metadata, Viewport } from 'next';
@@ -21,7 +22,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <DataProvider mode={parseDataMode(process.env.DATA_MODE)}>{children}</DataProvider>
+        <DataProvider mode={parseDataMode(process.env.DATA_MODE)}>
+          {children}
+          <FriendTools />
+        </DataProvider>
       </body>
     </html>
   );

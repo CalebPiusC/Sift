@@ -1,6 +1,7 @@
 from decimal import Decimal
 from functools import lru_cache
 from typing import Literal
+from uuid import UUID
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -25,6 +26,11 @@ class Settings(BaseSettings):
     pipeline_lease_seconds: int = 90
     worker_poll_seconds: float = 2
     pipeline_enabled: bool = False
+    rate_limit_enabled: bool = False
+    api_requests_per_minute: int = Field(default=120, ge=1)
+    webhook_requests_per_minute: int = Field(default=1200, ge=1)
+    operator_user_ids: list[UUID] = []
+    queue_alert_seconds: int = Field(default=300, ge=1)
     paystack_secret_key: SecretStr = SecretStr("")
     public_web_url: str = ""
     whatsapp_mode: Literal["sandbox", "live"] = "sandbox"

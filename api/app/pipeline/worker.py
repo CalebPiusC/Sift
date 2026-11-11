@@ -149,6 +149,7 @@ class Worker:
 
     async def tick(self):
         async with self.db.transaction() as (conn, _):
+            await conn.execute("SELECT b9_worker_heartbeat()")
             vendors = [
                 r["vendor_id"] for r in await conn.fetch("SELECT * FROM b2_due_vendors(100)")
             ]
@@ -268,6 +269,8 @@ class Worker:
             )
             if not row or row["status"] in ("sent", "delivered", "read", "blocked"):
                 return
+            if row["sender"] == "ai" and await conn.fetchval("SELECT b9_ai_paused($1)", vendor):
+                raise Deferred(datetime.now(UTC) + timedelta(seconds=30))
             if row["sender"] == "ai" and not await meter.admit(
                 conn, vendor, row["conversation_id"]
             ):
@@ -417,6 +420,10 @@ class Worker:
                         if not safe:
                             await replies.block_send(conn, vendor, row, reason, sheet)
                             return
+                    if row["sender"] == "ai" and await conn.fetchval(
+                        "SELECT b9_ai_paused($1)", vendor
+                    ):
+                        raise Deferred(datetime.now(UTC) + timedelta(seconds=30))
                     if row["template_context"]:
                         template = replies.document(row["template_context"])
                         provider_id = await adapter.send_template(
