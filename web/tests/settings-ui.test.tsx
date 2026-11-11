@@ -47,7 +47,7 @@ it('connects/reconnects channels, explains TikTok, replaces helper codes and sav
   await waitFor(() =>
     expect(screen.getByLabelText('WhatsApp link code').textContent).not.toBe(old),
   );
-  expect(screen.getByText(/No live helper number is configured/)).toBeInTheDocument();
+  expect(screen.getByText(/No helper number is configured/)).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Simulate sent code' }));
   await screen.findByText('Helper linked successfully');
   await user.click(screen.getByRole('button', { name: 'Back to channels' }));

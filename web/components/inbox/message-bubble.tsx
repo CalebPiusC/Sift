@@ -30,19 +30,22 @@ export function MessageBubble({
           <>
             <p className="flex items-center gap-2 font-medium">
               <Mic size={16} />
-              Voice note · {m.voice.durationSeconds}s
+              Voice note{m.voice.durationSeconds != null ? ` · ${m.voice.durationSeconds}s` : ''}
             </p>
             <p className="mt-2 text-xs">Transcript: {m.voice.transcript}</p>
             <p className="mt-1 text-[10px] text-slate-500">
-              Original language: {m.language === 'pcm' ? 'Nigerian Pidgin' : 'English'} ·
-              transcript, not a translation
+              Original language:{' '}
+              {(m.voice.detectedLanguage ?? m.language) === 'pcm'
+                ? 'Nigerian Pidgin'
+                : (m.voice.detectedLanguage ?? m.language) === 'en'
+                  ? 'English'
+                  : 'Other / unverified language'}{' '}
+              · transcript, not a translation
             </p>
             {m.voice.audioUrl ? (
               <audio controls preload="none" className="mt-2 w-full" src={m.voice.audioUrl} />
             ) : (
-              <p className="text-[10px] text-slate-500">
-                Original audio unavailable in sample data
-              </p>
+              <p className="text-[10px] text-slate-500">No public audio link is available.</p>
             )}
           </>
         ) : (

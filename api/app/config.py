@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -25,6 +26,17 @@ class Settings(BaseSettings):
     pipeline_enabled: bool = False
     paystack_secret_key: SecretStr = SecretStr("")
     public_web_url: str = ""
+    whatsapp_mode: Literal["sandbox", "live"] = "sandbox"
+    meta_graph_version: str = "v23.0"
+    meta_app_id: str = ""
+    meta_app_secret: SecretStr = SecretStr("")
+    meta_verify_token: SecretStr = SecretStr("")
+    meta_signup_config_id: str = ""
+    whatsapp_helper_phone_id: str = ""
+    whatsapp_helper_number: str = ""
+    whatsapp_helper_token: SecretStr = SecretStr("")
+    gemini_api_key: SecretStr = SecretStr("")
+    gemini_audio_model: str = "gemini-2.5-flash"
 
 
 @lru_cache

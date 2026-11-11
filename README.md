@@ -159,3 +159,9 @@ root `npm run build` runs it as a required prebuild gate. Gmail acceptance remai
 See [order/payment rules, signed receipts, setup and pending real acceptance](docs/backend/orders-payments.md).
 `PATH="$PWD/.venv/bin:$PATH" npm run test:commerce` exercises the local transactional flow and
 last-item races. Real Paystack/Gmail acceptance still needs configured credentials and deployment.
+
+## WhatsApp and helper (B5)
+
+See [WhatsApp sandbox/live setup, helper security and acceptance](docs/backend/whatsapp.md).
+`PATH="$PWD/.venv/bin:$PATH" npm run test:whatsapp` runs the real DB/Redis/worker flow
+with fake Meta/Gemini HTTP. Live Meta/Gemini acceptance requires credentials and approval.

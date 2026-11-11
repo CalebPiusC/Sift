@@ -100,6 +100,12 @@ export interface CustomersData {
   }): Promise<Result<Customer>>;
 }
 export interface ChannelsData {
+  completeWhatsApp?(input: {
+    attemptId: ID;
+    code?: string;
+    phoneNumberId?: string;
+    wabaId?: string;
+  }): Promise<Result<ChannelAccount>>;
   list(): Promise<Result<ChannelAccount[]>>;
   begin(input: { channel: ChannelAccount['channel'] }): Promise<Result<ChannelAttempt>>;
   complete(input: { attemptId: ID }): Promise<Result<ChannelAccount>>;

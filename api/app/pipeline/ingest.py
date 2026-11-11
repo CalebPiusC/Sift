@@ -13,9 +13,14 @@ def email_identity(address: str) -> str:
     return address.casefold()
 
 
-async def ingest(conn, crypto, vendor, account, item: Incoming, deep_link: str):
-    address = email_identity(item.sender_email)
-    digest = crypto.digest("email", address)
+async def ingest(conn, crypto, vendor, account, item: Incoming, deep_link: str, channel="email"):
+    if channel == "whatsapp":
+        from app.whatsapp.cloud import phone
+
+        address = phone(item.sender_email)
+    else:
+        address = email_identity(item.sender_email)
+    digest = crypto.digest(channel, address)
     # Per-account lock prevents races creating two customer/thread records for the same sender.
     await conn.execute(
         "SELECT pg_advisory_xact_lock(hashtextextended($1,0))", f"{account}:{digest}"
@@ -67,10 +72,11 @@ async def ingest(conn, crypto, vendor, account, item: Incoming, deep_link: str):
         # An arbitrary From header is not verified identity, even if another channel is.
         # Keep separate until an authorized manual merge or a verified identity proof.
         customer = await conn.fetchval(
-            "INSERT INTO customers(vendor_id,display_name,email) VALUES($1,$2,$3) RETURNING id",
+            "INSERT INTO customers(vendor_id,display_name,email,phone) VALUES($1,$2,$3,$4) RETURNING id",
             vendor,
             item.sender_name or address,
-            address,
+            address if channel == "email" else None,
+            address if channel == "whatsapp" else None,
         )
         await conn.execute(
             "INSERT INTO customer_identities(vendor_id,customer_id,channel_account_id,external_identity_hash,external_identity_ciphertext,key_version) VALUES($1,$2,$3,$4,$5,$6)",

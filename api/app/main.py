@@ -180,3 +180,7 @@ app.include_router(replies_router)
 from .commerce.api import router as commerce_router
 
 app.include_router(commerce_router)
+
+from .whatsapp.api import router as whatsapp_router
+
+app.include_router(whatsapp_router)

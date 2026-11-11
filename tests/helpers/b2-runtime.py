@@ -138,6 +138,9 @@ async def main():
         from b4_checks import run as b4_checks
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='https://test',headers=headers) as client:
             await b4_checks(rt,worker,vendor,account,cid,client,execute,fake)
+        from b5_checks import run as b5_checks
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='https://test',headers=headers) as client:
+            await b5_checks(rt,worker,vendor,client,execute)
         print('B2 native APIs, dedupe, out-of-order, tenant isolation, idempotency, durable lease kill/restart and Redis checks passed')
     finally:
         await rt.queue.close()

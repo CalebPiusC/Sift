@@ -13,6 +13,7 @@ export interface BusinessHours {
   awayMessage: string;
 }
 export interface HelperLink {
+  sandbox?: boolean;
   id: ID;
   code: string;
   expiresAt: ISODate;
@@ -20,6 +21,8 @@ export interface HelperLink {
   helperNumber: string | null;
 }
 export interface ChannelAttempt {
+  sandbox?: boolean;
+  embeddedSignup?: { appId: string; configId: string; version: string } | null;
   authorizationUrl?: string;
   id: ID;
   channel: Channel;

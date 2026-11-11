@@ -325,13 +325,16 @@ Added columns:
 - `mailbox_hash` text; nullable
 - `gmail_history_id` numeric; nullable
 - `watch_expires_at` timestamp with time zone; nullable
+- `whatsapp_waba_id` text; nullable
+- `helper_account` boolean; NOT NULL; default `false`
 
 New/changed constraints:
 
+- `channel_accounts_helper_account_not_null`: `NOT NULL helper_account`
 - `channel_accounts_mailbox_hash_check`: `CHECK ((mailbox_hash ~ '^[0-9a-f]{64}$'::text))`
 - `channel_accounts_own_account_check`: `CHECK (own_account)`
 - `channel_accounts_own_account_not_null`: `NOT NULL own_account`
-- `channel_accounts_provider_check`: `CHECK ((provider = 'gmail'::text))`
+- `channel_accounts_provider_check`: `CHECK ((provider = ANY (ARRAY['gmail'::text, 'whatsapp'::text])))`
 - `channel_accounts_status_check`: `CHECK ((status = ANY (ARRAY['connected'::text, 'disconnected'::text, 'expired'::text, 'error'::text])))`
 - `channel_accounts_updated_at_not_null`: `NOT NULL updated_at`
 
@@ -460,6 +463,7 @@ Added columns:
 - `updated_at` timestamp with time zone; NOT NULL; default `now()`
 - `revision` bigint; NOT NULL; default `1`
 - `provider_thread_id` text; nullable
+- `last_customer_at` timestamp with time zone; nullable
 
 New/changed constraints:
 
@@ -762,6 +766,9 @@ Added columns:
 - `helper_number_ciphertext` bytea; nullable
 - `key_version` text; nullable
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
+- `member_id` uuid; nullable
+- `sender_hash` text; nullable
+- `pending_proposal_id` uuid; nullable
 
 New/changed constraints:
 
@@ -778,12 +785,17 @@ New/changed constraints:
 - `helper_links_status_not_null`: `NOT NULL status`
 - `helper_links_vendor_id_fkey`: `FOREIGN KEY (vendor_id) REFERENCES vendors(id)`
 - `helper_links_vendor_id_id_key`: `UNIQUE (vendor_id, id)`
+- `helper_links_vendor_id_member_id_fkey`: `FOREIGN KEY (vendor_id, member_id) REFERENCES vendor_members(vendor_id, id)`
 - `helper_links_vendor_id_not_null`: `NOT NULL vendor_id`
+- `helper_links_vendor_id_pending_proposal_id_fkey`: `FOREIGN KEY (vendor_id, pending_proposal_id) REFERENCES typed_proposals(vendor_id, id)`
 - `helper_ttl`: `CHECK (((expires_at > created_at) AND (expires_at <= (created_at + '00:10:00'::interval))))`
 
 Added indexes (including constraint-backed and FK lookup indexes):
 
-- `current_helper_link`: `CREATE UNIQUE INDEX current_helper_link ON public.helper_links USING btree (vendor_id) WHERE (status = ANY (ARRAY['pending'::text, 'linked'::text]))`
+- `b5_helper_member_fk`: `CREATE INDEX b5_helper_member_fk ON public.helper_links USING btree (vendor_id, member_id)`
+- `b5_helper_proposal_fk`: `CREATE INDEX b5_helper_proposal_fk ON public.helper_links USING btree (vendor_id, pending_proposal_id)`
+- `b5_helper_sender`: `CREATE UNIQUE INDEX b5_helper_sender ON public.helper_links USING btree (sender_hash) WHERE (status = 'linked'::text)`
+- `current_helper_link`: `CREATE UNIQUE INDEX current_helper_link ON public.helper_links USING btree (vendor_id, COALESCE(member_id, vendor_id)) WHERE (status = ANY (ARRAY['pending'::text, 'linked'::text]))`
 - `helper_links_pkey`: `CREATE UNIQUE INDEX helper_links_pkey ON public.helper_links USING btree (id)`
 - `helper_links_vendor_id_id_key`: `CREATE UNIQUE INDEX helper_links_vendor_id_id_key ON public.helper_links USING btree (vendor_id, id)`
 
@@ -1056,6 +1068,8 @@ Added columns:
 - `detected_language` text; nullable
 - `detection_confidence` numeric; nullable
 - `commerce_context` jsonb; nullable
+- `template_context` jsonb; nullable
+- `media_language` text; nullable
 
 New/changed constraints:
 
@@ -1065,6 +1079,7 @@ New/changed constraints:
 - `messages_kind_check`: `CHECK ((kind = ANY (ARRAY['text'::text, 'voice'::text])))`
 - `messages_kind_not_null`: `NOT NULL kind`
 - `messages_lane_check`: `CHECK ((lane = ANY (ARRAY['auto'::text, 'approval'::text, 'paused'::text])))`
+- `messages_media_language_check`: `CHECK ((length(media_language) <= 80))`
 - `messages_revision_check`: `CHECK ((revision > 0))`
 - `messages_revision_not_null`: `NOT NULL revision`
 - `messages_status_check`: `CHECK ((status = ANY (ARRAY['received'::text, 'draft'::text, 'pending_approval'::text, 'blocked'::text, 'queued'::text, 'sending'::text, 'sent'::text, 'delivered'::text, 'read'::text, 'failed'::text])))`
@@ -1075,7 +1090,7 @@ New/changed constraints:
 - `messages_voice_duration_seconds_check`: `CHECK ((voice_duration_seconds > 0))`
 - `order_snapshot_shape`: `CHECK (((order_snapshot IS NULL) OR (jsonb_typeof(order_snapshot) = 'object'::text)))`
 - `product_snapshot_shape`: `CHECK (((product_snapshot IS NULL) OR (jsonb_typeof(product_snapshot) = 'object'::text)))`
-- `voice_shape`: `CHECK (((kind <> 'voice'::text) OR ((voice_duration_seconds IS NOT NULL) AND (voice_transcript IS NOT NULL))))`
+- `voice_shape`: `CHECK (((kind <> 'voice'::text) OR (voice_transcript IS NOT NULL)))`
 
 Added indexes (including constraint-backed and FK lookup indexes):
 
@@ -1652,6 +1667,7 @@ Added columns:
 - `status` text; NOT NULL; default `'pending'::text`
 - `expires_at` timestamp with time zone; NOT NULL
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
+- `instruction_change` jsonb; nullable
 
 New/changed constraints:
 
@@ -1800,6 +1816,15 @@ Added columns:
 - `processed_at` timestamp with time zone; nullable
 - `expires_at` timestamp with time zone; NOT NULL
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
+- `media_ciphertext` bytea; nullable
+- `media_key_version` text; nullable
+- `media_mime` text; nullable
+- `transcript` text; nullable
+- `detected_language` text; nullable
+- `helper_member_id` uuid; nullable
+- `helper_reply` text; nullable
+- `helper_send_started_at` timestamp with time zone; nullable
+- `helper_provider_id` text; nullable
 
 New/changed constraints:
 
@@ -1820,12 +1845,14 @@ New/changed constraints:
 - `webhook_events_signature_verified_not_null`: `NOT NULL signature_verified`
 - `webhook_events_vendor_id_channel_account_id_fkey`: `FOREIGN KEY (vendor_id, channel_account_id) REFERENCES channel_accounts(vendor_id, id)`
 - `webhook_events_vendor_id_fkey`: `FOREIGN KEY (vendor_id) REFERENCES vendors(id)`
+- `webhook_events_vendor_id_helper_member_id_fkey`: `FOREIGN KEY (vendor_id, helper_member_id) REFERENCES vendor_members(vendor_id, id)`
 - `webhook_events_vendor_id_id_key`: `UNIQUE (vendor_id, id)`
 - `webhook_events_vendor_id_not_null`: `NOT NULL vendor_id`
 
 Added indexes (including constraint-backed and FK lookup indexes):
 
 - `b0_fk_webhook_events_vendor_id_channel_account_id_fkey_18017`: `CREATE INDEX b0_fk_webhook_events_vendor_id_channel_account_id_fkey_18017 ON public.webhook_events USING btree (vendor_id, channel_account_id)`
+- `b5_event_member_fk`: `CREATE INDEX b5_event_member_fk ON public.webhook_events USING btree (vendor_id, helper_member_id)`
 - `webhook_account_dedupe`: `CREATE UNIQUE INDEX webhook_account_dedupe ON public.webhook_events USING btree (vendor_id, provider, channel_account_id, provider_event_id) WHERE (channel_account_id IS NOT NULL)`
 - `webhook_events_pkey`: `CREATE UNIQUE INDEX webhook_events_pkey ON public.webhook_events USING btree (id)`
 - `webhook_events_vendor_id_id_key`: `CREATE UNIQUE INDEX webhook_events_vendor_id_id_key ON public.webhook_events USING btree (vendor_id, id)`

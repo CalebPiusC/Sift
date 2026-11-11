@@ -14,6 +14,7 @@ from app.commerce import messages as commerce_messages
 from app.commerce import paystack
 from app.config import get_settings
 from app.replies import service as replies
+from app.whatsapp import service as whatsapp
 
 from .crypto import Crypto
 from .db import Database
@@ -32,6 +33,7 @@ class Worker:
         self.settings, self.crypto = settings, Crypto(settings)
         self.db, self.queue = db or Database(settings), queue or Queue(settings.redis_url)
         self.handlers = {
+            "ingest": lambda job: whatsapp.process(self, job),
             "gmail_sync": self.gmail_sync,
             "gmail_watch": self.gmail_watch,
             "send": self.send,
@@ -250,6 +252,7 @@ class Worker:
         async with self.db.transaction(vendor) as (conn, _):
             row = await conn.fetchrow(
                 """SELECT m.*,c.provider_thread_id,c.channel_account_id,c.human_mode,c.human_mode_until,c.status conversation_status,
+             (SELECT provider FROM channel_accounts WHERE id=c.channel_account_id) channel_provider,
              (SELECT rfc_message_id FROM messages WHERE conversation_id=c.id AND sender='customer' ORDER BY created_at DESC,id DESC LIMIT 1) parent,
              (SELECT ci.external_identity_ciphertext FROM customer_identities ci WHERE ci.customer_id=c.customer_id AND ci.channel_account_id=c.channel_account_id LIMIT 1) recipient,
              (SELECT ci.key_version FROM customer_identities ci WHERE ci.customer_id=c.customer_id AND ci.channel_account_id=c.channel_account_id LIMIT 1) recipient_version
@@ -308,10 +311,20 @@ class Worker:
                 "UPDATE message_deliveries SET status='sending',attempt=attempt+1 WHERE message_id=$1",
                 row["id"],
             )
-        async with httpx.AsyncClient(timeout=25) as client:
+        async with (
+            whatsapp.http_client(self.settings)
+            if row["channel_provider"] == "whatsapp"
+            else httpx.AsyncClient(timeout=25)
+        ) as client:
             adapter = await adapter_for(
                 self.db, self.crypto, self.settings, vendor, row["channel_account_id"], client
             )
+            if hasattr(adapter, "last_inbound"):
+                async with self.db.transaction(vendor) as (conn, _):
+                    adapter.last_inbound = await conn.fetchval(
+                        "SELECT last_customer_at FROM conversations WHERE id=$1",
+                        row["conversation_id"],
+                    )
             found = await adapter.find_sent(row["rfc_message_id"])
             if not found and prior_sending:
                 # Gmail send has no idempotency key. Never blindly resend after a crash/timeout.
@@ -363,21 +376,29 @@ class Worker:
                                 row["id"],
                             )
                             return
-                    elif row["sender"] in ("ai", "vendor") or row["reply_context"]:
+                    elif not row["template_context"] and (
+                        row["sender"] in ("ai", "vendor") or row["reply_context"]
+                    ):
                         safe, reason, sheet = await replies.recheck(conn, vendor, row)
                         if not safe:
                             await replies.block_send(conn, vendor, row, reason, sheet)
                             return
-                    provider_id = found or await adapter.send(
-                        Outgoing(
-                            recipient,
-                            row["content"],
-                            row["email_subject"] or "Your enquiry",
-                            row["provider_thread_id"],
-                            row["rfc_message_id"],
-                            row["parent"] or "",
+                    if row["template_context"]:
+                        template = replies.document(row["template_context"])
+                        provider_id = await adapter.send_template(
+                            recipient, template["name"], template["language"]
                         )
-                    )
+                    else:
+                        provider_id = found or await adapter.send(
+                            Outgoing(
+                                recipient,
+                                row["content"],
+                                row["email_subject"] or "Your enquiry",
+                                row["provider_thread_id"],
+                                row["rfc_message_id"],
+                                row["parent"] or "",
+                            )
+                        )
             else:
                 provider_id = found
         async with self.db.transaction(vendor) as (conn, _):

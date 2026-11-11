@@ -8,6 +8,25 @@ from app.channels.gmail import ChannelError
 
 
 async def adapter_for(db, crypto, settings, vendor, account, client: httpx.AsyncClient):
+    async with db.transaction(vendor) as (conn, _):
+        provider = await conn.fetchval("SELECT provider FROM channel_accounts WHERE id=$1", account)
+        if provider == "whatsapp":
+            from types import SimpleNamespace
+
+            from app.whatsapp.service import adapter
+
+            last = await conn.fetchval(
+                "SELECT max(last_customer_at) FROM conversations WHERE channel_account_id=$1",
+                account,
+            )
+            return await adapter(
+                SimpleNamespace(db=db, crypto=crypto, settings=settings),
+                conn,
+                vendor,
+                account,
+                client,
+                last,
+            )
     # Row lock serializes refresh-token rotation across workers; no plaintext persisted/logged.
     async with db.transaction(vendor) as (conn, _):
         row = await conn.fetchrow(

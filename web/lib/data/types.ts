@@ -66,7 +66,12 @@ export interface Message extends Entity {
   product?: Pick<Product, 'id' | 'name' | 'priceKobo' | 'stock' | 'revision'>;
   order?: Pick<Order, 'id' | 'items' | 'totalKobo' | 'paymentStatus' | 'status'>;
   text: string;
-  voice: { durationSeconds: number; transcript: string; audioUrl: string | null } | null;
+  voice: {
+    durationSeconds: number | null;
+    transcript: string;
+    audioUrl: string | null;
+    detectedLanguage?: string;
+  } | null;
   status:
     | 'received'
     | 'queued'

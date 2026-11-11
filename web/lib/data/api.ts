@@ -234,6 +234,8 @@ export function createApiClient(options: {
         ),
     },
     channels: {
+      completeWhatsApp: ({ attemptId, ...data }) =>
+        request(`channels/whatsapp/signup/${key(attemptId)}/complete`, data, 'POST'),
       list: () => request('channels'),
       begin: (i) => request('channels/connections', i, 'POST'),
       complete: (i) => request(`channels/connections/${key(i.attemptId)}/complete`, {}, 'POST'),

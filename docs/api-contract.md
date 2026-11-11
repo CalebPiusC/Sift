@@ -219,7 +219,12 @@ export interface Message extends Entity {
   product?: Pick<Product, 'id' | 'name' | 'priceKobo' | 'stock' | 'revision'>;
   order?: Pick<Order, 'id' | 'items' | 'totalKobo' | 'paymentStatus' | 'status'>;
   text: string;
-  voice: { durationSeconds: number; transcript: string; audioUrl: string | null } | null;
+  voice: {
+    durationSeconds: number | null;
+    transcript: string;
+    audioUrl: string | null;
+    detectedLanguage?: string;
+  } | null;
   status:
     | 'received'
     | 'queued'
@@ -531,6 +536,12 @@ export interface CustomersData {
   }): Promise<Result<Customer>>;
 }
 export interface ChannelsData {
+  completeWhatsApp?(input: {
+    attemptId: ID;
+    code?: string;
+    phoneNumberId?: string;
+    wabaId?: string;
+  }): Promise<Result<ChannelAccount>>;
   list(): Promise<Result<ChannelAccount[]>>;
   begin(input: { channel: ChannelAccount['channel'] }): Promise<Result<ChannelAttempt>>;
   complete(input: { attemptId: ID }): Promise<Result<ChannelAccount>>;
@@ -700,6 +711,7 @@ export interface BusinessHours {
   awayMessage: string;
 }
 export interface HelperLink {
+  sandbox?: boolean;
   id: ID;
   code: string;
   expiresAt: ISODate;
@@ -707,6 +719,8 @@ export interface HelperLink {
   helperNumber: string | null;
 }
 export interface ChannelAttempt {
+  sandbox?: boolean;
+  embeddedSignup?: { appId: string; configId: string; version: string } | null;
   authorizationUrl?: string;
   id: ID;
   channel: Channel;

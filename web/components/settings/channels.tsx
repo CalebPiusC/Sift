@@ -6,6 +6,7 @@ import { useDataClient } from '../data/provider';
 import { useResource } from '../../lib/data/use-resource';
 import { ResourceView, panel, useAction } from '../data/shared';
 import { ChannelIcon } from '../inbox/channel-icon';
+import { WhatsAppSignup } from './whatsapp-signup';
 import { Button } from '../ui/button';
 export function ChannelsSettings() {
   const { client } = useDataClient();
@@ -53,7 +54,25 @@ export function ChannelsSettings() {
             {channelLabels[attempt.channel]} ·{' '}
             {client.mode === 'mock' ? 'simulated connection' : 'connection'}
           </h3>
-          {attempt.channel === 'tiktok' ? (
+          {attempt.channel === 'whatsapp' && client.mode === 'api' ? (
+            <>
+              <WhatsAppSignup
+                attempt={attempt}
+                onConnected={() => {
+                  setAttempt(null);
+                  setSuccess(
+                    attempt.sandbox
+                      ? 'Sandbox WhatsApp connected. No real account was connected.'
+                      : 'Your WhatsApp Business number is connected.',
+                  );
+                  rows.retry();
+                }}
+              />
+              <Button variant="outline" onClick={() => setAttempt(null)}>
+                Cancel connection
+              </Button>
+            </>
+          ) : attempt.channel === 'tiktok' ? (
             <>
               <p className="my-3 text-sm leading-6">
                 TikTok availability is being confirmed. We cannot promise access or connect an
@@ -199,7 +218,13 @@ function HelperScreen({ onBack }: { onBack: () => void }) {
         your business number. Customer replies still come from your own account.
       </p>
       <ResourceView resource={link}>
-        {(h) => (h ? <HelperCode key={h.id} link={h} /> : <p className={panel}>No code yet.</p>)}
+        {(h) =>
+          h ? (
+            <HelperCode key={`${h.id}:${h.status}`} link={h} refresh={link.retry} />
+          ) : (
+            <p className={panel}>No code yet.</p>
+          )
+        }
       </ResourceView>
       <Button
         variant="outline"
@@ -216,7 +241,7 @@ function HelperScreen({ onBack }: { onBack: () => void }) {
     </section>
   );
 }
-function HelperCode({ link: h }: { link: HelperLink }) {
+function HelperCode({ link: h, refresh }: { link: HelperLink; refresh: () => void }) {
   const { client } = useDataClient();
   const action = useAction();
   const [now, setNow] = useState(Date.now());
@@ -239,6 +264,12 @@ function HelperCode({ link: h }: { link: HelperLink }) {
         </>
       ) : (
         <>
+          {h.sandbox && (
+            <p role="status" className="text-sm">
+              Sandbox helper: use signed sandbox webhooks; do not message this test number in
+              WhatsApp.
+            </p>
+          )}
           <p className="text-xs text-slate-500">Your 4-digit link code</p>
           <p
             aria-label="WhatsApp link code"
@@ -261,18 +292,21 @@ function HelperCode({ link: h }: { link: HelperLink }) {
           </ol>
           {!h.helperNumber && (
             <p className="mb-4 rounded-xl bg-amber-50 p-3 text-xs leading-6 text-amber-900 dark:bg-amber-950 dark:text-amber-200">
-              No live helper number is configured in sample mode. Do not send this code anywhere.
-              Use the simulation below.
+              No helper number is configured. Do not send this code anywhere.
             </p>
           )}
           <Button
             disabled={!seconds || action.busy}
             onClick={() =>
-              void action.run(() =>
-                client.mode === 'mock'
-                  ? client.channels.confirmHelper({ id: h.id })
-                  : client.channels.helper(),
-              )
+              void action
+                .run(() =>
+                  client.mode === 'mock'
+                    ? client.channels.confirmHelper({ id: h.id })
+                    : client.channels.helper(),
+                )
+                .then((r) => {
+                  if (r.ok) refresh();
+                })
             }
           >
             {client.mode === 'mock' ? 'Simulate sent code' : 'Check link status'}

@@ -33,7 +33,8 @@
     "eval:replies": "python3 api/evals/run.py",
     "test:replies": "python3 api/evals/run.py && python -m pytest api/tests -q && node --test tests/b2-native.test.mjs",
     "test:commerce": "python -m pytest api/tests -q && node --test tests/b2-native.test.mjs",
-    "test:layout": "node tests/responsive-layout.mjs"
+    "test:layout": "node tests/responsive-layout.mjs",
+    "test:whatsapp": "python -m pytest api/tests -q && node --test tests/b2-native.test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.16",

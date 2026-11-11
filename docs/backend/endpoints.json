@@ -161,8 +161,8 @@
     "tables": "typed_proposals",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Proposal only, no stock change."
+    "status": "implemented-local",
+    "notes": "Same server typed-instruction parser as WhatsApp helper; returns a pending ten-minute proposal, never applies a mutation."
   },
   {
     "function": "CatalogueData.confirmText",
@@ -172,8 +172,8 @@
     "tables": "typed_proposals,products,product_variants,stock_movements",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Lock proposal and inventory; confirm only once; conflict stale facts."
+    "status": "implemented-local",
+    "notes": "Member-bound, revision-checked explicit confirmation; once-only stock/price edit and audit. Variant edits fail closed for app review."
   },
   {
     "function": "ConversationsData.markRead",
@@ -272,7 +272,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
+    "notes": "Gmail OAuth or Meta Embedded Signup; sandbox mode fakes only provider HTTP."
   },
   {
     "function": "ChannelsData.complete",
@@ -293,19 +293,19 @@
     "tables": "helper_links",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Generate code once; store HMAC only; encrypted replay response; 10min and rate limits."
+    "status": "implemented-local",
+    "notes": "Authenticated owner/manager; replace prior code; Redis atomic ten-minute single-use capability."
   },
   {
     "function": "ChannelsData.confirmHelper",
-    "method": "POST",
-    "path": "/channels/whatsapp/helper/codes/{id}/confirm",
+    "method": "\u2014",
+    "path": "\u2014",
     "roles": "none",
     "tables": "helper_links",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Frontend mock-only confirmation. Production browser route returns NOT_IMPLEMENTED; provider receipt must verify via separate signed webhook."
+    "status": "local-only",
+    "notes": "Mock simulation only. API mode checks helper() and cannot confirm a code in the browser."
   },
   {
     "function": "SettingsData.update",
@@ -437,7 +437,7 @@
     "pagination": "cursor",
     "idempotency": "none",
     "status": "implemented-local",
-    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
+    "notes": "Connected accounts and unconnected WhatsApp card; helper account is excluded."
   },
   {
     "function": "ChannelsData.helper",
@@ -447,8 +447,8 @@
     "tables": "helper_links",
     "pagination": "none",
     "idempotency": "none",
-    "status": "planned",
-    "notes": "Sensitive helper hashes/tokens are never serialized."
+    "status": "implemented-local",
+    "notes": "Caller membership only. Four-digit pending code is encrypted in Redis; linked status established only by signed helper webhook."
   },
   {
     "function": "SettingsData.get",
@@ -812,5 +812,16 @@
     "idempotency": "required",
     "status": "implemented-local",
     "notes": "B4 explicit state-conditional operation; provider ambiguity is not blindly replayed."
+  },
+  {
+    "function": "ChannelsData.completeWhatsApp",
+    "method": "POST",
+    "path": "/channels/whatsapp/signup/{attempt}/complete",
+    "roles": "owner manager",
+    "tables": "channel_accounts,channel_attempts,channel_tokens",
+    "pagination": "none",
+    "idempotency": "required",
+    "status": "implemented-local",
+    "notes": "Authenticated initiating member and expiring attempt; exchange Meta code, validate token app/scopes/number ownership, subscribe/register. Sandbox explicitly returns a fake connection. Live Meta acceptance pending."
   }
 ]

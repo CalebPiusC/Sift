@@ -54,7 +54,16 @@ def message(row):
         "sender": row["sender"],
         "kind": row["kind"],
         "text": row["content"],
-        "voice": None,
+        "voice": {
+            "transcript": row["voice_transcript"],
+            "durationSeconds": row["voice_duration_seconds"],
+            "audioUrl": None,
+            "detectedLanguage": row["media_language"]
+            or row["detected_language"]
+            or row["language"],
+        }
+        if row["kind"] == "voice"
+        else None,
         "status": row["status"],
         "language": row["language"] if row["language"] in ("en", "pcm") else "en",
         "englishSummary": row["english_summary"],
@@ -243,8 +252,8 @@ async def send(
         account = await conn.fetchrow(
             "SELECT * FROM channel_accounts WHERE id=$1", c["channel_account_id"]
         )
-        if account["provider"] != "gmail" or account["status"] != "connected":
-            raise HTTPException(409, "Connect Gmail before replying")
+        if account["provider"] not in ("gmail", "whatsapp") or account["status"] != "connected":
+            raise HTTPException(409, "Connect a channel before replying")
         parent = await conn.fetchrow(
             "SELECT * FROM messages WHERE conversation_id=$1 AND sender='customer' ORDER BY created_at DESC,id DESC LIMIT 1",
             c["id"],
@@ -343,20 +352,32 @@ async def takeover(cid: UUID, data: HumanMode, rt: RuntimeDep, user: UserDep, ve
 @router.get("/channels")
 async def channels(rt: RuntimeDep, user: UserDep, vendor: VendorDep):
     async with rt.db.transaction(vendor, user.id) as (conn, _):
-        rows = await conn.fetch("SELECT * FROM channel_accounts WHERE vendor_id=$1", vendor)
-    return ok(
-        [
+        rows = await conn.fetch(
+            "SELECT * FROM channel_accounts WHERE vendor_id=$1 AND NOT helper_account", vendor
+        )
+    result = [
+        {
+            "id": str(r["id"]),
+            "vendorId": str(vendor),
+            "channel": r["channel"],
+            "displayName": r["display_name"],
+            "status": r["status"],
+            "ownAccount": True,
+        }
+        for r in rows
+    ]
+    if not any(r["channel"] == "whatsapp" for r in result):
+        result.append(
             {
-                "id": str(r["id"]),
+                "id": "whatsapp-unconnected",
                 "vendorId": str(vendor),
-                "channel": r["channel"],
-                "displayName": r["display_name"],
-                "status": r["status"],
+                "channel": "whatsapp",
+                "displayName": "WhatsApp Business",
+                "status": "disconnected",
                 "ownAccount": True,
             }
-            for r in rows
-        ]
-    )
+        )
+    return ok(result)
 
 
 class Connect(BaseModel):
@@ -365,6 +386,12 @@ class Connect(BaseModel):
 
 @router.post("/channels/connections")
 async def connect(data: Connect, rt: RuntimeDep, user: UserDep, vendor: VendorDep):
+    if data.channel == "whatsapp":
+        from app.whatsapp.signup import begin
+
+        async with rt.db.transaction(vendor, user.id, ("owner", "manager")) as (_, member):
+            member_id = member["id"]
+        return ok(await begin(rt, vendor, member_id))
     if data.channel != "email":
         raise HTTPException(501, "Only Gmail is connected in this pipeline")
     async with rt.db.transaction(vendor, user.id, ("owner", "manager")) as (_, member):
@@ -395,7 +422,7 @@ async def connection_status(attempt: UUID, rt: RuntimeDep, user: UserDep, vendor
         {
             "id": str(row["id"]),
             "vendorId": str(vendor),
-            "channel": "email",
+            "channel": row["channel"],
             "displayName": row["display_name"],
             "status": row["status"],
             "ownAccount": True,
