@@ -15,7 +15,7 @@
     "format": "prettier --write web tests/*.mjs package.json docker-compose.yml",
     "test:db:native": "node --test tests/native-postgres.test.mjs",
     "test:db:supabase": "node scripts/test-supabase-rls.mjs",
-    "test:security": "node --test tests/browser-env.test.mjs",
+    "test:security": "node --test tests/browser-env.test.mjs tests/contributor-setup.test.mjs",
     "check:browser-env": "node scripts/check-browser-env.mjs",
     "docs:contract": "node scripts/write-api-contract.mjs",
     "test:contract": "node --test tests/contract-doc.test.mjs",
@@ -35,7 +35,8 @@
     "test:commerce": "python -m pytest api/tests -q && node --test tests/b2-native.test.mjs",
     "test:layout": "node tests/responsive-layout.mjs",
     "test:whatsapp": "python -m pytest api/tests -q && node --test tests/b2-native.test.mjs",
-    "test:readiness": "python -m pytest api/tests -q && node --test tests/restore-native.test.mjs tests/b2-native.test.mjs"
+    "test:readiness": "python -m pytest api/tests -q && node --test tests/restore-native.test.mjs tests/b2-native.test.mjs",
+    "test:contributor-setup": "node --test tests/contributor-setup.test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.16",

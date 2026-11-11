@@ -1,0 +1,39 @@
+# Effective required approvals also need a main branch rule requiring code-owner review.
+# See CONTRIBUTING.md. Patterns are repository-root relative; last match wins.
+
+# Database schema, migrations and policies.
+/supabase/ @CalebPiusC
+
+# Authentication, secrets, tokens, tenant scope, webhooks and operational security.
+/api/app/auth.py @CalebPiusC
+/api/app/config.py @CalebPiusC
+/api/app/main.py @CalebPiusC
+/api/app/pipeline/ @CalebPiusC
+/api/app/channels/ @CalebPiusC
+/api/app/whatsapp/ @CalebPiusC
+/api/app/operations/ @CalebPiusC
+/api/app/extras/ @CalebPiusC
+/api/tests/ @CalebPiusC
+/api/logging.json @CalebPiusC
+/scripts/operations/ @CalebPiusC
+/scripts/check-browser-env.mjs @CalebPiusC
+/scripts/test-supabase-rls.mjs @CalebPiusC
+/web/lib/supabase.ts @CalebPiusC
+/web/app/auth/ @CalebPiusC
+/web/next.config.ts @CalebPiusC
+/.github/ @CalebPiusC
+/.gitignore @CalebPiusC
+**/.env.example @CalebPiusC
+
+# Payments, billing, orders and receipts.
+/api/app/commerce/ @CalebPiusC
+/api/app/billing/ @CalebPiusC
+/web/components/orders/ @CalebPiusC
+/web/components/receipts/ @CalebPiusC
+/web/components/settings/billing.tsx @CalebPiusC
+/web/app/receipts/ @CalebPiusC
+
+# Reply policy, factual verification and safety evaluations.
+/api/app/replies/ @CalebPiusC
+/api/evals/ @CalebPiusC
+/docs/operations/security-review.md @CalebPiusC
