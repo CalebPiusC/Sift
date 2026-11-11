@@ -31,7 +31,7 @@ class Database:
                     async with conn.transaction():
                         await conn.execute("SET LOCAL ROLE selvora_service")
                         await conn.execute(
-                            "SELECT reply_context,commerce_context,template_context,media_language FROM public.messages LIMIT 0"
+                            "SELECT reply_context,commerce_context,template_context,media_language,extras_context FROM public.messages LIMIT 0"
                         )
                     if not await conn.fetchval(
                         "SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='jobs' AND column_name='followup_id')"
@@ -51,6 +51,7 @@ class Database:
         vendor: UUID | str | None = None,
         user: UUID | None = None,
         roles=("owner", "manager", "agent"),
+        allow_closed=False,
     ):
         await self.connect()
         async with self.pool.acquire() as conn, conn.transaction():
@@ -67,6 +68,11 @@ class Database:
                 )
                 if not member or member["role"] not in roles:
                     raise HTTPException(403, "Business permission required")
+                if not allow_closed and await conn.fetchval(
+                    "SELECT deletion_requested_at IS NOT NULL FROM vendors WHERE id=$1",
+                    UUID(str(vendor)),
+                ):
+                    raise HTTPException(403, "Business deletion is in progress")
                 await conn.execute("SELECT set_config('request.jwt.claim.sub',$1,true)", str(user))
             yield conn, member
 

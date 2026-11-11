@@ -106,6 +106,10 @@ async def process(conn, vendor, mid):
     inbound = await conn.fetchrow("SELECT * FROM messages WHERE id=$1 AND sender='customer'", mid)
     if not inbound:
         return
+    from app.extras.safety import allowed
+
+    if not await allowed(conn, vendor, inbound["conversation_id"]):
+        return
     c = await conn.fetchrow(
         "SELECT * FROM conversations WHERE id=$1 FOR UPDATE", inbound["conversation_id"]
     )

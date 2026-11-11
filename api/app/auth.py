@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -14,6 +15,7 @@ bearer = HTTPBearer(auto_error=False)
 class Identity(BaseModel):
     id: UUID
     email: str | None = None
+    email_confirmed_at: datetime | None = None
 
 
 async def current_user(

@@ -502,6 +502,7 @@ Added columns:
 - `key_version` text; NOT NULL
 - `verified_at` timestamp with time zone; nullable
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
+- `opted_out_at` timestamp with time zone; nullable
 
 New/changed constraints:
 
@@ -541,6 +542,7 @@ Added columns:
 - `city` text; nullable
 - `updated_at` timestamp with time zone; NOT NULL; default `now()`
 - `merged_into_id` uuid; nullable
+- `opted_out_at` timestamp with time zone; nullable
 
 New/changed constraints:
 
@@ -716,6 +718,8 @@ Added columns:
 - `dedupe_key` text; NOT NULL
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
 - `message_id` uuid; nullable
+- `source_message_id` uuid; nullable
+- `template_context` jsonb; nullable
 
 New/changed constraints:
 
@@ -741,11 +745,13 @@ New/changed constraints:
 - `followups_vendor_id_id_key`: `UNIQUE (vendor_id, id)`
 - `followups_vendor_id_message_id_fkey`: `FOREIGN KEY (vendor_id, message_id) REFERENCES messages(vendor_id, id)`
 - `followups_vendor_id_not_null`: `NOT NULL vendor_id`
+- `followups_vendor_id_source_message_id_fkey`: `FOREIGN KEY (vendor_id, source_message_id) REFERENCES messages(vendor_id, id)`
 
 Added indexes (including constraint-backed and FK lookup indexes):
 
 - `b0_fk_followups_vendor_id_conversation_id_fkey_17372`: `CREATE INDEX b0_fk_followups_vendor_id_conversation_id_fkey_17372 ON public.followups USING btree (vendor_id, conversation_id)`
 - `b0_fk_followups_vendor_id_customer_id_conversation_id_fkey_1737`: `CREATE INDEX b0_fk_followups_vendor_id_customer_id_conversation_id_fkey_1737 ON public.followups USING btree (vendor_id, customer_id, conversation_id)`
+- `b7_followup_source`: `CREATE INDEX b7_followup_source ON public.followups USING btree (vendor_id, source_message_id)`
 - `followup_message_fk`: `CREATE INDEX followup_message_fk ON public.followups USING btree (vendor_id, message_id)`
 - `followups_due`: `CREATE INDEX followups_due ON public.followups USING btree (vendor_id, scheduled_at, id) WHERE (status = 'scheduled'::text)`
 - `followups_pkey`: `CREATE UNIQUE INDEX followups_pkey ON public.followups USING btree (id)`
@@ -865,6 +871,8 @@ Added columns:
 - `invitation_id` uuid; NOT NULL
 - `token_hash` text; NOT NULL
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
+- `token_ciphertext` bytea; nullable
+- `key_version` text; nullable
 
 New/changed constraints:
 
@@ -910,6 +918,8 @@ Added columns:
 - `approval_id` uuid; nullable
 - `followup_id` uuid; nullable
 - `reservation_id` uuid; nullable
+- `invitation_id` uuid; nullable
+- `restock_request_id` uuid; nullable
 
 New/changed constraints:
 
@@ -919,7 +929,7 @@ New/changed constraints:
 - `jobs_created_at_not_null`: `NOT NULL created_at`
 - `jobs_dedupe_key_not_null`: `NOT NULL dedupe_key`
 - `jobs_id_not_null`: `NOT NULL id`
-- `jobs_kind_check`: `CHECK ((kind = ANY (ARRAY['ingest'::text, 'send'::text, 'holding_reply'::text, 'followup'::text, 'restock'::text, 'payment'::text, 'receipt'::text, 'usage'::text, 'invitation_email'::text, 'channel_refresh'::text, 'cleanup'::text, 'gmail_sync'::text, 'gmail_watch'::text, 'reservation_expiry'::text, 'takeover_timeout'::text, 'reply'::text, 'checkout'::text, 'order_message'::text, 'refund'::text])))`
+- `jobs_kind_check`: `CHECK ((kind = ANY (ARRAY['ingest'::text, 'send'::text, 'holding_reply'::text, 'followup'::text, 'restock'::text, 'payment'::text, 'receipt'::text, 'usage'::text, 'invitation_email'::text, 'channel_refresh'::text, 'cleanup'::text, 'gmail_sync'::text, 'gmail_watch'::text, 'reservation_expiry'::text, 'takeover_timeout'::text, 'reply'::text, 'checkout'::text, 'order_message'::text, 'refund'::text, 'translation'::text])))`
 - `jobs_kind_not_null`: `NOT NULL kind`
 - `jobs_max_attempts_check`: `CHECK ((max_attempts > 0))`
 - `jobs_max_attempts_not_null`: `NOT NULL max_attempts`
@@ -933,11 +943,13 @@ New/changed constraints:
 - `jobs_vendor_id_fkey`: `FOREIGN KEY (vendor_id) REFERENCES vendors(id)`
 - `jobs_vendor_id_followup_id_fkey`: `FOREIGN KEY (vendor_id, followup_id) REFERENCES followups(vendor_id, id)`
 - `jobs_vendor_id_id_key`: `UNIQUE (vendor_id, id)`
+- `jobs_vendor_id_invitation_id_fkey`: `FOREIGN KEY (vendor_id, invitation_id) REFERENCES team_invitations(vendor_id, id)`
 - `jobs_vendor_id_kind_dedupe_key_key`: `UNIQUE (vendor_id, kind, dedupe_key)`
 - `jobs_vendor_id_message_id_fkey`: `FOREIGN KEY (vendor_id, message_id) REFERENCES messages(vendor_id, id)`
 - `jobs_vendor_id_not_null`: `NOT NULL vendor_id`
 - `jobs_vendor_id_order_id_fkey`: `FOREIGN KEY (vendor_id, order_id) REFERENCES orders(vendor_id, id)`
 - `jobs_vendor_id_reservation_id_fkey`: `FOREIGN KEY (vendor_id, reservation_id) REFERENCES stock_reservations(vendor_id, id)`
+- `jobs_vendor_id_restock_request_id_fkey`: `FOREIGN KEY (vendor_id, restock_request_id) REFERENCES restock_requests(vendor_id, id)`
 - `jobs_vendor_id_webhook_event_id_fkey`: `FOREIGN KEY (vendor_id, webhook_event_id) REFERENCES webhook_events(vendor_id, id)`
 - `safe_job_error`: `CHECK (((last_error_code IS NULL) OR (last_error_code ~ '^[A-Z0-9_]{1,64}$'::text)))`
 
@@ -947,6 +959,8 @@ Added indexes (including constraint-backed and FK lookup indexes):
 - `b0_fk_jobs_vendor_id_message_id_fkey_18056`: `CREATE INDEX b0_fk_jobs_vendor_id_message_id_fkey_18056 ON public.jobs USING btree (vendor_id, message_id)`
 - `b0_fk_jobs_vendor_id_order_id_fkey_18056`: `CREATE INDEX b0_fk_jobs_vendor_id_order_id_fkey_18056 ON public.jobs USING btree (vendor_id, order_id)`
 - `b0_fk_jobs_vendor_id_webhook_event_id_fkey_18056`: `CREATE INDEX b0_fk_jobs_vendor_id_webhook_event_id_fkey_18056 ON public.jobs USING btree (vendor_id, webhook_event_id)`
+- `b7_job_invitation`: `CREATE INDEX b7_job_invitation ON public.jobs USING btree (vendor_id, invitation_id)`
+- `b7_job_restock`: `CREATE INDEX b7_job_restock ON public.jobs USING btree (vendor_id, restock_request_id)`
 - `job_account_fk`: `CREATE INDEX job_account_fk ON public.jobs USING btree (vendor_id, channel_account_id)`
 - `job_approval_fk`: `CREATE INDEX job_approval_fk ON public.jobs USING btree (vendor_id, approval_id)`
 - `job_followup_fk`: `CREATE INDEX job_followup_fk ON public.jobs USING btree (vendor_id, followup_id)`
@@ -1070,6 +1084,8 @@ Added columns:
 - `commerce_context` jsonb; nullable
 - `template_context` jsonb; nullable
 - `media_language` text; nullable
+- `english_translation` text; nullable
+- `extras_context` jsonb; nullable
 
 New/changed constraints:
 
@@ -1133,6 +1149,7 @@ Added indexes (including constraint-backed and FK lookup indexes):
 
 - `b0_fk_moderation_flags_vendor_id_decided_by_fkey_17415`: `CREATE INDEX b0_fk_moderation_flags_vendor_id_decided_by_fkey_17415 ON public.moderation_flags USING btree (vendor_id, decided_by)`
 - `b0_fk_moderation_flags_vendor_id_message_id_fkey_17415`: `CREATE INDEX b0_fk_moderation_flags_vendor_id_message_id_fkey_17415 ON public.moderation_flags USING btree (vendor_id, message_id)`
+- `b7_flags_by_message`: `CREATE INDEX b7_flags_by_message ON public.moderation_flags USING btree (vendor_id, message_id)`
 - `moderation_flags_pkey`: `CREATE UNIQUE INDEX moderation_flags_pkey ON public.moderation_flags USING btree (id)`
 - `moderation_flags_vendor_id_id_key`: `CREATE UNIQUE INDEX moderation_flags_vendor_id_id_key ON public.moderation_flags USING btree (vendor_id, id)`
 
@@ -1480,6 +1497,9 @@ Added columns:
 - `consent_at` timestamp with time zone; nullable
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
 - `identity_id` uuid; nullable
+- `conversation_id` uuid; nullable
+- `message_id` uuid; nullable
+- `template_context` jsonb; nullable
 
 New/changed constraints:
 
@@ -1491,10 +1511,12 @@ New/changed constraints:
 - `restock_requests_product_id_not_null`: `NOT NULL product_id`
 - `restock_requests_status_check`: `CHECK ((status = ANY (ARRAY['waiting'::text, 'notified'::text, 'cancelled'::text])))`
 - `restock_requests_status_not_null`: `NOT NULL status`
+- `restock_requests_vendor_id_conversation_id_fkey`: `FOREIGN KEY (vendor_id, conversation_id) REFERENCES conversations(vendor_id, id)`
 - `restock_requests_vendor_id_customer_id_fkey`: `FOREIGN KEY (vendor_id, customer_id) REFERENCES customers(vendor_id, id)`
 - `restock_requests_vendor_id_customer_id_identity_id_fkey`: `FOREIGN KEY (vendor_id, customer_id, identity_id) REFERENCES customer_identities(vendor_id, customer_id, id)`
 - `restock_requests_vendor_id_fkey`: `FOREIGN KEY (vendor_id) REFERENCES vendors(id)`
 - `restock_requests_vendor_id_id_key`: `UNIQUE (vendor_id, id)`
+- `restock_requests_vendor_id_message_id_fkey`: `FOREIGN KEY (vendor_id, message_id) REFERENCES messages(vendor_id, id)`
 - `restock_requests_vendor_id_not_null`: `NOT NULL vendor_id`
 - `restock_requests_vendor_id_product_id_fkey`: `FOREIGN KEY (vendor_id, product_id) REFERENCES products(vendor_id, id)`
 - `restock_requests_vendor_id_product_id_variant_id_fkey`: `FOREIGN KEY (vendor_id, product_id, variant_id) REFERENCES product_variants(vendor_id, product_id, id)`
@@ -1504,6 +1526,8 @@ Added indexes (including constraint-backed and FK lookup indexes):
 - `b0_fk_restock_requests_vendor_id_customer_id_fkey_17487`: `CREATE INDEX b0_fk_restock_requests_vendor_id_customer_id_fkey_17487 ON public.restock_requests USING btree (vendor_id, customer_id)`
 - `b0_fk_restock_requests_vendor_id_product_id_fkey_17487`: `CREATE INDEX b0_fk_restock_requests_vendor_id_product_id_fkey_17487 ON public.restock_requests USING btree (vendor_id, product_id)`
 - `b0_fk_restock_requests_vendor_id_product_id_variant_id_fkey_174`: `CREATE INDEX b0_fk_restock_requests_vendor_id_product_id_variant_id_fkey_174 ON public.restock_requests USING btree (vendor_id, product_id, variant_id)`
+- `b7_restock_conversation`: `CREATE INDEX b7_restock_conversation ON public.restock_requests USING btree (vendor_id, conversation_id)`
+- `b7_restock_message`: `CREATE INDEX b7_restock_message ON public.restock_requests USING btree (vendor_id, message_id)`
 - `restock_identity_fk`: `CREATE INDEX restock_identity_fk ON public.restock_requests USING btree (vendor_id, customer_id, identity_id)`
 - `restock_requests_pkey`: `CREATE UNIQUE INDEX restock_requests_pkey ON public.restock_requests USING btree (id)`
 - `restock_requests_vendor_id_id_key`: `CREATE UNIQUE INDEX restock_requests_vendor_id_id_key ON public.restock_requests USING btree (vendor_id, id)`
@@ -1623,10 +1647,14 @@ Added columns:
 - `status` text; NOT NULL; default `'pending'::text`
 - `expires_at` timestamp with time zone; NOT NULL
 - `created_at` timestamp with time zone; NOT NULL; default `now()`
+- `delivery_status` text; NOT NULL; default `'queued'::text`
+- `provider_message_id` text; nullable
 
 New/changed constraints:
 
 - `team_invitations_created_at_not_null`: `NOT NULL created_at`
+- `team_invitations_delivery_status_check`: `CHECK ((delivery_status = ANY (ARRAY['queued'::text, 'sending'::text, 'sent'::text, 'uncertain'::text, 'failed'::text])))`
+- `team_invitations_delivery_status_not_null`: `NOT NULL delivery_status`
 - `team_invitations_email_check`: `CHECK ((email = lower(btrim(email))))`
 - `team_invitations_email_not_null`: `NOT NULL email`
 - `team_invitations_expires_at_not_null`: `NOT NULL expires_at`
@@ -1773,6 +1801,7 @@ Added columns:
 
 - `name` text; NOT NULL; default `''::text`
 - `status` text; NOT NULL; default `'active'::text`
+- `member_email` text; nullable
 
 New/changed constraints:
 
@@ -1789,11 +1818,12 @@ Added indexes (including constraint-backed and FK lookup indexes):
 
 Added columns:
 
-
+- `deletion_requested_at` timestamp with time zone; nullable
+- `deletion_state` text; nullable
 
 New/changed constraints:
 
-
+- `vendors_deletion_state_check`: `CHECK ((deletion_state = ANY (ARRAY['requested'::text, 'redacted_retention_pending'::text])))`
 
 Added indexes (including constraint-backed and FK lookup indexes):
 

@@ -13,6 +13,7 @@ from app.channels.gmail import ChannelError
 from app.commerce import messages as commerce_messages
 from app.commerce import paystack
 from app.config import get_settings
+from app.extras import providers, safety, workflow
 from app.replies import service as replies
 from app.whatsapp import service as whatsapp
 
@@ -45,7 +46,10 @@ class Worker:
             "reservation_expiry": self.reservation_expiry,
             "takeover_timeout": self.takeover_timeout,
             "holding_reply": self.holding_reply,
-            "followup": self.followup,
+            "followup": lambda job: workflow.followup(self, job),
+            "restock": lambda job: workflow.restock(self, job),
+            "translation": lambda job: providers.translation(self, job),
+            "invitation_email": lambda job: providers.invitation(self, job),
         }
 
     async def heartbeat(self, job):
@@ -261,6 +265,12 @@ class Worker:
             )
             if not row or row["status"] in ("sent", "delivered", "read", "blocked"):
                 return
+            if not await safety.allowed(conn, vendor, row["conversation_id"]):
+                await conn.execute(
+                    "UPDATE messages SET status='blocked',delivery_error_code='CONTACT_SUPPRESSED' WHERE id=$1",
+                    row["id"],
+                )
+                return
             if (
                 row["sender"] == "ai"
                 and row["human_mode"]
@@ -367,9 +377,22 @@ class Worker:
                             "UPDATE messages SET status='blocked' WHERE id=$1", row["id"]
                         )
                         return
+                    if not await safety.allowed(conn, vendor, row["conversation_id"]):
+                        await conn.execute(
+                            "UPDATE messages SET status='blocked',delivery_error_code='CONTACT_SUPPRESSED' WHERE id=$1",
+                            row["id"],
+                        )
+                        return
                     if row["sender"] == "ai":
                         await self.check_hours(conn, vendor)
-                    if row["commerce_context"]:
+                    if row["extras_context"]:
+                        if not await workflow.validate(conn, vendor, row):
+                            await conn.execute(
+                                "UPDATE messages SET status='blocked',delivery_error_code='STALE_EXTRA' WHERE id=$1",
+                                row["id"],
+                            )
+                            return
+                    elif row["commerce_context"]:
                         if not await commerce_messages.validate(self, conn, vendor, row):
                             await conn.execute(
                                 "UPDATE messages SET status='blocked',delivery_error_code='UNVERIFIED_FACTS' WHERE id=$1",
@@ -424,6 +447,11 @@ class Worker:
                 await conn.execute(
                     "UPDATE approvals SET holding_reply_sent_at=now() WHERE id=$1 AND status='pending'",
                     job["approval_id"],
+                )
+            if job["restock_request_id"]:
+                await conn.execute(
+                    "UPDATE restock_requests SET status='notified',notified_at=now() WHERE id=$1 AND status='waiting'",
+                    job["restock_request_id"],
                 )
             if job["followup_id"]:
                 await conn.execute(

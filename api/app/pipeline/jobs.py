@@ -16,6 +16,8 @@ async def enqueue(conn, vendor, kind, dedupe, *, run_at=None, **refs):
         "approval_id",
         "followup_id",
         "reservation_id",
+        "invitation_id",
+        "restock_request_id",
     ]
     return await conn.fetchval(
         f"INSERT INTO jobs(vendor_id,kind,dedupe_key,run_at,{','.join(names)}) VALUES($1,$2,$3,$4,{','.join(f'${i + 5}' for i in range(len(names)))}) ON CONFLICT(vendor_id,kind,dedupe_key) DO UPDATE SET dedupe_key=excluded.dedupe_key RETURNING id",

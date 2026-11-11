@@ -88,7 +88,7 @@ async def ingest(conn, crypto, vendor, account, item: Incoming, deep_link: str, 
             crypto.version,
         )
     thread = await conn.fetchrow(
-        "SELECT id FROM conversations WHERE vendor_id=$1 AND channel_account_id=$2 AND provider_thread_id=$3",
+        "SELECT id FROM conversations WHERE vendor_id=$1 AND channel_account_id=$2 AND provider_thread_id=$3 FOR UPDATE",
         vendor,
         account,
         item.thread_id,
@@ -121,6 +121,10 @@ async def ingest(conn, crypto, vendor, account, item: Incoming, deep_link: str, 
         timestamp,
         account,
     )
+    if not item.outgoing:
+        from app.extras.safety import inbound
+
+        await inbound(conn, vendor, mid)
     # Out-of-order history cannot move the inbox backwards.
     await conn.execute(
         """UPDATE conversations SET last_message_id=$2,updated_at=greatest(updated_at,$3) WHERE id=$1 AND

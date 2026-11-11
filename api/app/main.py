@@ -184,3 +184,7 @@ app.include_router(commerce_router)
 from .whatsapp.api import router as whatsapp_router
 
 app.include_router(whatsapp_router)
+
+from .extras.api import router as extras_router
+
+app.include_router(extras_router)

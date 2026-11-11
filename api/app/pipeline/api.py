@@ -67,6 +67,7 @@ def message(row):
         "status": row["status"],
         "language": row["language"] if row["language"] in ("en", "pcm") else "en",
         "englishSummary": row["english_summary"],
+        "englishTranslation": row["english_translation"],
         "createdAt": row["created_at"].isoformat(),
         "deliveryErrorCode": row["delivery_error_code"],
     }

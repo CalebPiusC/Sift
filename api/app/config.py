@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     whatsapp_helper_number: str = ""
     whatsapp_helper_token: SecretStr = SecretStr("")
     gemini_api_key: SecretStr = SecretStr("")
+    email_api_key: SecretStr = SecretStr("")
+    email_from: str = ""
     gemini_audio_model: str = "gemini-2.5-flash"
 
 
