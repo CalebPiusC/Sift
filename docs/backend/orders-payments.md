@@ -1,5 +1,7 @@
 # B4 — orders, payments and receipts
 
+> Current status authority: [status matrix](../status-matrix.md). This phase/design guide is technical context, not independent release sign-off.
+
 ## Status
 
 Implemented locally: all current OrdersData/ReceiptsData contract endpoints; seven-state

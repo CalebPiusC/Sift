@@ -1,5 +1,7 @@
 # B2 — Gmail pipeline (live acceptance pending)
 
+> Current status authority: [status matrix](../status-matrix.md). This phase/design guide is technical context, not independent release sign-off.
+
 ## Status
 
 Implemented locally: Gmail adapter/registry; PKCE Google offline consent; encrypted token
@@ -10,8 +12,8 @@ customer alias merge/unmerge; admin dead-job inspection. Migration 005 extends t
 
 **Not done:** a real customer email has not been received through a user-connected Gmail account.
 Google OAuth, Pub/Sub, production Redis/PostgreSQL and hosted Supabase realtime have not been
-configured or exercised here. Other channel adapters and B1/domain APIs (including approval
-creation/decision APIs) remain unavailable, not sample-backed. No recipient-delivered claim is
+configured or exercised here. WhatsApp and approval APIs were added in later phases. General B1 catalogue/settings
+APIs remain missing; see the current status matrix, not this phase chronology. No recipient-delivered claim is
 made for Gmail: `sent` means the API accepted the message. The schema supports delivered/read
 for future providers that offer authenticated evidence.
 

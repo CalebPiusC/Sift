@@ -10,7 +10,29 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run test:all
+      - name: Run full test suite
+        run: |
+          set -o pipefail
+          if npm run test:all 2>&1 | tee "$RUNNER_TEMP/foundation-tests.log"; then
+            exit 0
+          else
+            # Surface failure context through the Checks API as well as external logs.
+            node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const lines = readFileSync(`${process.env.RUNNER_TEMP}/foundation-tests.log`, 'utf8').split('\n');
+          const selected = new Set();
+          for (let i = 0; i < lines.length; i++) {
+            if (/not ok|FAIL |Error:|error:/.test(lines[i])) {
+              for (let j = Math.max(0, i - 2); j < Math.min(lines.length, i + 32); j++) selected.add(j);
+            }
+          }
+          for (let i = Math.max(0, lines.length - 20); i < lines.length; i++) selected.add(i);
+          const message = [...selected].sort((a, b) => a - b).map(i => lines[i]).join('\n')
+            .replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+          console.log(`::error title=Foundation test failure context::${message}`);
+          JS
+            exit 1
+          fi
       - run: npm run build
   api:
     runs-on: ubuntu-latest

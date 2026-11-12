@@ -1,5 +1,7 @@
 # B8 — insights, billing and usage
 
+> Current status authority: [status matrix](../status-matrix.md). This phase/design guide is technical context, not independent release sign-off.
+
 ## Payment authority
 
 `PATCH /v1/billing/selection` records preference only. Owner-only

@@ -1,0 +1,667 @@
+[
+  {
+    "name": "Sample workspace and reset-on-refresh",
+    "implemented": "yes",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "web/lib/data/mock.ts; web/tests/data-ui.test.tsx; fictional session memory, not persistence."
+  },
+  {
+    "name": "Email signup/sign-in/password/Google auth UI",
+    "implemented": "partial",
+    "frontend": "yes",
+    "local": "partial",
+    "proof": "web/components/auth-screen.tsx; web/tests/auth.test.tsx::email signup requests confirmation without fake success; provider mocked, hosted acceptance absent."
+  },
+  {
+    "name": "Business onboarding and returning workspace",
+    "implemented": "partial",
+    "frontend": "yes",
+    "local": "partial",
+    "proof": "web/components/onboarding-screen.tsx; web/tests/auth.test.tsx; Supabase RPC integration exists, hosted run absent."
+  },
+  {
+    "name": "Tenant RLS and role isolation",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "supabase/migrations/; tests/b0-reconciliation.test.mjs; tests/b0-native.test.mjs; browser and service permissions differ."
+  },
+  {
+    "name": "Restricted service transaction/login checks",
+    "implemented": "yes",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "api/app/pipeline/db.py::Database; tests/helpers/b2-runtime.py; no privileged API login accepted."
+  },
+  {
+    "name": "Encrypted tokens/raw events/identity routing",
+    "implemented": "yes",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "api/app/pipeline/crypto.py; api/tests/test_pipeline.py::test_ciphertext_is_random_and_context_bound."
+  },
+  {
+    "name": "Phone/tablet/desktop navigation and keyboard",
+    "implemented": "yes",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "docs/responsive-layout.md; tests/responsive-layout.mjs; not physical device acceptance."
+  },
+  {
+    "name": "Accessibility and low-data rendering",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "tests/frontend-a11y.mjs; web/tests/foundation.test.tsx; does not certify compliance."
+  },
+  {
+    "name": "PWA install/offline fallback/private-cache exclusion",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "web/public/sw.js; tests/pwa.test.mjs; no offline mutation sync."
+  },
+  {
+    "name": "Catalogue list/search/category/stock filters",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "web/lib/data/catalogue-mock.ts; web/tests/catalogue.test.ts (mock); no GET /v1/catalogue route."
+  },
+  {
+    "name": "Catalogue single create and reviewed batch create",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "web/lib/data/catalogue-mock.ts; web/tests/catalogue.test.ts::creates ten items atomically; memory only, no /catalogue/batches route."
+  },
+  {
+    "name": "Photo selection/resizing/preview",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "web/tests/photo-preview.test.ts; web/tests/catalogue-ui.test.tsx; no private catalogue upload route."
+  },
+  {
+    "name": "Private catalogue photo upload/read/delete lifecycle",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "No catalogue upload or object-storage adapter in api/app; product_photos schema is not blob storage."
+  },
+  {
+    "name": "Category-tapped Gemini photo extraction",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "No /catalogue/extractions route or Gemini vision extraction; mock drafts in web/lib/data/catalogue-mock.ts."
+  },
+  {
+    "name": "Category-specific draft questions/details",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "web/tests/catalogue-ui.test.tsx::shows category questions for Shoes; mock Food/Services tests, no API enforcement."
+  },
+  {
+    "name": "Catalogue typed price/stock proposal + confirmation",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "api/app/whatsapp/instructions.py; api/tests/test_whatsapp.py::test_same_server_typed_parser_for_app_and_helper; tests/helpers/b5_checks.py; non-variant only."
+  },
+  {
+    "name": "Variant create/update/delete and stock totals",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "web/tests/catalogue.test.ts::detail edits validate variant sums; SQL constraints exist, no mutation endpoint."
+  },
+  {
+    "name": "General product update/revision conflict handling",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "web/lib/data/api.ts targets PATCH /catalogue/{id}, absent; web/tests/catalogue.test.ts is mock only."
+  },
+  {
+    "name": "Catalogue archive/unarchive",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "web/tests/catalogue.test.ts::stock filters include all four badges; no archive HTTP route."
+  },
+  {
+    "name": "Direct stock correction/restock API",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "partial",
+    "proof": "Typed non-variant correction exists in whatsapp/instructions.py; no POST /catalogue/{id}/restock; commerce cancellations use a different internal ledger."
+  },
+  {
+    "name": "Business profile/general settings",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "web/components/settings/; web/tests/settings.test.ts; GET/PATCH /v1/settings absent."
+  },
+  {
+    "name": "Business hours/away message/delivery fees editing",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "DB fields and worker checks exist; web/tests/settings.test.ts mock editing; no general settings API."
+  },
+  {
+    "name": "Personal dark mode/low-data/language/notification preferences persistence",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "web/components/settings/preferences.tsx; provider.tsx reads missing /settings; only session/mock behavior tested."
+  },
+  {
+    "name": "Reply-policy activation/safe-intent/tone settings",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "api/app/replies/api.py; tests/helpers/b3_checks.py; separate from missing general settings endpoint."
+  },
+  {
+    "name": "Inbox list/thread/history/search/read state",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "api/app/pipeline/api.py; tests/helpers/b2-runtime.py; web/tests/pipeline.test.tsx; API mode optional, live inbox absent."
+  },
+  {
+    "name": "Manual text send/retry and original thread routing",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "pipeline/api.py; channels/gmail.py; tests/helpers/b2-runtime.py; provider boundary fake."
+  },
+  {
+    "name": "Vendor app voice recording",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "No vendor voice recording endpoint/control; intended app input remains photos/taps/typed text."
+  },
+  {
+    "name": "Customer WhatsApp voice/image ingress",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "whatsapp/service.py; api/tests/test_whatsapp.py; tests/helpers/b5_checks.py; sandbox provider/media fake."
+  },
+  {
+    "name": "Private customer media read/access expiry",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "whatsapp/api.py::private_media; test_private_media_rejects_ssrf_oversize_and_unsafe_types; UI player and physical purge incomplete."
+  },
+  {
+    "name": "Customer identity merge/unmerge",
+    "implemented": "yes",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "pipeline/api.py::merge (see route audit for undo action); tests/helpers/b2-runtime.py; no dedicated merge UI."
+  },
+  {
+    "name": "Supabase realtime invalidation",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "partial",
+    "proof": "web/lib/data/api.ts::realtime; web/tests/pipeline.test.tsx; hosted publication and reconnect acceptance absent."
+  },
+  {
+    "name": "Durable jobs/leases/crash recovery/ambiguous-send handling",
+    "implemented": "yes",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "pipeline/jobs.py; pipeline/worker.py; tests/helpers/b2-runtime.py; real PostgreSQL/Redis and killed worker, fake provider."
+  },
+  {
+    "name": "Gmail OAuth/refresh/revocation",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "partial",
+    "proof": "pipeline/oauth.py; pipeline/tokens.py; api/tests/test_pipeline.py; no live consent/token cycle."
+  },
+  {
+    "name": "Gmail signed push/history sync",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "pipeline/api.py::gmail_push; channels/gmail.py; test_pubsub_unsigned_identity_rejected; native pipeline fixture."
+  },
+  {
+    "name": "WhatsApp signup/own-number routing",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "whatsapp/signup.py; tests/helpers/b5_checks.py; real Embedded Signup/registration not verified."
+  },
+  {
+    "name": "WhatsApp signed webhook/dedup/delivery statuses",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "whatsapp/api.py; whatsapp/service.py; tests/helpers/b5_checks.py; sandbox only."
+  },
+  {
+    "name": "WhatsApp platform window and fixed approved templates",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "whatsapp/cloud.py; test_shared_adapter_window_and_approval_rules; no live Meta template evidence."
+  },
+  {
+    "name": "WhatsApp helper link/code authority and confirmed mutation",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "whatsapp/codes.py; instructions.py; tests/helpers/b5_checks.py; helper lives in WhatsApp, not app voice UI."
+  },
+  {
+    "name": "Instagram messaging integration",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "Only mock channel entries; no Instagram adapter/webhook in api/app/channels."
+  },
+  {
+    "name": "Facebook messaging integration",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "Only mock channel entries; no Facebook messaging adapter/webhook."
+  },
+  {
+    "name": "TikTok integration or approved manual fallback",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "docs/backend/tiktok-research.md is research only; choice not implemented."
+  },
+  {
+    "name": "Fact-only reply lookup and deterministic wording",
+    "implemented": "yes",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "replies/facts.py::get_product_facts; replies/core.py::TemplateWriter; api/tests/test_reply_engine.py."
+  },
+  {
+    "name": "Gemini wording writer",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "No Gemini writer invoked by replies/service.py; core.py uses TemplateWriter by default."
+  },
+  {
+    "name": "Verifier before queue and final send",
+    "implemented": "yes",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "replies/core.py::decide; replies/service.py::recheck; api/tests/test_reply_engine.py::test_bad_writer_blocked; tests/helpers/b3_checks.py."
+  },
+  {
+    "name": "Approvals send/edit/reject/once-only decisions",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "replies/api.py; tests/helpers/b3_checks.py; fresh verification and durable jobs, no live provider."
+  },
+  {
+    "name": "Human takeover/holding replies/business-hour deferral",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "pipeline/worker.py; replies/service.py; tests/helpers/b3_checks.py; requests already in flight cannot be recalled."
+  },
+  {
+    "name": "Negotiation/floor/price/stock safety",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "replies/core.py; test_midpoint_half_up_and_clamped; test_stock_change_blocks_previously_good_wording; opt-in only."
+  },
+  {
+    "name": "Prompt injection and impersonation defense",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "api/tests/test_reply_engine.py::test_injection_never_auto; api/tests/test_operations.py::test_prompt_injection_does_not_auto_send; heuristic not universal protection."
+  },
+  {
+    "name": "English/Pidgin/mixed reply detection/wording",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "replies/core.py::detect; test_language_and_transcript_data; transparent rule confidence, limited patterns."
+  },
+  {
+    "name": "Other-language customer-language reply generation",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "Unknown/other languages route conservatively; no multilingual Gemini wording writer."
+  },
+  {
+    "name": "Reply evaluation build gate (current corpus)",
+    "implemented": "yes",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "api/evals/messages.json; api/evals/run.py; web/package.json prebuild. Current corpus is not S2's 200-message suite."
+  },
+  {
+    "name": "200-message Gemini/DB-backed-number evaluation",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "No 200-message Gemini wording evaluation; current evaluator uses a synthetic fact sheet, not live DB values."
+  },
+  {
+    "name": "Chat-created order drafts",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "commerce/chat.py; tests/helpers/b4_checks.py; no vendor order creation form/API."
+  },
+  {
+    "name": "Inventory reservations/expiry/last-item race",
+    "implemented": "yes",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "commerce/domain.py; tests/helpers/b4_checks.py; 30-minute durable expiry."
+  },
+  {
+    "name": "Seven-state order lifecycle/delivery notices",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "commerce/api.py; commerce/messages.py; tests/helpers/b4_checks.py; current orders-ui tests have failures, see S0 validation."
+  },
+  {
+    "name": "Order Paystack checkout/signed verify/dedupe",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "commerce/paystack.py; api/tests/test_commerce.py; tests/helpers/b4_checks.py; verification fake in native tests."
+  },
+  {
+    "name": "Explicit bank payment confirmation",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "commerce/api.py::payment_challenge; web/tests/commerce.test.tsx; tests/helpers/b4_checks.py; bank itself not queried."
+  },
+  {
+    "name": "Cancellation/refund/restock decisions",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "commerce/domain.py; paystack.py; tests/helpers/b4_checks.py; provider refund completion/cancellation lifecycle incomplete."
+  },
+  {
+    "name": "Immutable sequential receipt and PDF",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "commerce/receipts.py; tests/b0-native.test.mjs; web/tests/orders.test.ts; order UI flow currently red."
+  },
+  {
+    "name": "Receipt signed share/expiry/revoke",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "commerce/receipts.py; web/tests/commerce.test.tsx; tests/helpers/b4_checks.py."
+  },
+  {
+    "name": "Multi-vendor payment settlement/currencies/partial refunds",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "commerce/paystack.py uses one configured merchant key/NGN; no settlement or partial-refund feature."
+  },
+  {
+    "name": "Customer notes/tags/flag memory",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "extras/api.py; tests/helpers/b7_checks.py; customer screen uses client adapter, general API-mode workflow not fully browser-tested."
+  },
+  {
+    "name": "Cold follow-up consent/reply-purchase cancellation/STOP",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "extras/workflow.py; extras/safety.py; migration009 triggers; tests/helpers/b7_checks.py; native test does not prove all send/race paths."
+  },
+  {
+    "name": "Spam/fake-payment/phishing/repeat classifier",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "extras/safety.py; api/tests/test_extras.py; transparent heuristic classifier, not trained fraud model."
+  },
+  {
+    "name": "Not spam/block suppression",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "extras/api.py::moderate; tests/helpers/b7_checks.py Not spam; broad linked-identity stress tests absent."
+  },
+  {
+    "name": "Variant-specific opted-in restock alerts",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "partial",
+    "proof": "extras/workflow.py; migration009; no full end-to-end variant notification test; UI send control developer-only."
+  },
+  {
+    "name": "Real email invitation/verified acceptance",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "partial",
+    "proof": "extras/providers.py::email; extras/api.py::accept; web/app/invitations/accept/page.tsx; live email/session flow untested."
+  },
+  {
+    "name": "Team role management/chat assignment/audit",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "partial",
+    "proof": "extras/api.py; team.tsx; native B7 GET smoke not all negative-role/action tests."
+  },
+  {
+    "name": "English translation/summary for incoming text",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "partial",
+    "proof": "extras/providers.py; pipeline/api.py serializes fields; Gemini boundary exists but no targeted translation-provider test."
+  },
+  {
+    "name": "App-wide localization",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "web/lib/data/preferences.ts; settings/preferences.tsx; only partial labels and English/Pidgin choices."
+  },
+  {
+    "name": "Persisted notification history/read endpoints",
+    "implemented": "yes",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "extras/api.py::notifications/read_notification; tests/helpers/b7_checks.py GET smoke; inbox/notifications.tsx derives session entries instead."
+  },
+  {
+    "name": "Browser push notifications",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "No push subscription/send implementation."
+  },
+  {
+    "name": "Business export",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "extras/api.py::export_business; tests/helpers/b7_checks.py GET; no UI, 10000-row cap, no streaming/snapshot guarantee."
+  },
+  {
+    "name": "Physical account deletion/retention purge",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "extras/api.py::delete_business requests freeze only; no physical deletion/purge worker."
+  },
+  {
+    "name": "Deletion request and automation freeze",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "no",
+    "proof": "extras/api.py::delete_business; no identified targeted test or frontend control."
+  },
+  {
+    "name": "Historical event-based funnel/revenue/products/hours",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "partial",
+    "proof": "billing/insights.py; tests/helpers/b8_checks.py GET smoke, not numerical metric assertions; missing pre-migration snapshots remain unknown."
+  },
+  {
+    "name": "Response time and AI/vendor conversation handling",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "partial",
+    "proof": "billing/insights.py; frontend insights-panel.tsx; no exact historical fixture assertion."
+  },
+  {
+    "name": "Trial/offers/selection/checkout",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "billing/api.py; tests/helpers/b8_checks.py; selection never upgrades, no live checkout provider run."
+  },
+  {
+    "name": "Verified subscription grant/renewal/bundles",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "billing/service.py; meter.py; tests/helpers/b8_checks.py initial upgrade/dedupe; recurring/cancellation overlap coverage incomplete."
+  },
+  {
+    "name": "Usage quota/80-100 warnings/graceful manual fallback",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "billing/meter.py; tests/helpers/b8_checks.py; inbound persisted and pipeline paused, notification UI not durable-history-backed."
+  },
+  {
+    "name": "Per-vendor AI token/cost estimates",
+    "implemented": "partial",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "billing/meter.py::cost; tests/helpers/b8_checks.py exact estimate; transcription/translation only, no wording calls, no invoice/failed-call reconciliation."
+  },
+  {
+    "name": "Billing cancellation/plan-change/overlap prevention",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "No self-service management endpoint; operational manual process only."
+  },
+  {
+    "name": "Rate limiting and proxy abuse controls",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "operations/middleware.py; tests/helpers/b9_checks.py; Redis fixed windows, edge controls/config external."
+  },
+  {
+    "name": "PII-free logging/validation redaction",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "operations/telemetry.py; main.py; api/tests/test_operations.py; safe formatter must be configured in deployed runtime/proxy."
+  },
+  {
+    "name": "External error tracking and paging destination",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "Allowlisted log emission/monitor script exist, no configured collector/pager acceptance."
+  },
+  {
+    "name": "Health/dependency readiness/backlog/worker heartbeat",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "operations/api.py; pipeline/worker.py; tests/helpers/b9_checks.py; monitor delivery not live tested."
+  },
+  {
+    "name": "Vendor/global AI kill switches",
+    "implemented": "yes",
+    "frontend": "partial",
+    "local": "yes",
+    "proof": "operations/api.py; worker.py final gates; tests/helpers/b9_checks.py; global control operator-only, no global browser button."
+  },
+  {
+    "name": "Friend feedback and safety dashboard",
+    "implemented": "partial",
+    "frontend": "yes",
+    "local": "yes",
+    "proof": "web/components/data/friend-tools.tsx; operations/api.py; tests/helpers/b9_checks.py; aggregate categories/reasons, no rich investigations UI."
+  },
+  {
+    "name": "Backups and isolated cold physical restore",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "tests/restore-native.test.mjs; scripts/operations/backup.sh and restore.sh are not exercised by that test."
+  },
+  {
+    "name": "Hosted PITR/blob/auth/key recovery",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "No hosted restore evidence or managed backup configuration committed."
+  },
+  {
+    "name": "Pipeline burst test",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "tests/helpers/b9_checks.py: 200 synthetic ingest calls/100 unique; not HTTP saturation, sustained load or multiworker benchmark."
+  },
+  {
+    "name": "Incident/retention/go-live runbooks",
+    "implemented": "yes",
+    "frontend": "no",
+    "local": "partial",
+    "proof": "docs/operations/; checklists exist, no incident rehearsal/legal approval recorded."
+  },
+  {
+    "name": "Physical Android Chrome/iPhone Safari acceptance",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "docs/operations/mobile-checklist.md has unchecked manual evidence requirements; desktop browser automation not equivalent."
+  },
+  {
+    "name": "Real signup \u2192 channel \u2192 paid order \u2192 receipt demo",
+    "implemented": "no",
+    "frontend": "no",
+    "local": "no",
+    "proof": "No captured real-provider end-to-end run/sign-off; docs/operations/go-live-checklist.md remains NO-GO."
+  },
+  {
+    "name": "Contributor onboarding/CODEOWNERS/review enforcement",
+    "implemented": "partial",
+    "frontend": "no",
+    "local": "yes",
+    "proof": "CONTRIBUTING.md; .github/CODEOWNERS; tests/contributor-setup.test.mjs; branch enforcement could not be inspected (403)."
+  }
+]

@@ -1,167 +1,190 @@
 # Selvora
 
-Mobile-first AI sales-assistant workspace for Nigerian vendors: unified inbox, fact-based
-catalogue, approval controls, human takeover, orders, receipts and business operations.
+Mobile-first sales-assistant workspace for Nigerian vendors: inbox, fact-based
+catalogue, approvals, human takeover, orders, receipts and business operations.
 
-**Current status:** F0–F7 sample frontend is demo-ready. B0 reconciles the database/security
-foundation with that frontend; it does not implement business HTTP endpoints. Hosted Supabase
-verification is pending project access. A passing local demo is not a production-connected assistant.
+**Status:** the sample frontend runs without accounts. B2–B9 add locally tested
+backend capabilities, but provider acceptance and several implementation gaps
+remain. **Production is NO-GO** until the [go-live checklist](docs/operations/go-live-checklist.md)
+is signed off. Local mocks are not proof of real delivery or payment.
 
-## Authoritative guides
+## Getting started in 30 minutes
 
-- [Phone demo, click by click](docs/frontend-demo.md)
-- [Backend endpoint status, auth/cursors/errors and roadmap](docs/backend-roadmap.md)
-- [Current frontend declarations](docs/api-contract.md)
-- [Contract gaps](docs/backend/contract-gaps.md), [exact schema delta](docs/backend/schema-delta.md)
-- [SQL role matrix](docs/backend/role-matrix.md), [events/idempotency](docs/backend/events-and-idempotency.md)
-- [Frontend accessibility, performance and low-data notes](docs/frontend-quality.md)
+### 0–5 minutes: tools and checkout
 
-## Setup: sample frontend (no credentials)
+Install Git, **Node 22.12+** (Node 22 LTS recommended), npm and **Python 3.11+**.
+Python is used by the build's reply-safety evaluation; the sample dev server itself
+needs only Node/npm. Full native backend tests are best run on Linux/WSL2.
 
-Requires Node **22.12+**, npm. Python **3.11+** is needed for API tests.
+```sh
+git clone https://github.com/CalebPiusC/selvora.git
+cd selvora
+node --version
+npm --version
+python3 --version
+```
+
+If working in an existing Arena checkout, skip cloning and stay on its assigned branch.
+
+### 5–15 minutes: install and run sample mode — no accounts
 
 ```sh
 npm ci
+cp web/.env.example web/.env.local
 npm run dev
-# Production phone preview:
-npm run build
-DATA_MODE=mock npm run start -w web -- --port 3001
 ```
 
-Default `DATA_MODE=mock` opens fictional **Adire by Tola**, clearly labelled Sample data. No login
-or external provider calls. Changes/photos/settings live in session memory; refresh resets them.
-Settings → Try sample onboarding replays the four prompts without resetting sample history.
-Use the HTTPS preview on a phone. The development server binds 0.0.0.0; no browser code calls
-localhost to reach a remote backend.
+On PowerShell, `Copy-Item web/.env.example web/.env.local` is equivalent. Open
+**http://localhost:3000**. Leave `DATA_MODE=mock`, both Supabase values blank and
+`API_ORIGIN` blank. You do **not** need Supabase, Docker, Google, Meta, Paystack,
+Gemini or an API server. If you already have shell environment variables for this
+project, unset them or ensure they match sample mode; shell values can override files.
 
-## Feature status: real versus sample
+You should see fictional **Adire by Tola**, labelled **Sample data**. Try inbox,
+approvals, catalogue, orders and settings. Changes/photos/settings are in session
+memory and reset on refresh. No real messages or payments are sent. Settings →
+Try sample onboarding replays onboarding without replacing sample history.
 
-| Area | Implemented | Not yet connected / production limitation |
-|---|---|---|
-| Authentication/onboarding | Supabase integration, PKCE callback, atomic SQL onboarding; mock replay | Hosted email/Google configuration and end-to-end validation required |
-| Catalogue | Photo/tap flow, reviewed cards, variants, stock/floors, confirmed typed edits, archive | Mock extraction; no persistent uploads or business API |
-| Inbox | Five-channel sample threads, rich messages/transcripts, filters and unread indicators | No live ingestion/sends/transcription; API realtime and history paging pending |
-| AI/approvals | Safe intent controls, fact cards, Send/Edit/Reject, sample holding timers | No AI provider or durable processing; re-verification before sends is future backend work |
-| Takeover | Chat-scoped timeout/Hand Back and mock send-time recheck | Durable workers/original provider thread routing pending |
-| Orders/payment | Seven-state sample lifecycle, explicit bank acknowledgement, one-time mock stock deduction | No checkout/webhook/reconciliation; screenshots never confirm payment |
-| Receipts | Real local PDF, immutable sample snapshots; guarded sequential SQL issuance foundation | Unsigned sample share links are not proof; hosted capability route pending |
-| Channels/helper | Simulated connection flows, expiring/replaced helper codes | No live helper number, OAuth or tokens; TikTok availability unconfirmed |
-| Team/billing | Sample invitations/assignment/audit, trial/offers/selection | No real email/subscription/entitlement workflow; selection never charges |
-| Insights/extras | Seven sample charts, follow-ups, moderation, restock requests, customer memory | No scheduler/provider blocking/alerts; real historical analytics endpoint pending |
-| Language | Original Pidgin + labelled English sample summaries; partial app labels | No live translation or full-app localization |
-| PWA/low-data | Install assets, safe offline reconnect page, text-first lists, resized/lazy photos | Private conversations intentionally not cached; no offline mutation sync |
-| Backend/security | 48 tenant-scoped tables, forced RLS, composite FKs, bounded service role, append-only events/ledgers | Business routes/workers/KMS/hosted rollout pending; see endpoint inventory |
+### 15–25 minutes: quick checks
 
-## Setup: API/auth foundation
-
-1. Create a **staging** Supabase project. Configure email auth, SMTP and/or Google provider with
-   the exact site origin and `/auth/callback` redirect. Secrets stay in Supabase/server environment.
-2. Apply all SQL files in `supabase/migrations/` once, in filename order, using the migration owner.
-   Back up existing data first. Never apply `tests/bootstrap.sql` or local seed fixtures to production.
-   B0 supports the full blank chain and an F0 upgrade, preserves issued receipts, and explicitly
-   maps legacy order states. Invalid historical references fail atomically for explicit repair.
-3. Copy `web/.env.example` to `web/.env.local`; set `DATA_MODE=api`, Supabase URL and public anon/
-   publishable key. Never expose service-role/worker credentials in browser variables. Restart Next.
-4. API mode uses real auth then reports honest missing-endpoint errors. It never falls back to mock.
-   The legacy Explore shortcut stays development-only and is disabled when Supabase is configured.
+In another terminal at the repository root:
 
 ```sh
-python -m venv .venv
-.venv/bin/pip install -e './api[test]'
-cp api/.env.example api/.env
-# Configure SUPABASE_URL / SUPABASE_ANON_KEY securely, then:
-cd api
-../.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --no-access-log
+npm run test:contributor-setup
+npm test
+npm run typecheck
 ```
 
-Only `/health` (process liveness), `/v1/me` and `/v1/vendors` exist. Browser `/api/v1/*` proxying,
-new cursor DTOs and business routes are planned, not supplied by this setup. `WEB_ORIGINS` controls
-CORS; use exact deployment origins, never a wildcard authenticated production policy.
+These are quick checks, not the full release suite. For an optional production
+sample build, stop the dev server or choose a different port:
 
-## Database/service security
+```sh
+npm run build
+npm run start -w web -- --port 3001
+```
 
-Every application table has vendor_id, forced RLS, tenant FKs and explicit role policies/grants.
-Human membership is resolved from auth.uid(), not a body/header/JWT role claim. Policies restrict
-per-member preferences/read markers/notifications to their owner. Financial/operational facts and
-secret/outbox tables use controlled RPCs or a bounded service transaction, not direct browser DML.
+The build requires Python 3.11+ as `python3` on PATH. The copied web template
+explicitly selects mock mode, including for production previews.
 
-`selvora_service` is NOLOGIN/NOBYPASSRLS. Provision a separate server login with NOINHERIT and
-NOBYPASSRLS through secure infrastructure, and grant it permission to SET ROLE selvora_service.
-For each authorized transaction set that role and SET LOCAL app.vendor_id. Never grant this role
-to authenticated, anon or a BYPASSRLS role. Supabase service_role table access is revoked by B0;
-a bypass key is not the worker architecture. Migration owners/superusers can alter security and
-must never be used as routine application credentials. See the matrix before deploying workers.
+### 25–30 minutes: prepare your first task
 
-Channel tokens/raw webhooks/identity routing and replay bodies store ciphertext with external key
-versions; link codes use keyed HMAC. B0 does not implement encryption or provision keys. No
-plaintext message/phone/token/SQL parameter logging. Hosted/platform logging needs the same rules.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and
+[working with two people](docs/working-with-two-people.md). Agree one phase owner,
+create one task branch (`phase-name/short-description`, except fixed Arena
+branches), and open one PR for that phase. See the PR template and CODEOWNERS.
+No secrets or real `.env` files belong in commits.
 
-Optional local infrastructure: copy `.env.example` to `.env`, set a strong local password and
-`docker compose up -d`. PostgreSQL/Redis volumes are local-only. Compose auth shims are not an
-email/Google auth server. Existing volumes need new migrations explicitly; init scripts run once.
-Never run `docker compose down -v` unless intentionally erasing local data.
+## Optional API and database setup
+
+Do this only for backend work; it is not needed for the sample frontend.
+
+```sh
+python3 -m venv .venv
+. .venv/bin/activate
+# PowerShell: .venv\Scripts\Activate.ps1
+python -m pip install -e './api[test]'
+cp api/.env.example api/.env
+```
+
+The API reads `.env` relative to its working directory. Run from `api/`:
+
+```sh
+cd api
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --no-access-log --log-config logging.json
+```
+
+`/health` is process liveness only. Pipeline routes remain disabled with
+`PIPELINE_ENABLED=false`; this is not an error in the no-account setup.
+
+For optional local PostgreSQL/Redis, copy root `.env.example` to `.env`, replace
+its local-only password placeholder with a strong unique password, then run
+`docker compose up -d`. Compose's administrator is **not** the API login: provision
+a separate NOINHERIT/NOSUPERUSER/NOBYPASSRLS login granted `selvora_service` using
+[the pipeline guide](docs/backend/gmail-pipeline.md). Never use production data.
+Init migrations run only for new volumes; apply new migrations explicitly to
+existing volumes. Do not use `docker compose down -v` on data you need.
+
+Local auth shims are not a real email/Google authentication service. For API-mode
+browser testing, configure a separate staging Supabase project, apply migrations
+in order, set API auth and pipeline settings securely, then set `DATA_MODE=api`,
+the public Supabase URL/anon key and server-only `API_ORIGIN` in `web/.env.local`.
+Restart Next. `/api/v1/*` proxies to FastAPI; remote browser code must not call a
+sandbox's localhost directly. API mode never silently falls back to sample data.
+Never apply `tests/bootstrap.sql` or test fixtures to hosted production.
+
+## Environment files and secret handling
+
+| Template | Scope |
+|---|---|
+| `.env.example` | Local Compose password; commented test/operator tooling inputs |
+| `web/.env.example` | Sample/API switch, public Supabase settings, server-side proxy origin |
+| `api/.env.example` | All API Settings fields; providers, encryption, quotas and operations |
+
+Blank credential values deliberately do not authenticate. Optional AI token-rate
+examples are commented out; leave them unset until actual rates are approved.
+Real `.env`, `.env.local`, environment-specific files, key exports and backups
+are ignored. Verify before committing with `git diff --cached` and
+`git check-ignore web/.env.local api/.env .env`. Only templates belong in Git.
+Never expose server/provider/service-role keys through `NEXT_PUBLIC_*`.
+
+## What is real versus sample
+
+| Area | Locally implemented | Still pending / limitation |
+|---|---|---|
+| Frontend | Complete sample workspace, responsive phone/tablet/desktop UI | Sample changes reset; not every screen is fully API-wired |
+| Auth/database | Supabase integration, tenant RLS, role matrix, restricted service transactions | Hosted acceptance and deployment configuration |
+| Gmail pipeline | OAuth, signed push ingress, history, encrypted tokens, durable outbox/reconciliation | Authorized live Gmail/Pub/Sub acceptance |
+| Replies | Fact lookup, deterministic wording, approvals, takeover, final-send rechecks | Not unrestricted generative AI; broader language/live-channel acceptance |
+| Orders/receipts | Chat drafts, reservations, verified-payment boundary, immutable PDF/shared receipts | Real Paystack/channel demo; no multi-vendor settlement/partial payments |
+| WhatsApp/helper | Same sandbox/live adapter, signed ingress, private media, confirmed helper edits | Meta approvals/live delivery; physical media purge |
+| Instagram/Facebook/TikTok | B6 TikTok feasibility report | Meta messaging implementation and TikTok scope decision/approval |
+| Extras | Persisted notes, consent follow-ups, moderation, restock, invitations, export | Frontend gaps; physical erasure and broader live/role/race acceptance |
+| Insights/billing | Event-based metrics, verified-webhook entitlements, usage limits, cost estimates | Live renewals; cancellation/overlap handling; full cost reconciliation |
+| Operations | Rate controls, kill switches, category feedback, monitoring/restore tooling | Actual paging/PITR setup, legal retention and real-device sign-off |
+
+The roadmap contains historical planning entries; use the phase guides and
+[go-live checklist](docs/operations/go-live-checklist.md) for current limitations.
 
 ## Validation
 
+With the Python virtual environment activated, from the repository root:
+
 ```sh
-npm run test:all       # frontend, F0 + B0 DB/security/native tests, docs, typecheck
+npm run test:contributor-setup
+npm run test:all
 npm run build
-(cd api && ../.venv/bin/python -m pytest -q && ../.venv/bin/ruff check .)
-SELVORA_TEST_URL=http://localhost:3001 npm run test:ui
-npm audit
+(cd api && python -m pytest -q && ruff check . && ruff format --check .)
+npm run test:readiness
 ```
 
-B0: `npm run test:backend` applies the full chain on a blank database and upgrades populated F0
-fixtures, runs **768 table × role × operation cells** on PGlite and native PostgreSQL, plus tenant/
-constraint/event checks and generated inventory tests. F0 regression tests still run separately
-against their original chain; they are not claimed as tests of B0's tightened role permissions.
-`npm run docs:backend` regenerates exact schema/matrix/endpoint reports.
+Native SQL/Redis tests use disposable local fixtures, not hosted accounts. The
+cold physical restore test is Linux-specific. For UI/layout checks run a sample
+production server, then use `SELVORA_TEST_URL=http://localhost:3001 npm run test:ui`
+and `npm run test:layout`; see the responsive guide. Physical Android Chrome and
+iPhone Safari remain a separate manual checklist.
 
-Hosted rollback-only check: set `SUPABASE_TEST_DATABASE_URL` securely to a direct/session connection
-and run `npm run test:db:supabase`. Do not paste secrets into tracked files. The runner uses real
-project auth/roles and rolls back temporary migrations/fixtures; it does not deploy migrations.
-Hosted validation has **not** run yet. This sandbox restricts outbound hosts, so authorized Supabase
-connectivity or a user-run command may be needed. Never report local tests as a hosted pass.
+After contract/schema changes, regenerate with `npm run docs:contract` and
+`npm run docs:backend`. Hosted rollback-only RLS checks use
+`SUPABASE_TEST_DATABASE_URL` securely in the environment with
+`npm run test:db:supabase`; they do not deploy migrations or prove live providers.
 
-## Known limitations and next work
+## Current status and completion sequence
 
-- Mock/legacy frontend APIs still use offset pages/array DTOs. B1 must change adapter + DTOs to
-  signed cursor pages together; all message history must remain reachable.
-- Actual AI, channel providers, verified payments, private storage URLs, durable jobs and send
-  reconciliation are not implemented. No sample billing action purchases anything.
-- SQL foundation functions are not a complete HTTP idempotency/payment/inventory service. Future
-  transactions must bind verified actor, request key, ledger, stock, event and outbox atomically.
-- Event history begins at B0; do not invent past funnel transitions from current stages.
-- Local/automated Chromium and axe checks do not certify hosted security, physical device support
-  or full accessibility compliance. Real Android/iOS/assistive-technology testing remains advisable.
-- Production monitoring, rate limits, provider consent/windows, retention/erasure, backups and
-  restore drills are prerequisites before handling real customers.
+**Single status authority:** [docs/status-matrix.md](docs/status-matrix.md).
+See [original B1 endpoint gaps](docs/backend/b1-gap-audit.md),
+[actual HTTP route audit](docs/backend/route-audit.md) and
+[S0 validation](docs/s0-validation.md). Older phase narratives are context, not
+completion evidence. S1 catalogue/settings completion and S2 Gemini wording have
+not been implemented by S0. No live-provider/release approval is recorded.
 
-Next sequence: **B1 API substrate/read slice → B2 persistent catalogue/customers/stock → B3 one
-verified messaging provider and safe AI → B4 payments/receipts → B5 durable extras/billing/analytics.**
-See the authoritative backend roadmap for each endpoint's status and rules.
+## Guides
 
-## Gmail message pipeline (B2)
-
-An opt-in Gmail outbox/ingress worker and inbox API are now implemented locally.
-See [setup, tested behavior and remaining acceptance](docs/backend/gmail-pipeline.md).
-Live Gmail/hosted realtime acceptance is **pending**; API mode never falls back to samples.
-Run `PATH="$PWD/.venv/bin:$PATH" npm run test:pipeline` for Python and native PostgreSQL/Redis tests.
-
-## Reply engine (B3)
-
-See [reply safety rules, evaluation, activation and live-acceptance status](docs/backend/reply-engine.md).
-The engine is off per vendor until enabled. `npm run eval:replies` prints the120-case safety evaluation;
-root `npm run build` runs it as a required prebuild gate. Gmail acceptance remains pending authorization.
-
-## Orders and payments (B4)
-
-See [order/payment rules, signed receipts, setup and pending real acceptance](docs/backend/orders-payments.md).
-`PATH="$PWD/.venv/bin:$PATH" npm run test:commerce` exercises the local transactional flow and
-last-item races. Real Paystack/Gmail acceptance still needs configured credentials and deployment.
-
-## WhatsApp and helper (B5)
-
-See [WhatsApp sandbox/live setup, helper security and acceptance](docs/backend/whatsapp.md).
-`PATH="$PWD/.venv/bin:$PATH" npm run test:whatsapp` runs the real DB/Redis/worker flow
-with fake Meta/Gemini HTTP. Live Meta/Gemini acceptance requires credentials and approval.
+- [Contributing](CONTRIBUTING.md) · [Two-person workflow](docs/working-with-two-people.md)
+- [Frontend demo](docs/frontend-demo.md) · [Responsive layout](docs/responsive-layout.md)
+- [Backend roadmap](docs/backend-roadmap.md) · [API contract](docs/api-contract.md)
+- [Gmail pipeline](docs/backend/gmail-pipeline.md) · [Reply safety](docs/backend/reply-engine.md)
+- [Orders/payments/receipts](docs/backend/orders-payments.md) · [WhatsApp/helper](docs/backend/whatsapp.md)
+- [TikTok research](docs/backend/tiktok-research.md) · [Extras](docs/backend/b7-extras.md)
+- [Insights/billing](docs/backend/b8-insights-billing.md)
+- [Go-live checklist](docs/operations/go-live-checklist.md) · [Incident/retention runbook](docs/operations/runbook.md)
+- [Security review](docs/operations/security-review.md) · [Real-device checklist](docs/operations/mobile-checklist.md)

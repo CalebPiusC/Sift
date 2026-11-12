@@ -1,11 +1,11 @@
 # B0 table role matrix
 
-Authoritative executable permissions: `role-matrix.json`; enforced by SQL policies AND grants. R=SELECT, I=INSERT, U=UPDATE, D=DELETE; —=denied. Every table × role × operation has a real SQL test (768 cases). All roles are tenant scoped; anonymous access is denied. Service means `selvora_service`, NOT Supabase `service_role`.
+Authoritative executable permissions: `role-matrix.json`; enforced by SQL policies AND grants. R=SELECT, I=INSERT, U=UPDATE, D=DELETE; —=denied. Every table × role × operation has a real SQL test (816 cases). All roles are tenant scoped; anonymous access is denied. Service means `selvora_service`, NOT Supabase `service_role`.
 
 | Table | Owner | Manager | Agent | Service | Notes |
 |---|---|---|---|---|---|
 | vendors | RU | R | R | RU | Tenant creation remains onboard_vendor RPC. |
-| vendor_members | R | R | R | RIU | Membership writes require the future owner-authorized service transaction; no direct self-escalation. |
+| vendor_members | R | R | R | RIU | Membership writes require the owner-authorized service transaction; no direct self-escalation. |
 | customers | RIU | RIU | RIU | RIU |  |
 | conversations | R | R | R | RIU | Operational truth is service-owned. Human APIs authorize takeover/assignment; read markers use conversation_reads. |
 | products | RIU | RIU | R | RIU |  |
@@ -37,10 +37,10 @@ Authoritative executable permissions: `role-matrix.json`; enforced by SQL polici
 | billing_offers | R | — | — | RIU |  |
 | billing_selections | R | — | — | RIU |  |
 | usage_meters | R | — | — | RIU |  |
-| payments | R | R | — | RI | Append-only; future trusted transaction writes facts, no arbitrary metadata. |
-| stock_movements | R | R | — | RI | Append-only; future trusted transaction writes facts, no arbitrary metadata. |
-| usage_entries | R | R | — | RI | Append-only; future trusted transaction writes facts, no arbitrary metadata. |
-| domain_events | R | R | R | RI | Append-only; future trusted transaction writes facts, no arbitrary metadata. |
+| payments | R | R | — | RI | Append-only; trusted transaction writes facts, no arbitrary metadata. |
+| stock_movements | R | R | — | RI | Append-only; trusted transaction writes facts, no arbitrary metadata. |
+| usage_entries | R | R | — | RI | Append-only; trusted transaction writes facts, no arbitrary metadata. |
+| domain_events | R | R | R | RI | Append-only; trusted transaction writes facts, no arbitrary metadata. |
 | stock_reservations | R | R | R | RIU |  |
 | order_timeline | R | R | R | RIU |  |
 | message_deliveries | R | R | R | RIU |  |
@@ -56,7 +56,7 @@ Authoritative executable permissions: `role-matrix.json`; enforced by SQL polici
 | billing_payments | — | — | — | RI | Append-only verified webhook payment evidence. |
 | ai_cost_entries | — | — | — | RI | Append-only per-vendor provider usage estimates; unknown costs remain null. |
 
-Human roles are active vendor_members resolved from auth.uid(), never editable JWT role claims. Member preferences/read markers/notifications are restricted to the caller’s own membership. A table write denied to a human may be performed by a future authorized API transaction under the scoped service role; that is not a direct browser grant. Endpoint authorization is a separate required layer, specified in backend-roadmap.md.
+Human roles are active vendor_members resolved from auth.uid(), never editable JWT role claims. Member preferences/read markers/notifications are restricted to the caller’s own membership. A table write denied to a human may be performed by an authorized API transaction under the scoped service role; that is not a direct browser grant. Endpoint authorization is a separate required layer, specified in backend-roadmap.md.
 
 Existing controlled RPC exceptions: onboard_vendor creates a tenant/owner/config atomically; legacy confirm_vendor_payment and issue_receipt browser execution is revoked by B4 migration007; use the authorized payment-confirmation and receipt APIs instead. Receipt, event, payment, stock ledger, usage ledger and audit rows reject UPDATE/DELETE even for the bounded service role. DELETE is intentionally absent on core business records; use status/archive/retention design instead.
 

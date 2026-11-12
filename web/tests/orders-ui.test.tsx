@@ -1,8 +1,18 @@
-import { it, expect } from 'vitest';
+import { it, expect, vi } from 'vitest';
 import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DataProvider } from '../components/data/provider';
 import { OrdersPanel } from '../components/data/orders-panel';
+// Exercise the real sample domain logic, but not its artificial 100 ms network delay.
+// Every resource/mutation still resolves asynchronously and goes through DataProvider.
+vi.mock('../lib/data', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/data')>();
+  return {
+    ...actual,
+    createMockClient: (options: Parameters<typeof actual.createMockClient>[0]) =>
+      actual.createMockClient({ ...options, latencyMs: 0 }),
+  };
+});
 const renderOrders = () =>
   render(
     <div style={{ width: 390, maxWidth: '100%' }}>
@@ -86,7 +96,8 @@ it('restocks a selected variant only after explicit review and confirmation', as
   await user.click(await screen.findByRole('button', { name: 'Payment received' }));
   await user.click(screen.getByLabelText('I checked my bank and received the full amount.'));
   await user.click(screen.getByRole('button', { name: 'Confirm payment received' }));
-  await user.click(await screen.findByRole('button', { name: 'Restock' }));
+  const stock = within(await screen.findByRole('region', { name: 'Stock after payment' }));
+  await user.click(await stock.findByRole('button', { name: 'Restock' }));
   await user.type(screen.getByLabelText('Units to add'), '5');
   await user.click(screen.getByRole('button', { name: 'Review restock' }));
   expect(screen.getByText(/Stock will change from 1 to 6/)).toBeInTheDocument();

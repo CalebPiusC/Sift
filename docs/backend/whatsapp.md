@@ -1,5 +1,7 @@
 # B5 — WhatsApp Cloud API and Selvora helper
 
+> Current status authority: [status matrix](../status-matrix.md). This phase/design guide is technical context, not independent release sign-off.
+
 ## Status and boundaries
 
 Local sandbox acceptance is implemented and tested. **No real Meta approval, Embedded

@@ -14,6 +14,21 @@ const B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const USER = '11111111-1111-4111-8111-111111111111';
 const OTHER_USER = '22222222-2222-4222-8222-222222222222';
 let server, dir, pool, config;
+const clients = new Set();
+const connectionErrors = [];
+const onConnectionError = (error) => connectionErrors.push(error);
+async function connectClient() {
+  const client = new pg.Client(config);
+  client.on('error', onConnectionError);
+  clients.add(client);
+  await client.connect();
+  return client;
+}
+async function closeClient(client) {
+  // Keep the error listener installed through socket shutdown.
+  await client.end();
+  clients.delete(client);
+}
 before(async () => {
   const port = await new Promise((resolve) => {
     const s = net.createServer();
@@ -52,7 +67,8 @@ before(async () => {
       execFileSync(bin.pg_ctl, ['-D', data, '-m', 'fast', '-w', 'stop'], { stdio: 'pipe' }),
   };
   config = { host: '127.0.0.1', port, user: 'postgres', password, database: 'postgres' };
-  pool = new pg.Pool({ ...config, max: 30 });
+  // Keep the query harness name, but own one dedicated client instead of idle pool sockets.
+  pool = await connectClient();
   for (const file of [
     'tests/bootstrap.sql',
     'supabase/migrations/202611100001_foundation.sql',
@@ -62,9 +78,19 @@ before(async () => {
     await pool.query(await readFile(file, 'utf8'));
 });
 after(async () => {
-  await pool?.end();
-  await server?.stop();
-  if (dir) await rm(dir, { recursive: true, force: true });
+  // Close every explicitly owned socket before pg_ctl, including the query client.
+  // allSettled also covers a connect/setup failure without abandoning siblings.
+  const closed = await Promise.allSettled([...clients].map(closeClient));
+  try {
+    await server?.stop();
+  } finally {
+    if (dir) await rm(dir, { recursive: true, force: true });
+  }
+  const errors = [
+    ...connectionErrors,
+    ...closed.filter((r) => r.status === 'rejected').map((r) => r.reason),
+  ];
+  if (errors.length) throw new AggregateError(errors, 'PostgreSQL connection cleanup failed');
 });
 test('24 independent PostgreSQL sessions issue gap-free receipts under real lock contention', async () => {
   const customer = (await pool.query('select id from public.customers where vendor_id=$1', [A]))
@@ -79,19 +105,26 @@ test('24 independent PostgreSQL sessions issue gap-free receipts under real lock
         )
       ).rows[0].id,
     );
-  const clients = await Promise.all(orders.map(() => pool.connect()));
-  const blocker = await pool.connect();
-  let pending = [];
+  const sessions = orders.map(() => connectClient());
+  let clients = [],
+    blocker;
+  let pending = [],
+    setup = [];
   try {
+    // Do not let a failed acquisition leave other connection attempts in flight.
+    const connected = await Promise.allSettled(sessions);
+    clients = connected.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+    const failed = connected.find((r) => r.status === 'rejected');
+    if (failed) throw failed.reason;
+    blocker = await connectClient();
     await blocker.query('begin');
     await blocker.query('select id from public.vendors where id=$1 for update', [A]);
-    await Promise.all(
-      clients.map(async (client) => {
-        await client.query('begin');
-        await client.query("set local role authenticated;set local statement_timeout='20s'");
-        await client.query("select set_config('request.jwt.claim.sub',$1,true)", [USER]);
-      }),
-    );
+    setup = clients.map(async (client) => {
+      await client.query('begin');
+      await client.query("set local role authenticated;set local statement_timeout='20s'");
+      await client.query("select set_config('request.jwt.claim.sub',$1,true)", [USER]);
+    });
+    await Promise.all(setup);
     const before = Number(
       (
         await blocker.query(
@@ -113,6 +146,8 @@ test('24 independent PostgreSQL sessions issue gap-free receipts under real lock
         throw error;
       }
     });
+    // Observe failures immediately while the lock-contention poll is running.
+    for (const session of pending) void session.catch(() => {});
     // All 24 backends must actually be blocked, not merely queued on one JS connection.
     const deadline = Date.now() + 10000;
     let waiting = 0;
@@ -141,7 +176,7 @@ test('24 independent PostgreSQL sessions issue gap-free receipts under real lock
       Array.from({ length: 24 }, (_, i) => before + i + 1),
     );
     // Assignment/commit order is monotonic; Promise resolution/input order is not guaranteed.
-    const client = await pool.connect();
+    const client = await connectClient();
     try {
       await client.query('begin;set local role authenticated');
       await client.query("select set_config('request.jwt.claim.sub',$1,true)", [USER]);
@@ -150,17 +185,24 @@ test('24 independent PostgreSQL sessions issue gap-free receipts under real lock
       assert.equal(id, ids[0]);
       await client.query('commit');
     } finally {
-      client.release();
+      await closeClient(client);
     }
   } finally {
-    await blocker.query('rollback');
-    await Promise.allSettled(pending);
-    blocker.release();
-    for (const client of clients) client.release();
+    try {
+      if (blocker) await blocker.query('rollback');
+    } finally {
+      await Promise.allSettled(setup);
+      await Promise.allSettled(pending);
+      const closed = await Promise.allSettled(
+        [...clients, ...(blocker ? [blocker] : [])].map(closeClient),
+      );
+      const errors = closed.filter((r) => r.status === 'rejected').map((r) => r.reason);
+      if (errors.length) throw new AggregateError(errors, 'Receipt session cleanup failed');
+    }
   }
 });
 test('shared isolation checks pass against native PostgreSQL and real-project runner rolls back', async () => {
-  const client = await pool.connect();
+  const client = await connectClient();
   try {
     await client.query('begin');
     const db = {
@@ -178,8 +220,11 @@ test('shared isolation checks pass against native PostgreSQL and real-project ru
     };
     await isolationChecks(db, { A, B, USER, OTHER_USER });
   } finally {
-    await client.query('rollback');
-    client.release();
+    try {
+      await client.query('rollback');
+    } finally {
+      await closeClient(client);
+    }
   }
   const before = Number((await pool.query('select count(*) as n from auth.users')).rows[0].n);
   // Exercise the exact later-use Supabase script; the cluster's auth shim is local only.

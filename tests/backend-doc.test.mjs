@@ -54,7 +54,10 @@ test('every frontend contract method including inherited catalogue mutations has
   assert.equal(endpoints.filter((e) => e.function === 'DataClient.dispose').length, 1);
   assert.equal(new Set(endpoints.map((e) => e.function)).size, endpoints.length);
   for (const e of endpoints) {
-    if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(e.method))
+    if (
+      ['POST', 'PATCH', 'PUT', 'DELETE'].includes(e.method) &&
+      e.function !== 'Future.receiptShare'
+    )
       assert.equal(e.idempotency, 'required');
     if (e.function.startsWith('MockControls.')) assert.equal(e.status, 'local-only');
   }

@@ -1,5 +1,7 @@
 # B3 — fact-backed reply engine
 
+> Current status authority: [status matrix](../status-matrix.md). This phase/design guide is technical context, not independent release sign-off.
+
 ## Status and boundary
 
 Implemented locally with a **deterministic wording adapter**, not a connected generative model.

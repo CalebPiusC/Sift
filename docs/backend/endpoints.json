@@ -7,8 +7,8 @@
     "tables": "products,product_variants,product_photos",
     "pagination": "cursor",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "not-implemented",
+    "notes": "S0: no matching registered FastAPI route. Adapter targets/schema/sample tests do not implement this endpoint. See docs/backend/b1-gap-audit.md."
   },
   {
     "function": "CatalogueData.get",
@@ -18,8 +18,8 @@
     "tables": "products,product_variants,product_photos",
     "pagination": "none",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "not-implemented",
+    "notes": "S0: no matching registered FastAPI route. Adapter targets/schema/sample tests do not implement this endpoint. See docs/backend/b1-gap-audit.md."
   },
   {
     "function": "ConversationsData.list",
@@ -30,7 +30,7 @@
     "pagination": "cursor",
     "idempotency": "none",
     "status": "implemented-local",
-    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
+    "notes": "S0 route proof: api/app/pipeline/api.py::conversations. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ConversationsData.get",
@@ -41,7 +41,7 @@
     "pagination": "none",
     "idempotency": "none",
     "status": "implemented-local",
-    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
+    "notes": "S0 route proof: api/app/pipeline/api.py::get_conversation. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "OrdersData.list",
@@ -52,7 +52,7 @@
     "pagination": "cursor",
     "idempotency": "none",
     "status": "implemented-local",
-    "notes": "B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending."
+    "notes": "S0 route proof: api/app/commerce/api.py::list_orders. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "OrdersData.get",
@@ -63,7 +63,7 @@
     "pagination": "none",
     "idempotency": "none",
     "status": "implemented-local",
-    "notes": "B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending."
+    "notes": "S0 route proof: api/app/commerce/api.py::get_order. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ReceiptsData.list",
@@ -74,7 +74,7 @@
     "pagination": "cursor",
     "idempotency": "none",
     "status": "implemented-local",
-    "notes": "B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending."
+    "notes": "S0 route proof: api/app/commerce/api.py::list_receipts. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ReceiptsData.get",
@@ -85,7 +85,7 @@
     "pagination": "none",
     "idempotency": "none",
     "status": "implemented-local",
-    "notes": "B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending."
+    "notes": "S0 route proof: api/app/commerce/api.py::get_receipt. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "CustomersData.list",
@@ -93,10 +93,10 @@
     "path": "/customers",
     "roles": "owner manager agent",
     "tables": "customers",
-    "pagination": "cursor",
+    "pagination": "offset; limit 1\u2013100",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::customers. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "CustomersData.get",
@@ -106,8 +106,8 @@
     "tables": "customers",
     "pagination": "none",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::get_customer. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "CatalogueData.extract",
@@ -117,8 +117,8 @@
     "tables": "catalogue_drafts,product_photos",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Store private media references; provider integration deferred."
+    "status": "not-implemented",
+    "notes": "S0: no matching registered FastAPI route. Adapter targets/schema/sample tests do not implement this endpoint. See docs/backend/b1-gap-audit.md."
   },
   {
     "function": "CatalogueData.createMany",
@@ -128,8 +128,8 @@
     "tables": "products,product_variants,product_photos",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Atomic batch; requestId also unique business request; reserve one idempotency key for whole batch."
+    "status": "not-implemented",
+    "notes": "S0: no matching registered FastAPI route. Adapter targets/schema/sample tests do not implement this endpoint. See docs/backend/b1-gap-audit.md."
   },
   {
     "function": "CatalogueData.update",
@@ -139,8 +139,8 @@
     "tables": "products,product_variants,product_photos",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "expectedRevision required; existing stock changes also append stock_movements."
+    "status": "not-implemented",
+    "notes": "S0: no matching registered FastAPI route. Adapter targets/schema/sample tests do not implement this endpoint. See docs/backend/b1-gap-audit.md."
   },
   {
     "function": "CatalogueData.archive",
@@ -150,8 +150,8 @@
     "tables": "products",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "expectedRevision required; no historical deletion."
+    "status": "not-implemented",
+    "notes": "S0: no matching registered FastAPI route. Adapter targets/schema/sample tests do not implement this endpoint. See docs/backend/b1-gap-audit.md."
   },
   {
     "function": "CatalogueData.proposeText",
@@ -161,8 +161,8 @@
     "tables": "typed_proposals",
     "pagination": "none",
     "idempotency": "required",
-    "status": "implemented-local",
-    "notes": "Same server typed-instruction parser as WhatsApp helper; returns a pending ten-minute proposal, never applies a mutation."
+    "status": "partial",
+    "notes": "S0 route proof: api/app/whatsapp/api.py::proposal. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md. Restricted regex commands, not general catalogue editing; variant confirmations unsupported."
   },
   {
     "function": "CatalogueData.confirmText",
@@ -172,8 +172,8 @@
     "tables": "typed_proposals,products,product_variants,stock_movements",
     "pagination": "none",
     "idempotency": "required",
-    "status": "implemented-local",
-    "notes": "Member-bound, revision-checked explicit confirmation; once-only stock/price edit and audit. Variant edits fail closed for app review."
+    "status": "partial",
+    "notes": "S0 route proof: api/app/whatsapp/api.py::confirm_instruction. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md. Simple non-variant price/stock only; variant edits fail closed."
   },
   {
     "function": "ConversationsData.markRead",
@@ -184,7 +184,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
+    "notes": "S0 route proof: api/app/pipeline/api.py::mark_read. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ConversationsData.setHumanMode",
@@ -195,7 +195,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
+    "notes": "S0 route proof: api/app/pipeline/api.py::takeover. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "MessagesData.send",
@@ -206,7 +206,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
+    "notes": "S0 route proof: api/app/pipeline/api.py::send. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ApprovalsData.decide",
@@ -217,7 +217,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "B3 once-only decisions; stale snapshot refresh and verifier required, including at send."
+    "notes": "S0 route proof: api/app/replies/api.py::decision. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "OrdersData.setStatus",
@@ -228,7 +228,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending."
+    "notes": "S0 route proof: api/app/commerce/api.py::set_status. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "OrdersData.confirmPayment",
@@ -239,7 +239,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending."
+    "notes": "S0 route proof: api/app/commerce/api.py::bank_payment. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ReceiptsData.issue",
@@ -250,7 +250,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "B4 server lifecycle/verified payment/stock transaction and immutable signed receipts; live Paystack acceptance pending."
+    "notes": "S0 route proof: api/app/commerce/api.py::issue. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "CustomersData.update",
@@ -260,8 +260,8 @@
     "tables": "customers",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Allowlisted notes/tags/flagged; metadata flag does not block provider."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::notes. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ChannelsData.begin",
@@ -271,8 +271,8 @@
     "tables": "channel_attempts,channel_accounts",
     "pagination": "none",
     "idempotency": "required",
-    "status": "implemented-local",
-    "notes": "Gmail OAuth or Meta Embedded Signup; sandbox mode fakes only provider HTTP."
+    "status": "partial",
+    "notes": "S0 route proof: api/app/pipeline/api.py::connect. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md. Only Gmail/WhatsApp supported; others return 501."
   },
   {
     "function": "ChannelsData.complete",
@@ -283,7 +283,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
+    "notes": "S0 route proof: api/app/pipeline/api.py::connection_status. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ChannelsData.newHelperCode",
@@ -294,7 +294,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "Authenticated owner/manager; replace prior code; Redis atomic ten-minute single-use capability."
+    "notes": "S0 route proof: api/app/whatsapp/api.py::new_code. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ChannelsData.confirmHelper",
@@ -315,8 +315,8 @@
     "tables": "vendors,business_settings,business_hours,delivery_fees,member_preferences",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Field authorization: owner business identity/type/tone/negotiation; owner+manager reply lanes/hours/fees; everyone own preferences. Split transaction permissions; never blanket service authorization."
+    "status": "not-implemented",
+    "notes": "S0: no matching registered FastAPI route. Adapter targets/schema/sample tests do not implement this endpoint. See docs/backend/b1-gap-audit.md."
   },
   {
     "function": "TeamData.invite",
@@ -326,8 +326,8 @@
     "tables": "team_invitations,invitation_secrets,jobs",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Lowercase email; pending uniqueness; role manager/agent only; external email not implemented."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::invite. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "TeamData.setRole",
@@ -337,8 +337,8 @@
     "tables": "vendor_members",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Protect owner; manager/agent only; target same vendor; lock membership."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::role. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "TeamData.assign",
@@ -348,8 +348,8 @@
     "tables": "conversations",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Active same-vendor member or null only."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::assign. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "BillingData.selectOffer",
@@ -359,8 +359,8 @@
     "tables": "billing_selections,billing_offers",
     "pagination": "none",
     "idempotency": "required",
-    "status": "implemented",
-    "notes": "Selection only. Never charge or grant entitlement."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/billing/api.py::select. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ExtrasData.configure",
@@ -370,8 +370,8 @@
     "tables": "followup_settings,followups",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "24\u2013720 hours; reschedule pending only; consent/opt-out required before future delivery."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::configure. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ExtrasData.followup",
@@ -381,8 +381,8 @@
     "tables": "followups",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Cancel only in production; simulate_send NOT_IMPLEMENTED; real due sends are jobs."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::cancel. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md. Cancel only; simulate_send is not accepted by real API."
   },
   {
     "function": "ExtrasData.moderate",
@@ -392,8 +392,8 @@
     "tables": "moderation_flags,blocked_identities,jobs",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Agent assigned/unassigned related chat; block intent not provider-confirmed until job completes."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::moderate. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ExtrasData.notifyRestock",
@@ -403,8 +403,8 @@
     "tables": "restock_requests,jobs",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Mock-only simulator at present; production browser route NOT_IMPLEMENTED, real alert delivery through consent-checked job."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::notify_restock. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "MessagesData.list",
@@ -415,7 +415,7 @@
     "pagination": "cursor-bidirectional",
     "idempotency": "none",
     "status": "implemented-local",
-    "notes": "B2 opt-in; Gmail only. See gmail-pipeline.md for limits and pending live acceptance."
+    "notes": "S0 route proof: api/app/pipeline/api.py::messages. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ApprovalsData.list",
@@ -426,7 +426,7 @@
     "pagination": "cursor",
     "idempotency": "none",
     "status": "implemented-local",
-    "notes": "B3 once-only decisions; stale snapshot refresh and verifier required, including at send."
+    "notes": "S0 route proof: api/app/replies/api.py::approvals. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ChannelsData.list",
@@ -437,7 +437,7 @@
     "pagination": "cursor",
     "idempotency": "none",
     "status": "implemented-local",
-    "notes": "Connected accounts and unconnected WhatsApp card; helper account is excluded."
+    "notes": "S0 route proof: api/app/pipeline/api.py::channels. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ChannelsData.helper",
@@ -448,7 +448,7 @@
     "pagination": "none",
     "idempotency": "none",
     "status": "implemented-local",
-    "notes": "Caller membership only. Four-digit pending code is encrypted in Redis; linked status established only by signed helper webhook."
+    "notes": "S0 route proof: api/app/whatsapp/api.py::helper. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "SettingsData.get",
@@ -458,8 +458,8 @@
     "tables": "vendors,business_settings,business_hours,delivery_fees,member_preferences",
     "pagination": "none",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "not-implemented",
+    "notes": "S0: no matching registered FastAPI route. Adapter targets/schema/sample tests do not implement this endpoint. See docs/backend/b1-gap-audit.md."
   },
   {
     "function": "InsightsData.get",
@@ -469,19 +469,19 @@
     "tables": "domain_events,orders,payments,stock_movements",
     "pagination": "date-range",
     "idempotency": "none",
-    "status": "implemented",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/billing/insights.py::insights. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "TeamData.list",
     "method": "GET",
     "path": "/team",
-    "roles": "owner manager agent",
+    "roles": "owner manager",
     "tables": "vendor_members,team_invitations",
-    "pagination": "cursor",
+    "pagination": "none",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::team. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "TeamData.audit",
@@ -489,10 +489,10 @@
     "path": "/team/audit",
     "roles": "owner manager",
     "tables": "audit_log",
-    "pagination": "cursor",
+    "pagination": "offset",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::audit_log. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "BillingData.get",
@@ -500,21 +500,21 @@
     "path": "/billing",
     "roles": "owner",
     "tables": "billing_accounts,billing_offers,billing_selections,usage_meters,usage_entries",
-    "pagination": "cursor-offers",
+    "pagination": "none",
     "idempotency": "none",
-    "status": "implemented",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/billing/api.py::billing. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ExtrasData.get",
     "method": "GET",
     "path": "/extras",
-    "roles": "owner manager agent",
+    "roles": "owner manager",
     "tables": "followup_settings,followups,moderation_flags,restock_requests",
-    "pagination": "independent-cursors",
+    "pagination": "bounded first 100 per section",
     "idempotency": "none",
-    "status": "planned",
-    "notes": ""
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::extras. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "RealtimeData.subscribe",
@@ -524,8 +524,8 @@
     "tables": "domain_events",
     "pagination": "event-cursor",
     "idempotency": "none",
-    "status": "planned",
-    "notes": "SSE reconnect via Last-Event-ID; safe invalidation DTO, no raw messages/secret rows. Local listener/unsubscribe are not JSON routes."
+    "status": "not-implemented",
+    "notes": "S0: no matching registered FastAPI route. Adapter targets/schema/sample tests do not implement this endpoint. See docs/backend/b1-gap-audit.md."
   },
   {
     "function": "MockControls.simulateIncoming",
@@ -580,7 +580,7 @@
     "pagination": "none",
     "idempotency": "none",
     "status": "local-only",
-    "notes": "Local lifecycle / mock-only; never deploy a simulation endpoint."
+    "notes": "Client lifecycle, not HTTP: web/lib/data/api.ts. Supabase realtime invalidation is configured conditionally; hosted delivery unproven."
   },
   {
     "function": "Infrastructure.health",
@@ -590,8 +590,8 @@
     "tables": "\u2014",
     "pagination": "none",
     "idempotency": "none",
-    "status": "existing-foundation",
-    "notes": "Existing liveness; outside /v1 prefix."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/main.py::health. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "Infrastructure.me",
@@ -601,8 +601,8 @@
     "tables": "auth.users",
     "pagination": "none",
     "idempotency": "none",
-    "status": "existing-foundation",
-    "notes": "Existing Supabase token validation."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/main.py::me. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "Infrastructure.vendors",
@@ -612,19 +612,19 @@
     "tables": "vendors",
     "pagination": "none",
     "idempotency": "none",
-    "status": "existing-foundation",
-    "notes": "Existing RLS-scoped endpoint; cursor migration pending."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/main.py::vendors. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "Future.orders.create",
-    "method": "POST",
-    "path": "/orders",
+    "method": "INTERNAL",
+    "path": "\u2014",
     "roles": "owner manager agent",
     "tables": "orders,order_items,stock_reservations",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Not a new B0 feature; future creation API needed for orders produced by chat."
+    "status": "internal-only",
+    "notes": "Chat creates drafts via api/app/commerce/chat.py. No vendor order-creation HTTP form/route; do not implement the obsolete proposed POST /orders."
   },
   {
     "function": "Future.stock.restock",
@@ -634,19 +634,19 @@
     "tables": "products,product_variants,stock_movements",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "expectedRevision, explicit quantity and variant, transaction + ledger."
+    "status": "not-implemented",
+    "notes": "S0: no matching registered FastAPI route. Adapter targets/schema/sample tests do not implement this endpoint. See docs/backend/b1-gap-audit.md."
   },
   {
     "function": "Future.reservations.create",
-    "method": "POST",
-    "path": "/orders/{id}/reservations",
+    "method": "INTERNAL",
+    "path": "\u2014",
     "roles": "owner manager service",
     "tables": "stock_reservations",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Lock inventory; expiry/release/commit must be transactional."
+    "status": "internal-only",
+    "notes": "Reservation lifecycle is internal to commerce/domain.py. No public reservation-creation route."
   },
   {
     "function": "Future.notifications.list",
@@ -654,10 +654,10 @@
     "path": "/notifications",
     "roles": "owner manager agent",
     "tables": "notifications",
-    "pagination": "cursor",
+    "pagination": "offset",
     "idempotency": "none",
-    "status": "planned",
-    "notes": "Own membership only; no cross-user alert history."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::notifications. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "Future.notifications.read",
@@ -667,8 +667,8 @@
     "tables": "notifications",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Own read_at only."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::read_notification. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "Future.identities.link",
@@ -678,8 +678,8 @@
     "tables": "customer_identities",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Explicit verified merge/link; no silent cross-channel identity inference."
+    "status": "not-implemented",
+    "notes": "S0: no matching registered FastAPI route. Adapter targets/schema/sample tests do not implement this endpoint. See docs/backend/b1-gap-audit.md."
   },
   {
     "function": "Future.invitations.accept",
@@ -689,19 +689,19 @@
     "tables": "team_invitations,invitation_secrets,vendor_members",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Validate token hash, verified email, expiry; scoped service after invitation resolved."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/extras/api.py::accept. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "Future.receiptShare",
-    "method": "GET",
-    "path": "/receipt-shares/{token}",
+    "method": "POST",
+    "path": "/public/receipts",
     "roles": "expiring capability",
     "tables": "receipt_shares,receipts",
     "pagination": "none",
     "idempotency": "none",
-    "status": "planned",
-    "notes": "Hash token, minimal immutable DTO, no customer contact fields."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/commerce/api.py::public_receipt. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md. Read-only POST capability lookup: no mutation/idempotency key; token is kept out of URLs."
   },
   {
     "function": "Future.webhook",
@@ -711,8 +711,8 @@
     "tables": "webhook_events,jobs",
     "pagination": "none",
     "idempotency": "required",
-    "status": "planned",
-    "notes": "Resolve vendor from verified account/reference, never arbitrary X-Vendor-Id. Dedup provider event; fast durable ACK. Provider exception to header idempotency."
+    "status": "partial",
+    "notes": "Only explicit /webhooks/gmail, /webhooks/whatsapp and /webhooks/paystack routes exist. No generic provider handler or Instagram/Facebook/TikTok adapter."
   },
   {
     "function": "Future.worker.claim",
@@ -722,19 +722,19 @@
     "tables": "jobs",
     "pagination": "cursor-due",
     "idempotency": "none",
-    "status": "planned",
-    "notes": "No public route. Per-vendor transaction, SKIP LOCKED lease, retries and dead-letter state."
+    "status": "implemented-local",
+    "notes": "Internal only: pipeline/jobs.py claim and worker.py tick. Native lease/crash tests in tests/helpers/b2-runtime.py; no live deployment proof."
   },
   {
     "function": "Future.oauth.callback",
     "method": "GET",
-    "path": "/channels/oauth/{provider}/callback",
+    "path": "/channels/oauth/gmail/callback",
     "roles": "verified expiring OAuth state",
     "tables": "channel_attempts,channel_tokens",
     "pagination": "none",
     "idempotency": "none",
-    "status": "planned",
-    "notes": "No implicit trusted query param; resolve attempt/state before tenant transaction."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/pipeline/api.py::callback. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "MessagesData.retry",
@@ -745,7 +745,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "State-conditional retry; ambiguous sends reconcile only. Live Gmail acceptance pending."
+    "notes": "S0 route proof: api/app/pipeline/api.py::retry. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "SettingsData.getReplyPolicy",
@@ -756,7 +756,7 @@
     "pagination": "none",
     "idempotency": "none",
     "status": "implemented-local",
-    "notes": "B3 safe intent allowlist; no approve-everything option. Activation is prospective only."
+    "notes": "S0 route proof: api/app/replies/api.py::get_settings. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "SettingsData.updateReplyPolicy",
@@ -767,7 +767,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "B3 safe intent allowlist; no approve-everything option. Activation is prospective only."
+    "notes": "S0 route proof: api/app/replies/api.py::settings. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "OrdersData.requestCheckout",
@@ -778,7 +778,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "B4 explicit state-conditional operation; provider ambiguity is not blindly replayed."
+    "notes": "S0 route proof: api/app/commerce/api.py::checkout. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "OrdersData.cancellationActions",
@@ -789,7 +789,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "B4 explicit state-conditional operation; provider ambiguity is not blindly replayed."
+    "notes": "S0 route proof: api/app/commerce/api.py::cancellation. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ReceiptsData.share",
@@ -800,7 +800,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "B4 explicit state-conditional operation; provider ambiguity is not blindly replayed."
+    "notes": "S0 route proof: api/app/commerce/api.py::share_receipt. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ReceiptsData.revoke",
@@ -811,7 +811,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "B4 explicit state-conditional operation; provider ambiguity is not blindly replayed."
+    "notes": "S0 route proof: api/app/commerce/api.py::revoke. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "ChannelsData.completeWhatsApp",
@@ -822,7 +822,7 @@
     "pagination": "none",
     "idempotency": "required",
     "status": "implemented-local",
-    "notes": "Authenticated initiating member and expiring attempt; exchange Meta code, validate token app/scopes/number ownership, subscribe/register. Sandbox explicitly returns a fake connection. Live Meta acceptance pending."
+    "notes": "S0 route proof: api/app/whatsapp/api.py::complete. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   },
   {
     "function": "BillingData.checkout",
@@ -832,7 +832,7 @@
     "tables": "billing_checkouts,billing_offers",
     "pagination": "none",
     "idempotency": "required",
-    "status": "implemented",
-    "notes": "Durable pending checkout per offer; no entitlement grant before signed webhook and independent verification."
+    "status": "implemented-local",
+    "notes": "S0 route proof: api/app/billing/api.py::checkout. Route existence is NOT DTO, idempotency, frontend or live acceptance proof; see docs/status-matrix.md."
   }
 ]
