@@ -48,3 +48,31 @@ test('B1 audit explicitly exposes missing catalogue/settings handlers and no Gem
   const audit = await readFile('docs/backend/b1-gap-audit.md', 'utf8');
   assert.match(audit, /S2 is a separate subsequent phase/);
 });
+
+test('S0 inventory is independent of filesystem enumeration order', () => {
+  execFileSync(
+    'python3',
+    [
+      '-c',
+      `
+import random
+import runpy
+from pathlib import Path
+build = runpy.run_path('scripts/audit-status.py')['build']
+expected = build()
+original = Path.glob
+try:
+    for seed in range(20):
+        def shuffled(self, pattern):
+            paths = list(original(self, pattern))
+            random.Random(seed).shuffle(paths)
+            return iter(paths)
+        Path.glob = shuffled
+        assert build() == expected, f'Inventory depends on directory order (seed {seed})'
+finally:
+    Path.glob = original
+`,
+    ],
+    { stdio: 'pipe' },
+  );
+});

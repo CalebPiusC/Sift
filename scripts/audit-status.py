@@ -65,7 +65,8 @@ def build():
              'Routes not already represented by a contract decision above. Local no means no route-specific proving test was identified; code existence does not imply tested acceptance. See product rows for related internal/unit evidence.', '',
              '| Capability | Implemented | Frontend uses real API | Locally tested | Live-provider tested | Release-approved | Proof / limitation |',
              '|---|---|---|---|---|---|---|']
-    tests=list(Path('api/tests').glob('*.py'))+list(Path('tests/helpers').glob('*.py'))
+    # Filesystem enumeration order differs between local checkouts and CI.
+    tests=sorted(Path('api/tests').glob('*.py'))+sorted(Path('tests/helpers').glob('*.py'))
     for r in actual:
         if (r['method'],canonical(r['path'])) in mapped:continue
         hits=[str(p) for p in tests if r['path'] in p.read_text()]
