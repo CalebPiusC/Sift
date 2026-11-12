@@ -315,8 +315,8 @@
     "tables": "vendors,business_settings,business_hours,delivery_fees,member_preferences",
     "pagination": "none",
     "idempotency": "required",
-    "status": "not-implemented",
-    "notes": "S0: no matching registered FastAPI route. Adapter targets/schema/sample tests do not implement this endpoint. See docs/backend/b1-gap-audit.md."
+    "status": "partial",
+    "notes": "S1 initial slice: PATCH supports own-member preferences only, expectedPreferencesRevision and required Idempotency-Key; strict extra-field denial. Business/hours/fees/reply-language writes remain missing. Native PostgreSQL tenant/concurrency/replay tests in tests/helpers/s1-settings.py."
   },
   {
     "function": "TeamData.invite",
@@ -458,8 +458,8 @@
     "tables": "vendors,business_settings,business_hours,delivery_fees,member_preferences",
     "pagination": "none",
     "idempotency": "none",
-    "status": "not-implemented",
-    "notes": "S0: no matching registered FastAPI route. Adapter targets/schema/sample tests do not implement this endpoint. See docs/backend/b1-gap-audit.md."
+    "status": "implemented-local",
+    "notes": "S1 initial slice: api/app/settings/api.py::get_settings composes persisted business/hours/fees and own-member preferences. Native endpoint tests: tests/helpers/s1-settings.py. Full API-backed browser acceptance remains pending."
   },
   {
     "function": "InsightsData.get",

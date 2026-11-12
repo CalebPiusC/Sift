@@ -31,20 +31,22 @@ test('capability status is evidence-qualified with no implied live acceptance', 
     assert.equal(cells[6], 'no', 'Release unapproved: ' + cells[1]);
   }
 });
-test('B1 audit explicitly exposes missing catalogue/settings handlers and no Gemini writer', async () => {
+test('B1 audit distinguishes initial settings slice from missing catalogue and Gemini writer', async () => {
   const routes = JSON.parse(await readFile('docs/backend/route-inventory.json', 'utf8'));
-  for (const path of [
-    '/v1/catalogue',
-    '/v1/catalogue/batches',
-    '/v1/catalogue/extractions',
-    '/v1/settings',
-  ])
+  for (const path of ['/v1/catalogue', '/v1/catalogue/batches', '/v1/catalogue/extractions'])
     assert.equal(
       routes.some((r) => r.path === path),
       false,
       path + ' is not implemented by S0',
     );
   assert.ok(routes.some((r) => r.path === '/v1/catalogue/text-proposals'));
+  for (const method of ['GET', 'PATCH'])
+    assert.ok(
+      routes.some(
+        (r) =>
+          r.path === '/v1/settings' && r.method === method && r.file === 'api/app/settings/api.py',
+      ),
+    );
   const audit = await readFile('docs/backend/b1-gap-audit.md', 'utf8');
   assert.match(audit, /S2 is a separate subsequent phase/);
 });

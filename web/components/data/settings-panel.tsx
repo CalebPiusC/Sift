@@ -72,7 +72,7 @@ export function SettingsPanel() {
                 area === 'replies' ? (
                   <ReplySettings settings={s} />
                 ) : area === 'preferences' ? (
-                  <PreferencesSettings value={s.preferences} />
+                  <PreferencesSettings value={s.preferences} revision={s.preferencesRevision} />
                 ) : (
                   <Business settings={s} />
                 )

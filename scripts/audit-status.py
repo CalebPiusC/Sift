@@ -30,7 +30,7 @@ def build():
     canonical=lambda p:re.sub(r'\{[^}]+\}','{}',p)
     lookup={(r['method'],canonical(r['path'])):r for r in actual}
     rows=['# Product status matrix — authoritative S0 inventory','',
-          'This is the single source of truth for current capability status. Scope: every frontend contract operation, every declared FastAPI route, and the cross-cutting/product capabilities below. Read alongside [B1 gap audit](backend/b1-gap-audit.md). S1 and S2 are **not implemented** by this audit.',
+          'This is the single source of truth for current capability status. Scope: every frontend contract operation, every declared FastAPI route, and the cross-cutting/product capabilities below. Read alongside [B1 gap audit](backend/b1-gap-audit.md). S1 is **in progress**: settings read/member preferences are the initial slice; catalogue/media/business mutations and full API-backed browser acceptance remain incomplete. S2 is **not implemented**.',
           '', '## Reading the evidence', '',
           '- **Implemented:** yes = scoped behavior exists; partial = limited subset/scaffolding; no = absent. Mock-only product workflows count partial, not real backend completion.',
           '- **Frontend uses real API:** yes = concrete consumer and supported server path; partial = optional API-mode wiring/DTO or dependent-read gaps; no = absent, internal-only or sample-only. Adapter URLs alone are not proof.',

@@ -3,7 +3,7 @@
 **Authority:** [status matrix](../status-matrix.md). Inspected source, not a claim
 of live acceptance. Route declarations are exhaustively generated in
 [route audit](route-audit.md). Frontend adapter URLs do not establish server support.
-No S1 implementation is included in this audit.
+S1 is in progress. The initial draft adds settings read and own-member preference writes only; all remaining gaps below still apply. See [S1 progress](../s1-progress.md).
 
 ## What exists and exactly what is missing
 
@@ -27,9 +27,9 @@ All paths below use FastAPI `/v1`; Next's same-origin proxy is `/api/v1`.
 | Stock correction | Non-variant typed edits exist; commerce sale/reservation ledger exists | General/variant stock editor; respect reserved quantities and ledger correctness; conflict handling, no negative stock or silent overwrites |
 | Explicit restock | Planned `POST /catalogue/{id}/restock` absent | Choose documented endpoint or existing update action, explicit quantity/variant/revision, audited once-only ledger; trigger only opted-in restock work |
 | Archive/unarchive | `PATCH /catalogue/{id}/archive` absent | Revision-checked authorized archive state; preserve historic order/receipt facts; exclude from facts/new selections appropriately |
-| General settings read | `GET /settings` absent; provider attempts this even in API mode | Compose authorized business/settings/hours/fees and per-member preference DTO. Missing read currently blocks settings screens despite separate working subpanels |
-| General settings update | `PATCH /settings` absent | Per-field role checks (owner/manager business fields vs own preferences), validation, durable idempotency/conflict handling, atomic hours/fee edits and audit |
-| Preferences | `client.settings.update({preferences})` targets absent PATCH | Persist per-member dark/low-data/language/notification flags; forbid updating another member; return/publish refreshed state |
+| General settings read | `GET /settings` now composes persisted business/hours/fees and own-member preferences | Initial native-tested read exists; full API-backed browser acceptance and remaining general business mutation flows are pending |
+| General settings update | `PATCH /settings` supports own-member preferences only | Per-field role checks (owner/manager business fields vs own preferences), validation, durable idempotency/conflict handling, atomic hours/fee edits and audit |
+| Preferences | `client.settings.update({preferences, expectedPreferencesRevision})` now targets the own-member PATCH | Initial persistence/replay/revision/member-isolation implementation and native tests exist; full API-backed browser test remains pending |
 | Reply-policy settings (not missing) | `GET/PATCH /settings/reply-engine` exist in `replies/api.py` | Preserve B3 allowlist/activation/floors. This route does not implement the general settings DTO |
 | Every catalogue/settings screen using API | DataProvider selects one whole-app mock/API client; screens call that client | Remove dependency on absent routes; test actual FastAPI-backed UI for every screen. Adapter/mock test is insufficient |
 | Sample banner | `provider.tsx` renders it **only when mode=mock** | It already disappears in API mode. Do not hide a sample banner while retaining mock data. If mixing modes is necessary, label each actual source truthfully |
