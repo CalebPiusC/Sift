@@ -63,8 +63,8 @@ expected = build()
 original = Path.glob
 try:
     for seed in range(20):
-        def shuffled(self, pattern):
-            paths = list(original(self, pattern))
+        def shuffled(self, pattern, **kwargs):
+            paths = list(original(self, pattern, **kwargs))
             random.Random(seed).shuffle(paths)
             return iter(paths)
         Path.glob = shuffled
