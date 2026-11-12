@@ -232,3 +232,8 @@ async def private_validation_error(request, error):
             },
         },
     )
+
+
+from .settings.api import router as settings_router
+
+app.include_router(settings_router)

@@ -4,40 +4,66 @@ import type { Preferences } from '../../lib/data';
 import { useDataClient } from '../data/provider';
 import { useAction, panel } from '../data/shared';
 import { Button } from '../ui/button';
-export function PreferencesSettings({ value }: { value: Preferences }) {
+export function PreferencesSettings({
+  value,
+  revision,
+}: {
+  value: Preferences;
+  revision?: string;
+}) {
   const { client } = useDataClient();
   const action = useAction();
   const [draft, setDraft] = useState(() => structuredClone(value)),
     [saved, setSaved] = useState(false);
   const dirty = useRef(false);
+  const baseRevision = useRef(revision);
+  const requestKey = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (!dirty.current) setDraft(structuredClone(value));
-  }, [value]);
+    if (!dirty.current) {
+      setDraft(structuredClone(value));
+      baseRevision.current = revision;
+    }
+  }, [value, revision]);
   const set = (patch: Partial<Preferences>) => {
     setDraft((p) => ({ ...p, ...patch }));
     setSaved(false);
     dirty.current = true;
+    requestKey.current = undefined;
   };
   return (
     <form
       className="space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
+        requestKey.current ??= crypto.randomUUID();
         void action
-          .run(() => client.settings.update({ preferences: draft }))
+          .run(() =>
+            client.settings.update({
+              preferences: draft,
+              ...(client.mode === 'api'
+                ? {
+                    expectedPreferencesRevision: baseRevision.current,
+                    idempotencyKey: requestKey.current,
+                  }
+                : {}),
+            }),
+          )
           .then((r) => {
             if (r.ok) {
               setDraft(r.data.preferences);
               setSaved(true);
               dirty.current = false;
+              baseRevision.current = r.data.preferencesRevision;
+              requestKey.current = undefined;
             }
           });
       }}
     >
       <h2 className="text-xl font-semibold">Make yourself comfortable</h2>
       <p className="text-sm leading-6 text-slate-500">
-        Changes apply when you save and persist across screens for this session. Refreshing resets
-        mock data.
+        {client.mode === 'mock'
+          ? 'Sample changes apply when you save. Refreshing resets mock data.'
+          : 'Saved preferences belong to your signed-in business membership and persist after reload.'}
       </p>
       <section className={panel}>
         <h3 className="mb-3 font-semibold">Data and appearance</h3>
@@ -52,7 +78,7 @@ export function PreferencesSettings({ value }: { value: Preferences }) {
         </label>
         <p className="mb-4 text-xs leading-6 text-slate-500">
           Skips catalogue thumbnail loading. Photos still appear when you deliberately open/edit an
-          item. Voice audio never auto-plays.
+          item.
         </p>
         <label className="flex min-h-14 items-center justify-between gap-3 text-sm">
           Dark mode
@@ -113,8 +139,29 @@ export function PreferencesSettings({ value }: { value: Preferences }) {
       </Button>
       {saved && (
         <p role="status" className="text-xs text-success">
-          Preferences saved for this session.
+          {client.mode === 'mock' ? 'Preferences saved for this session.' : 'Preferences saved.'}
         </p>
+      )}
+      {action.error?.code === 'CONFLICT' && (
+        <Button
+          type="button"
+          disabled={action.busy}
+          onClick={() => {
+            void action
+              .run(() => client.settings.get())
+              .then((r) => {
+                if (r.ok) {
+                  setDraft(structuredClone(r.data.preferences));
+                  baseRevision.current = r.data.preferencesRevision;
+                  requestKey.current = undefined;
+                  dirty.current = false;
+                  setSaved(false);
+                }
+              });
+          }}
+        >
+          Reload saved preferences
+        </Button>
       )}
       {action.error && (
         <p role="alert" className="text-xs text-danger">

@@ -137,7 +137,7 @@ export interface SettingsData {
         | 'businessHours'
         | 'preferences'
       >
-    >,
+    > & { expectedPreferencesRevision?: string; idempotencyKey?: string },
   ): Promise<Result<BusinessSettings>>;
 }
 export interface InsightsData {

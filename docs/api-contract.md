@@ -216,6 +216,7 @@ export type AutoIntent =
   | 'order_status'
   | 'alternatives';
 export interface BusinessSettings extends Entity {
+  preferencesRevision?: string;
   replyLanguages: import('./settings-types').AppLanguage[];
   businessHours: import('./settings-types').BusinessHours;
   preferences: import('./settings-types').Preferences;
@@ -442,7 +443,7 @@ export interface SettingsData {
         | 'businessHours'
         | 'preferences'
       >
-    >,
+    > & { expectedPreferencesRevision?: string; idempotencyKey?: string },
   ): Promise<Result<BusinessSettings>>;
 }
 export interface InsightsData {

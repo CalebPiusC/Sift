@@ -72,6 +72,8 @@ Generated from Python AST route decorators in mounted application modules. It pr
 | POST | `/v1/approvals/{aid}/decision` | `api/app/replies/api.py:65::decision` |
 | PATCH | `/v1/settings/reply-engine` | `api/app/replies/api.py:163::settings` |
 | GET | `/v1/settings/reply-engine` | `api/app/replies/api.py:185::get_settings` |
+| GET | `/v1/settings` | `api/app/settings/api.py:116::get_settings` |
+| PATCH | `/v1/settings` | `api/app/settings/api.py:122::update_preferences` |
 | GET | `/v1/webhooks/whatsapp` | `api/app/whatsapp/api.py:20::verify` |
 | POST | `/v1/webhooks/whatsapp` | `api/app/whatsapp/api.py:35::webhook` |
 | POST | `/v1/channels/whatsapp/signup/{attempt}/complete` | `api/app/whatsapp/api.py:70::complete` |

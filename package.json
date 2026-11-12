@@ -38,7 +38,8 @@
     "test:readiness": "python -m pytest api/tests -q && node --test tests/restore-native.test.mjs tests/b2-native.test.mjs",
     "test:contributor-setup": "node --test tests/contributor-setup.test.mjs",
     "test:inventory": "node --test tests/status-inventory.test.mjs",
-    "docs:status": "python3 scripts/audit-status.py"
+    "docs:status": "python3 scripts/audit-status.py",
+    "test:settings:native": "node --test tests/s1-settings-native.test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.16",

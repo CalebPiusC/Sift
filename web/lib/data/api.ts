@@ -246,7 +246,10 @@ export function createApiClient(options: {
     },
     settings: {
       get: () => request('settings'),
-      update: (i) => request('settings', i, 'PATCH'),
+      update: (i) => {
+        const { idempotencyKey, ...body } = i;
+        return request('settings', body, 'PATCH', idempotencyKey ?? crypto.randomUUID());
+      },
       getReplyPolicy: () => request('settings/reply-engine'),
       updateReplyPolicy: (i) => request('settings/reply-engine', i, 'PATCH'),
     },

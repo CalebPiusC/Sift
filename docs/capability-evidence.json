@@ -142,9 +142,9 @@
   {
     "name": "Business profile/general settings",
     "implemented": "partial",
-    "frontend": "no",
+    "frontend": "partial",
     "local": "partial",
-    "proof": "web/components/settings/; web/tests/settings.test.ts; GET/PATCH /v1/settings absent."
+    "proof": "api/app/settings/api.py GET composes persisted settings; tests/helpers/s1-settings.py. General business/hours/fees PATCH still absent; initial S1 draft, not full settings completion."
   },
   {
     "name": "Business hours/away message/delivery fees editing",
@@ -156,16 +156,16 @@
   {
     "name": "Personal dark mode/low-data/language/notification preferences persistence",
     "implemented": "partial",
-    "frontend": "no",
+    "frontend": "partial",
     "local": "partial",
-    "proof": "web/components/settings/preferences.tsx; provider.tsx reads missing /settings; only session/mock behavior tested."
+    "proof": "api/app/settings/api.py GET/PATCH own-member preferences; tests/helpers/s1-settings.py native tenant/replay/concurrency/ABA checks; web/tests/settings-api-preferences.test.tsx boundary-double UI tests. Real API-backed browser acceptance pending; S1 in progress."
   },
   {
     "name": "Reply-policy activation/safe-intent/tone settings",
     "implemented": "yes",
     "frontend": "partial",
     "local": "yes",
-    "proof": "api/app/replies/api.py; tests/helpers/b3_checks.py; separate from missing general settings endpoint."
+    "proof": "api/app/replies/api.py; tests/helpers/b3_checks.py; separate from general settings composition/preferences endpoint; business-setting writes remain incomplete."
   },
   {
     "name": "Inbox list/thread/history/search/read state",
