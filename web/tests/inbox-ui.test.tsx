@@ -1,8 +1,18 @@
-import { it, expect } from 'vitest';
+import { it, expect, vi } from 'vitest';
 import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DataProvider } from '../components/data/provider';
 import { InboxPanel } from '../components/data/inbox';
+// UI integration exercises domain logic/subscriptions, not the sample network delay.
+// Keep all async calls, real mutations and assertions; production latency is unchanged.
+vi.mock('../lib/data', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/data')>();
+  return {
+    ...actual,
+    createMockClient: (options: Parameters<typeof actual.createMockClient>[0]) =>
+      actual.createMockClient({ ...options, latencyMs: 0 }),
+  };
+});
 const renderInbox = () =>
   render(
     <div style={{ width: 390, maxWidth: '100%' }}>

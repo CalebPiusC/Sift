@@ -57,3 +57,15 @@ acceptance. Existing frontend tests remain in place.
 
 Live Gemini/storage acceptance and release approval remain **no** until independently
 proven. Passing tests for this initial slice do not complete S1 or make release GO.
+
+## Initial CI timing follow-up
+
+The first push ran the S1 native and API jobs green, but the existing Inbox
+hand-back UI test exceeded its unchanged 5000ms limit on GitHub. The test file
+was unchanged from main. Local original file passed all five tests in 7793ms,
+with hand-back taking 2958ms; the fixture now uses the existing sample client
+`latencyMs: 0` option (same approach as the merged orders UI fixture). The real
+async methods, subscriptions and domain mutations remain, and all expectation
+expressions are unchanged. No production latency, timeout, retry or skip changes.
+The modified file passed 5/5 in 4678ms, with hand-back taking 1745ms locally.
+GitHub acceptance still needs to be checked for the final pushed commit.
